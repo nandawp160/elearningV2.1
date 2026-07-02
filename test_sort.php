@@ -1,0 +1,1 @@
+<?php require 'vendor/autoload.php'; $c = collect([['name' => 'Kelas X IPA 1'], ['name' => 'Kelas XII IPA 1'], ['name' => 'Kelas XI IPA 1'], ['name' => 'Kelas X IPA 2']]); echo "Default Sort:\n"; print_r($c->sortBy('name')->pluck('name')->toArray()); echo "\nNatural Sort:\n"; print_r($c->sortBy('name', SORT_NATURAL)->pluck('name')->toArray());

@@ -1,0 +1,790 @@
+@extends('layouts.app')
+
+@section('title', 'Tugas - ' . ($subject->course->name ?? $subject->nama ?? '') . ' - ' . ($subject->classRoom->name ?? ''))
+
+@section('content')
+<style>
+.tg-wrapper { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; position: relative; }
+[x-cloak] { display: none !important; }
+
+/* Alerts */
+.tg-alert { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; margin-bottom: 20px; font-size: 13.5px; font-weight: 500; }
+.tg-alert--success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.tg-alert--danger { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.tg-alert__icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.5); font-size: 13px; }
+.tg-alert__text { flex: 1; }
+.tg-alert__close { background: none; border: none; cursor: pointer; color: inherit; opacity: 0.5; padding: 4px; }
+
+/* Topbar */
+.tgd-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.tgd-back { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.15s; }
+.tgd-back:hover { border-color: #f97316; color: #f97316; }
+.dark .tgd-back { background: #1e293b; border-color: #334155; color: #94a3b8; }
+
+.tgd-btn-new { display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; border: none; border-radius: 10px; background: #f97316; color: #fff; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background 0.15s; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2); }
+.tgd-btn-new:hover { background: #ea580c; }
+
+/* Header */
+.tgd-subject-header { margin-bottom: 24px; }
+.tgd-subject-title { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0 0 8px 0; }
+.dark .tgd-subject-title { color: #f1f5f9; }
+.tgd-subject-meta { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #64748b; flex-wrap: wrap; }
+.tgd-subject-meta i { font-size: 12px; color: #94a3b8; }
+.tgd-subject-meta strong { color: #334155; }
+.dark .tgd-subject-meta strong { color: #e2e8f0; }
+.tgd-sep { color: #cbd5e1; }
+
+/* Card & Table */
+.tg-card { background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.dark .tg-card { background: #0f172a; border-color: #1e293b; }
+
+.tgd-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px; }
+.dark .tgd-toolbar { border-color: #1e293b; }
+.tgd-toolbar__left { display: flex; align-items: center; gap: 10px; }
+.tgd-show-label { font-size: 13px; color: #64748b; }
+
+.tg-select { padding: 7px 30px 7px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #475569; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 10px center; appearance: none; outline: none; cursor: pointer; transition: border 0.15s; }
+.tg-select:focus { border-color: #f97316; }
+.dark .tg-select { background-color: #1e293b; border-color: #334155; color: #e2e8f0; }
+
+.tg-search { position: relative; }
+.tg-search__icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px; pointer-events: none; }
+.tg-search__input { padding: 8px 12px 8px 34px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #334155; background: #fff; outline: none; width: 220px; transition: border 0.15s; }
+.tg-search__input::placeholder { color: #94a3b8; }
+.tg-search__input:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.08); }
+.dark .tg-search__input { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+
+.tg-table-wrap { overflow-x: auto; }
+.tg-table { width: 100%; border-collapse: collapse; }
+.tg-thead-row { background: #fafbfc; }
+.dark .tg-thead-row { background: #1e293b; }
+.tg-th { padding: 14px 18px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
+.dark .tg-th { border-color: #1e293b; color: #64748b; }
+.tg-th--center { text-align: center; }
+
+.tg-row:nth-child(even) { background: #fafbfc; }
+.dark .tg-row:nth-child(even) { background: #0c1526; }
+.tg-row:nth-child(odd) { background: #fff; }
+.dark .tg-row:nth-child(odd) { background: #0f172a; }
+.tg-row { transition: background 0.12s; }
+.tg-row:hover { background: #fff4ee !important; }
+.dark .tg-row:hover { background: #1e293b !important; }
+.tg-row:not(:last-child) .tg-td { border-bottom: 1px solid #f8fafc; }
+.dark .tg-row:not(:last-child) .tg-td { border-bottom-color: #1e293b; }
+
+.tg-td { padding: 15px 18px; font-size: 13.5px; color: #334155; vertical-align: middle; }
+.dark .tg-td { color: #cbd5e1; }
+.tg-td--num { color: #94a3b8; font-weight: 500; width: 48px; }
+.tg-td--center { text-align: center; }
+.tg-td--empty { padding: 60px 20px; text-align: center; }
+
+.tgd-code { display: inline-block; padding: 3px 10px; border-radius: 6px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 11.5px; font-weight: 600; color: #64748b; font-family: monospace; }
+.dark .tgd-code { background: #1e293b; border-color: #334155; color: #94a3b8; }
+
+.tgd-detail { display: flex; flex-direction: column; gap: 2px; max-width: 260px; }
+.tgd-detail__title { font-weight: 700; color: #1e293b; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dark .tgd-detail__title { color: #f1f5f9; }
+.tgd-detail__desc { font-size: 12px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.tgd-date { display: flex; flex-direction: column; gap: 2px; }
+.tgd-date--ok { font-size: 13.5px; color: #334155; font-weight: 600; white-space: nowrap; }
+.tgd-date--over { font-size: 13.5px; color: #ef4444; font-weight: 700; white-space: nowrap; }
+.tgd-date__time { font-size: 12px; color: #94a3b8; }
+
+.tgd-method { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; }
+.tgd-method--essay, .tgd-method--online { background: #eff6ff; color: #2563eb; }
+.tgd-method--offline { background: #f0fdf4; color: #16a34a; }
+
+.tgd-soal { display: flex; flex-direction: column; gap: 3px; }
+.tgd-dl-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #f97316; text-decoration: none; }
+.tgd-no-soal { font-size: 12px; color: #cbd5e1; }
+.tgd-soal__type { font-size: 11px; color: #94a3b8; }
+
+.tg-collect { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tg-collect__label { font-weight: 700; font-size: 12.5px; color: #f97316; }
+.tg-collect__sep { color: #cbd5e1; font-size: 12px; }
+.tg-collect__total { font-size: 12.5px; color: #94a3b8; }
+.tg-collect__bar { width: 100%; height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden; flex-basis: 100%; margin-top: 4px; }
+.tg-collect__fill { height: 100%; background: #16a34a; border-radius: 2px; transition: width 0.4s; }
+
+.tgd-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.tgd-badge--aktif { background: #ecfdf5; color: #059669; }
+.tgd-badge--ditutup { background: #fef2f2; color: #dc2626; }
+.tgd-badge--draft { background: #fffbeb; color: #d97706; }
+
+.tgd-actions { display: flex; justify-content: center; gap: 6px; }
+.tgd-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; font-size: 13px; text-decoration: none; cursor: pointer; transition: all 0.15s; }
+.tgd-icon-btn:hover { background: #f8fafc; border-color: #cbd5e1; color: #1e293b; transform: translateY(-1px); }
+.tgd-icon-btn--edit:hover { background: #fffbeb; border-color: #fde68a; color: #d97706; }
+.tgd-icon-btn--del:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+.dark .tgd-icon-btn { background: #1e293b; border-color: #334155; color: #94a3b8; }
+
+.tg-table-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid #f1f5f9; flex-wrap: wrap; gap: 12px; }
+.tg-info { font-size: 13px; color: #94a3b8; }
+.tg-pagination { display: flex; gap: 4px; }
+.tg-page-btn { min-width: 32px; height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #64748b; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; }
+.tg-page-btn--active { background: #f97316 !important; border-color: #f97316 !important; color: #fff !important; }
+.tg-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Empty state */
+.tg-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.tg-empty__icon { width: 56px; height: 56px; border-radius: 18px; background: #fff7ed; color: #f97316; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.tg-empty__title { font-size: 15px; font-weight: 700; color: #475569; margin: 0; }
+.tg-empty__desc { font-size: 13.5px; color: #94a3b8; margin: 0; text-align: center; max-width: 300px; }
+
+/* Modal Styles */
+.tgd-modal-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.tgd-modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); }
+.tgd-modal-panel { position: relative; width: 100%; max-width: 680px; z-index: 1001; }
+.tgd-modal-content { background: #fff; border-radius: 20px; border: 1px solid #f1f5f9; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; }
+.dark .tgd-modal-content { background: #0f172a; border-color: #1e293b; }
+
+.tgd-modal-header { display: flex; align-items: center; gap: 14px; padding: 20px 24px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+.tgd-modal__icon { width: 44px; height: 44px; border-radius: 14px; background: #fff7ed; color: #f97316; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.tgd-modal__title { font-size: 16px; font-weight: 800; color: #1e293b; margin: 0; }
+.tgd-modal__sub { font-size: 13px; color: #94a3b8; margin: 2px 0 0 0; }
+.tgd-modal__close { margin-left: auto; width: 34px; height: 34px; border-radius: 10px; border: none; background: transparent; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.tgd-modal__close:hover { background: #f1f5f9; color: #1e293b; }
+
+.tgd-modal__body { padding: 24px; overflow-y: auto; }
+.tgd-form-grid { display: grid; grid-template-cols: repeat(2, 1fr); gap: 20px; }
+.tgd-form-group--full { grid-column: span 2; }
+.tgd-label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; }
+.tgd-input { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #334155; background: #fff; outline: none; transition: all 0.15s; font-family: inherit; }
+.tgd-input:focus { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1); }
+textarea.tgd-input { resize: vertical; min-height: 100px; }
+
+.tgd-file-wrapper { position: relative; border: 2px dashed #e2e8f0; border-radius: 12px; padding: 24px; text-align: center; transition: all 0.15s; }
+.tgd-file-wrapper:hover { border-color: #f97316; background: #fffbf5; }
+.tgd-file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.tgd-file-dummy { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #94a3b8; }
+.tgd-file-dummy i { font-size: 24px; color: #cbd5e1; }
+.tgd-file-dummy span { font-size: 13px; font-weight: 600; }
+
+.tgd-modal__footer { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 24px; border-top: 1px solid #f1f5f9; background: #fafbfc; flex-shrink: 0; }
+.tgd-btn-outline { padding: 10px 20px; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff; color: #64748b; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.tgd-btn-outline:hover { border-color: #cbd5e1; color: #1e293b; background: #f8fafc; }
+.tgd-btn-primary { padding: 10px 24px; border: none; border-radius: 10px; background: #f97316; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2); }
+.tgd-btn-primary:hover { background: #ea580c; }
+
+/* Premium Design System for Tambah Tugas Modal */
+.select-premium {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1.5px solid #cbd5e1;
+    background-color: #fff;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 16px center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+.select-premium:focus {
+    border-color: #D65A20;
+    box-shadow: 0 0 0 3px rgba(214, 90, 32, 0.15);
+}
+.select-premium:disabled {
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+    color: #94a3b8;
+}
+.input-premium {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1.5px solid #cbd5e1;
+    background-color: #fff;
+    color: #1e293b;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-premium:focus {
+    border-color: #D65A20;
+    box-shadow: 0 0 0 3px rgba(214, 90, 32, 0.15);
+}
+.dropzone-premium {
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 24px 20px;
+    cursor: pointer;
+    background-color: #f8fafc;
+    transition: border-color 0.2s, background-color 0.2s, border-style 0.2s;
+}
+.dropzone-premium:not(.locked):hover {
+    border-color: #D65A20;
+    background-color: rgba(214, 90, 32, 0.02);
+}
+.btn-batal {
+    padding: 12px 32px;
+    border-radius: 30px;
+    border: 1.5px solid #cbd5e1;
+    background-color: #fff;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.btn-batal:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+}
+.btn-simpan {
+    padding: 12px 32px;
+    border-radius: 30px;
+    border: none;
+    background-color: #D65A20;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+.btn-simpan:hover {
+    background-color: #c24e18;
+    box-shadow: 0 4px 12px rgba(214, 90, 32, 0.2);
+}
+</style>
+<div class="tg-wrapper" x-data="teacherDetailModals()" @keydown.escape.window="closeCreateModal()">
+
+    {{-- Success/Error Alerts --}}
+    @if(session('success'))
+    <div class="tg-alert tg-alert--success">
+        <div class="tg-alert__icon"><i class="fas fa-check-circle"></i></div>
+        <span class="tg-alert__text">{{ session('success') }}</span>
+        <button onclick="this.parentElement.remove()" class="tg-alert__close"><i class="fas fa-times"></i></button>
+    </div>
+    @endif
+
+    @if($errors->any())
+    <div class="tg-alert tg-alert--danger" x-init="openCreateModal()">
+        <div class="tg-alert__icon"><i class="fas fa-exclamation-circle"></i></div>
+        <span class="tg-alert__text">Terdapat kesalahan pada input. Silakan periksa kembali form.</span>
+        <button onclick="this.parentElement.remove()" class="tg-alert__close"><i class="fas fa-times"></i></button>
+    </div>
+    @endif
+
+    {{-- Top Navigation & Action --}}
+    <div class="tgd-topbar">
+        <a href="{{ route('assignments.index') }}" class="tgd-back">
+            <i class="fas fa-arrow-left"></i> Kembali ke Daftar Pengampuan
+        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('assignments.teacher.rekap', ['subject' => $subject->id, 'class_name' => $subject->classRoom ? $subject->classRoom->name : null]) }}" class="tgd-btn-new" style="background-color: #f59e0b; color: white;">
+                <i class="fas fa-table"></i> Lihat Rekap Nilai
+            </a>
+            <button type="button" class="tgd-btn-new" @click="openCreateModal()">
+                <i class="fas fa-plus"></i> Buat Tugas Baru
+            </button>
+        </div>
+    </div>
+
+    {{-- Subject Header Info --}}
+    <div class="tgd-subject-header">
+        <h1 class="tgd-subject-title">{{ $subject->course->name ?? $subject->nama ?? '' }} - {{ $subject->classRoom->name ?? '' }}</h1>
+        <div class="tgd-subject-meta">
+            <span><i class="fas fa-user-tie"></i> Guru Pengampu: <strong>{{ $subject->teacher->name ?? '-' }}</strong></span>
+            <span class="tgd-sep">•</span>
+            <span><i class="fas fa-calendar-alt"></i> Tahun Ajaran: <strong>{{ $subject->classRoom->academic_year ?? \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026') }}</strong></span>
+        </div>
+    </div>
+
+    {{-- Main Content Table --}}
+    <div class="tg-card">
+        <div class="tgd-toolbar">
+            <div class="tgd-toolbar__left">
+                <label class="tgd-show-label">Tampilkan</label>
+                <select id="perPageSel" class="tg-select" style="width:75px">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+                <span class="tgd-show-label">entri</span>
+            </div>
+            <div class="tg-search">
+                <i class="fas fa-search tg-search__icon"></i>
+                <input type="text" id="detailSearch" class="tg-search__input" placeholder="Cari tugas...">
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse border border-slate-300" id="detailTable">
+                <thead>
+                    <tr class="bg-slate-50">
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700" style="width:48px">NO</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700" style="width:80px">KODE</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">DETAIL TUGAS</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">TANGGAL & WAKTU</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">METODE</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">SOAL & INFORMASI</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">PENGUMPULAN</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">STATUS</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="detailBody">
+                    @forelse($assignments as $i => $a)
+                    @php
+                        $isPast   = $a->due_date->isPast();
+                        $subCount = $a->submissions->count();
+                        $pct      = $studentCount > 0 ? min(100, ($subCount / $studentCount) * 100) : 0;
+                        $isActive = $a->status === 'active' && !$isPast;
+                    @endphp
+                    <tr class="tg-row hover:bg-yellow-50 transition border-b border-slate-200" data-search="{{ strtolower($a->title.' '.$a->description) }}">
+                        <td class="px-4 py-2 border border-slate-300 text-slate-600 text-center tgd-rownum">{{ $i+1 }}</td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">
+                            TGS-{{ str_pad($a->id, 4, '0', STR_PAD_LEFT) }}
+                        </td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800">
+                            <div class="font-bold text-slate-800">{{ $a->title }}</div>
+                            <div class="text-xs text-slate-500">{{ Str::limit(strip_tags($a->description), 45) }}</div>
+                        </td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 whitespace-nowrap">
+                            <div class="{{ $isPast ? 'text-rose-600 font-semibold' : 'text-slate-800 font-semibold' }}">{{ $a->due_date->format('d M Y') }}</div>
+                            <div class="text-xs text-slate-500">{{ $a->due_date->format('H:i') }} WIB</div>
+                        </td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">
+                            {{ strtoupper($a->type ?? 'ESSAY') }}
+                        </td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 whitespace-nowrap">
+                            @if($a->attachment)
+                            <a href="{{ $a->attachment_url }}" target="_blank" class="text-[#D65A20] hover:underline font-semibold text-xs inline-flex items-center gap-1">
+                                <i class="fas fa-download"></i> Unduh
+                            </a>
+                            @else
+                            <span class="text-slate-400">-</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">
+                            {{ $subCount }} / {{ $studentCount }}
+                        </td>
+                        <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
+                            @if($isActive)
+                                <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">Aktif</span>
+                            @elseif($a->status === 'inactive')
+                                <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">Draft</span>
+                            @else
+                                <span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">Ditutup</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-3 text-lg">
+                                <a href="{{ route('assignments.show', ['assignment' => $a->id, 'class_name' => request('class_name') ?? ($subject->classRoom ? $subject->classRoom->name : '')]) }}" class="text-blue-500 hover:text-blue-700 transition" title="Lihat">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('assignments.edit',$a) }}" class="text-amber-500 hover:text-amber-700 transition" title="Edit">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <form action="{{ route('assignments.destroy',$a) }}" method="POST" onsubmit="return confirm('Hapus tugas ini?')" style="display:inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-rose-500 hover:text-rose-700 transition" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="9" class="px-6 py-10 text-center border border-slate-300 text-slate-500">
+                            <p class="font-semibold text-sm">Belum ada tugas untuk mata pelajaran ini.</p>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <div class="tg-table-footer">
+            <span class="tg-info" id="detailInfo"></span>
+            <div class="tg-pagination" id="detailPag"></div>
+        </div>
+    </div>
+
+    {{-- Create Modal Overlay (Alpine.js) --}}
+    <div
+        x-show="openCreate"
+        x-cloak
+        style="display: none;"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Form Tambah Tugas">
+
+        {{-- Backdrop --}}
+        <div
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+            x-show="openCreate"
+            x-transition:enter="transition duration-200 ease-out"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition duration-150 ease-in"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @click="closeCreateModal()"
+            aria-hidden="true">
+        </div>
+
+        {{-- Modal Panel --}}
+        <div
+            class="relative w-full max-w-4xl my-auto"
+            x-show="openCreate"
+            x-transition:enter="transition duration-250 ease-out"
+            x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition duration-150 ease-in"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            @click.outside="closeCreateModal()">
+
+            <div class="bg-white dark:bg-slate-900 rounded-[30px] shadow-2xl border border-slate-200/70 dark:border-slate-800/70 overflow-hidden">
+
+                {{-- Modal Header --}}
+                <div class="flex items-center justify-between px-10 py-8">
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Tambah Tugas</h2>
+                    <button
+                        @click="closeCreateModal()"
+                        type="button"
+                        class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white transition"
+                        title="Tutup">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                {{-- Modal Body — the Form --}}
+                <form action="{{ route('assignments.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+
+                    {{-- Form inputs mapping & compatibility --}}
+                    <input type="hidden" name="subject_id" :value="selectedSubjectId" required />
+                    <input type="hidden" name="class_name" :value="selectedClass" />
+                    <input type="hidden" name="max_score" value="100" />
+                    <input type="hidden" name="type" value="essay" />
+                    <input type="hidden" name="status" value="active" />
+
+                    <div class="px-10 pb-8 space-y-6">
+
+                        {{-- Baris 1: Kelas & Mata Pelajaran --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="modal_kelas" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                    Kelas
+                                </label>
+                                <select id="modal_kelas" x-model="selectedClass" @change="onClassChange()"
+                                    class="select-premium @error('subject_id') border-rose-500 @enderror" required>
+                                    <option value="" disabled selected>Pilih kelas...</option>
+                                    <template x-for="c in getUniqueClasses()" :key="c">
+                                        <option :value="c" x-text="c"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="modal_mapel" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                    Mata Pelajaran
+                                </label>
+                                <select id="modal_mapel" x-model="selectedSubjectName" @change="onSubjectChange()"
+                                    class="select-premium @error('subject_id') border-rose-500 @enderror" :disabled="!selectedClass" required>
+                                    <option value="" disabled selected>Pilih mata pelajaran...</option>
+                                    <template x-for="s in getSubjectsForClass(selectedClass)" :key="s.id">
+                                        <option :value="s.course_name" x-html="s.course_name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                        @error('subject_id')
+                        <p class="text-rose-500 text-xs mt-1 flex items-center gap-1">
+                            <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                        </p>
+                        @enderror
+
+                        {{-- Baris 2: Judul Tugas --}}
+                        <div>
+                            <label for="modal_title" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Judul Tugas
+                            </label>
+                            <input type="text" name="title" id="modal_title"
+                                value="{{ old('title') }}"
+                                placeholder="Masukkan judul tugas"
+                                class="input-premium @error('title') border-rose-500 @enderror" required />
+                            @error('title')
+                            <p class="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                            </p>
+                            @enderror
+                        </div>
+
+                        {{-- Baris 3: Deskripsi Tugas --}}
+                        <div>
+                            <label for="modal_description" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Deskripsi Tugas <span class="text-slate-400 font-normal">(opsional)</span>
+                            </label>
+                            <textarea name="description" id="modal_description" rows="4"
+                                placeholder="Masukkan deskripsi tugas"
+                                style="height: 120px;"
+                                class="input-premium py-3 resize-none @error('description') border-rose-500 @enderror">{{ old('description') }}</textarea>
+                            @error('description')
+                            <p class="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                            </p>
+                            @enderror
+                        </div>
+
+                        {{-- Baris 4: Deadline & File Tugas --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="modal_due_date" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                    Deadline
+                                </label>
+                                <input type="datetime-local" name="due_date" id="modal_due_date"
+                                    value="{{ old('due_date') }}"
+                                    class="input-premium @error('due_date') border-rose-500 @enderror" required />
+                                @error('due_date')
+                                <p class="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                                </p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                    File Tugas <span class="text-slate-400 font-normal">(opsional)</span>
+                                </label>
+
+                                <div
+                                    @dragover.prevent="!createFileName && (isDraggingCreate = true)"
+                                    @dragleave.prevent="isDraggingCreate = false"
+                                    @drop.prevent="isDraggingCreate = false; !createFileName && handleCreateFileDrop($event)"
+                                    @click="!createFileName && $refs.createFileInput.click()"
+                                    class="dropzone-premium relative transition-all duration-200"
+                                    :class="{
+                                        'locked border-emerald-500 dark:border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/20': createFileName,
+                                        'border-orange-500 bg-orange-50/30': isDraggingCreate && !createFileName,
+                                        'border-slate-300 dark:border-slate-700': !createFileName && !isDraggingCreate
+                                    }"
+                                    :style="createFileName ? 'border-style: solid !important; cursor: not-allowed !important;' : ''"
+                                >
+                                    <!-- Clear File Button -->
+                                    <template x-if="createFileName">
+                                        <button
+                                            type="button"
+                                            @click.stop="
+                                                $refs.createFileInput.value = '';
+                                                createFileName = '';
+                                            "
+                                            class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-500 dark:text-rose-400 flex items-center justify-center transition-all duration-200 shadow-sm z-10"
+                                            title="Hapus File"
+                                        >
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </template>
+
+                                    <div class="flex flex-col items-center justify-center text-center">
+                                        <div 
+                                            class="w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm transition-all duration-300"
+                                            :class="createFileName ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'"
+                                        >
+                                            <i class="fas text-lg" :class="createFileName ? 'fa-check-circle text-emerald-500' : 'fa-cloud-upload-alt'"></i>
+                                        </div>
+                                        <p 
+                                            class="text-sm font-semibold transition-colors duration-200 max-w-[90%] truncate"
+                                            :class="createFileName ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'"
+                                            x-text="createFileName || 'Klik atau drag file ke sini'"
+                                        ></p>
+                                        <p 
+                                            class="text-[10px] mt-1 transition-colors duration-200"
+                                            :class="createFileName ? 'text-emerald-500 font-semibold' : 'text-slate-400'"
+                                            x-text="createFileName ? 'File siap diupload' : 'PDF, DOCX, PPTX, ZIP (Maks. 20 MB)'"
+                                        ></p>
+                                    </div>
+                                    <input type="file" name="attachment" x-ref="createFileInput" class="hidden"
+                                        accept=".pdf,.doc,.docx,.pptx,.zip"
+                                        @change="createFileName = $el.files[0] ? $el.files[0].name : ''" />
+                                </div>
+                                @error('attachment')
+                                <p class="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                                </p>
+                                @enderror
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {{-- Modal Footer --}}
+                    <div class="flex items-center justify-end gap-3 px-10 py-6 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                            @click="closeCreateModal()"
+                            type="button"
+                            class="btn-batal">
+                            Batal
+                        </button>
+                        <button type="submit" class="btn-simpan">
+                            Simpan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function teacherDetailModals() {
+    return {
+        openCreate: {{ $errors->any() ? 'true' : 'false' }},
+        descLen: {{ strlen(old('description', '')) }},
+        descContent: @json(old('description', '')),
+        attachName: 'Pilih file...',
+
+        // -- Subjects Data --
+        subjectsList: [
+            @foreach($subjects as $subj)
+            {
+                id: {{ $subj->id }},
+                course_name: "{!! addslashes($subj->course->name ?? $subj->nama) !!}",
+                class_name: "{!! addslashes($subj->classRoom->name ?? '') !!}"
+            },
+            @endforeach
+        ],
+        selectedClass: '',
+        selectedSubjectName: '',
+        selectedSubjectId: "{{ old('subject_id', '') }}",
+        isDraggingCreate: false,
+        createFileName: '',
+
+        getUniqueClasses() {
+            const classes = this.subjectsList.map(s => s.class_name).filter(Boolean);
+            return [...new Set(classes)].sort();
+        },
+
+        getSubjectsForClass(className) {
+            if (!className) return [];
+            return this.subjectsList.filter(s => s.class_name === className);
+        },
+
+        onClassChange() {
+            this.selectedSubjectName = '';
+            this.selectedSubjectId = '';
+        },
+
+        onSubjectChange() {
+            const match = this.subjectsList.find(s => s.class_name === this.selectedClass && s.course_name === this.selectedSubjectName);
+            this.selectedSubjectId = match ? match.id : '';
+        },
+
+        handleCreateFileDrop(e) {
+            if (this.createFileName) return;
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.$refs.createFileInput.files = files;
+                this.createFileName = files[0].name;
+            }
+        },
+
+        openCreateModal() {
+            this.openCreate = true;
+            document.body.style.overflow = 'hidden';
+        },
+
+        closeCreateModal() {
+            this.openCreate = false;
+            document.body.style.overflow = '';
+        },
+
+        init() {
+            if (this.selectedSubjectId) {
+                const match = this.subjectsList.find(s => s.id == this.selectedSubjectId);
+                if (match) {
+                    this.selectedClass = match.class_name;
+                    this.selectedSubjectName = match.course_name;
+                }
+            } else {
+                const match = this.subjectsList.find(s => s.id == {{ $subject->id }});
+                if (match) {
+                    this.selectedClass = match.class_name;
+                    this.selectedSubjectName = match.course_name;
+                    this.selectedSubjectId = match.id;
+                }
+            }
+        }
+    }
+}
+
+(function(){
+    var PER_PAGE = 10, page = 1, filtered = [];
+    var tbody = document.getElementById('detailBody');
+    var rows = tbody ? Array.from(tbody.querySelectorAll('tr.tg-row')) : [];
+    var info = document.getElementById('detailInfo');
+    var pag = document.getElementById('detailPag');
+    var sel = document.getElementById('perPageSel');
+    var srch = document.getElementById('detailSearch');
+
+    function filter(){
+        var q = (srch ? srch.value : '').toLowerCase().trim();
+        filtered = rows.filter(function(r){
+            return !q || (r.dataset.search || '').includes(q);
+        });
+        page = 1;
+        render();
+    }
+
+    function render(){
+        rows.forEach(function(r){ r.style.display = 'none'; });
+        PER_PAGE = sel ? parseInt(sel.value) : 10;
+        var t = filtered.length,
+            tp = Math.max(1, Math.ceil(t / PER_PAGE)),
+            s = (page - 1) * PER_PAGE,
+            e = Math.min(s + PER_PAGE, t);
+
+        for(var i = s; i < e; i++){
+            filtered[i].style.display = '';
+            filtered[i].querySelector('.tgd-rownum').textContent = i + 1;
+        }
+        if(info) info.textContent = t === 0 ? 'Tidak ada data' : 'Menampilkan ' + (s + 1) + ' sampai ' + e + ' dari ' + t + ' data';
+        buildPag(tp);
+    }
+
+    function buildPag(tp){
+        if(!pag) return;
+        pag.innerHTML = '';
+        if(tp <= 1) return;
+        pag.appendChild(mkBtn('‹', page > 1, function(){ page--; render(); }));
+        for(var p = 1; p <= tp; p++){
+            (function(pp){
+                var b = mkBtn(pp, true, function(){ page = pp; render(); });
+                if(pp === page) b.classList.add('tg-page-btn--active');
+                pag.appendChild(b);
+            })(p);
+        }
+        pag.appendChild(mkBtn('›', page < tp, function(){ page++; render(); }));
+    }
+
+    function mkBtn(l, en, fn){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.innerHTML = l;
+        b.className = 'tg-page-btn';
+        b.disabled = !en;
+        if(en) b.addEventListener('click', fn);
+        return b;
+    }
+
+    if(srch) srch.addEventListener('input', filter);
+    if(sel) sel.addEventListener('change', filter);
+    filtered = rows.slice();
+    render();
+})();
+</script>
+
+
+@endpush
+@endsection

@@ -1,0 +1,1206 @@
+@extends('layouts.app')
+
+@section('title', 'Materi Pelajaran')
+
+@section('content')
+@if(session('success'))
+<div class="mb-6 glass p-4 border border-emerald-100 bg-emerald-50/70 text-emerald-700 flex items-center justify-between rounded-xl">
+    <div class="flex items-center gap-3">
+        <i class="fas fa-check-circle"></i>
+        <span class="font-semibold text-sm">{{ session('success') }}</span>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-emerald-700/70 hover:text-emerald-700 transition">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+@endif
+
+@if(auth()->user()->isStudent())
+    <!-- ========================================== -->
+    <!-- TAMPILAN SISWA (STUDENT VIEW)              -->
+    <!-- ========================================== -->
+    <div class="space-y-6">
+        @if(!request('subject_id'))
+            <!-- ========================================== -->
+            <!-- PORTAL MATERI: DAFTAR MATA PELAJARAN      -->
+            <!-- ========================================== -->
+            <div class="card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm p-6">
+                <div>
+                    <h1 class="page-title text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Materi Pembelajaran</h1>
+                    <p class="page-subtitle text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-medium">Pilih mata pelajaran untuk mengakses daftar modul, presentasi, dan bahan ajar.</p>
+                </div>
+            </div>
+
+            <!-- Toolbar Pencarian Client-Side -->
+            <div class="relative mb-6">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="search-input" placeholder="Cari mata pelajaran atau guru..." class="form-input w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition text-slate-800 dark:text-slate-200">
+            </div>
+
+            <!-- List/Tabel Mata Pelajaran -->
+            <div class="card p-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="table-ui w-full">
+                        <thead id="subjects-table-header">
+                            <tr class="bg-slate-50/50 dark:bg-slate-800/30">
+                                <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Mata Pelajaran</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Guru Pengajar</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider w-36">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subjects-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @forelse($subjects as $subject)
+                                @php
+                                    $teacher = $subject->teacher;
+                                    $teacherName = $teacher ? $teacher->nama : 'Belum Ada Guru';
+                                    
+                                    // Peta ikon berdasarkan nama mata pelajaran
+                                    $iconMap = [
+                                        'matematika' => ['icon' => 'fa-drafting-compass', 'bg' => 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400'],
+                                        'kimia' => ['icon' => 'fa-vial', 'bg' => 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'],
+                                        'bahasa' => ['icon' => 'fa-book', 'bg' => 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'],
+                                        'muatan lokal' => ['icon' => 'fa-leaf', 'bg' => 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400'],
+                                        'tik' => ['icon' => 'fa-desktop', 'bg' => 'bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400'],
+                                        'default' => ['icon' => 'fa-file-alt', 'bg' => 'bg-slate-50 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400']
+                                    ];
+                                    
+                                    $matched = $iconMap['default'];
+                                    $subjectNameLower = strtolower($subject->nama);
+                                    foreach ($iconMap as $key => $values) {
+                                        if ($key !== 'default' && str_contains($subjectNameLower, $key)) {
+                                            $matched = $values;
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                <tr class="subject-row hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition" 
+                                    data-name="{{ strtolower($subject->nama) }}" 
+                                    data-teacher="{{ strtolower($teacherName) }}">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $matched['bg'] }}">
+                                                <i class="fas {{ $matched['icon'] }} text-lg"></i>
+                                            </div>
+                                            <span class="font-bold text-slate-800 dark:text-white">{{ $subject->nama }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ $teacherName }}</span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <a href="{{ route('materials.index', ['subject_id' => $subject->id]) }}" 
+                                           class="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-[#D65A20] hover:text-white dark:hover:bg-[#D65A20] dark:hover:text-white hover:border-[#D65A20] rounded-lg px-4 py-2 text-xs font-bold transition duration-200 inline-block text-center whitespace-nowrap">
+                                            Buka Materi
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr id="no-subjects-row">
+                                    <td colspan="3" class="px-6 py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <div class="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-2">
+                                                <i class="fas fa-folder-open text-2xl"></i>
+                                            </div>
+                                            <h3 class="text-base font-bold text-slate-800 dark:text-white">Belum ada materi tersedia</h3>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Materi dari guru akan muncul pada halaman ini.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty State Pencarian -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm text-center">
+                <div class="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-4">
+                    <i class="fas fa-search text-2xl"></i>
+                </div>
+                <h3 id="empty-state-title" class="text-base font-bold text-slate-800 dark:text-white">Tidak ditemukan materi</h3>
+                <p id="empty-state-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">Coba gunakan kata kunci lain.</p>
+            </div>
+
+        @else
+            <!-- ========================================== -->
+            <!-- PORTAL DETAIL MATERI KELAS                -->
+            <!-- ========================================== -->
+            @php
+                $currentSubject = $subjects->firstWhere('id', request('subject_id')) ?? $subjects->first();
+            @endphp
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('materials.index') }}" class="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-center" title="Kembali ke Portal">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="page-title text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Materi {{ $currentSubject ? $currentSubject->nama : '' }}</h1>
+                        <p class="page-subtitle text-xs text-slate-500 mt-0.5">Daftar materi pembelajaran kelas: {{ $currentSubject && $currentSubject->classRoom ? $currentSubject->classRoom->name : '' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar Pencarian Detail Mapel -->
+            <div class="relative mb-6">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" id="search-materi-input" placeholder="Cari judul materi..." class="form-input w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition text-slate-800 dark:text-slate-200">
+            </div>
+
+            <!-- Tabel Daftar Materi Berkas -->
+            <div class="card p-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="table-ui w-full">
+                        <thead id="materials-table-header">
+                            <tr class="bg-slate-50/50 dark:bg-slate-800/30">
+                                <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Materi</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tanggal & Uploader</th>
+                                <th class="px-6 py-4 text-center w-36 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="materials-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @forelse($materials as $material)
+                                @php
+                                    $attachment = $material->file_path;
+                                    $isLink = $attachment && (filter_var($attachment, FILTER_VALIDATE_URL) || str_starts_with($attachment, 'http://') || str_starts_with($attachment, 'https://'));
+                                    
+                                    if ($isLink) {
+                                        $fileType = 'LINK';
+                                        $fileIcon = 'fa-link text-emerald-500';
+                                        $badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50';
+                                    } else {
+                                        $extension = $attachment ? strtolower(pathinfo($attachment, PATHINFO_EXTENSION)) : '';
+                                        
+                                        if ($extension === 'pdf') {
+                                            $fileType = 'PDF';
+                                            $fileIcon = 'fa-file-pdf text-red-500';
+                                            $badgeClass = 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950/30 dark:text-red-400 dark:border-red-900/50';
+                                        } elseif (in_array($extension, ['doc', 'docx'])) {
+                                            $fileType = 'WORD';
+                                            $fileIcon = 'fa-file-word text-blue-500';
+                                            $badgeClass = 'bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50';
+                                        } elseif (in_array($extension, ['ppt', 'pptx'])) {
+                                            $fileType = 'PPT';
+                                            $fileIcon = 'fa-file-powerpoint text-orange-500';
+                                            $badgeClass = 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-950/30 dark:text-orange-400 dark:border-orange-900/50';
+                                        } elseif (in_array($extension, ['mp4', 'mkv', 'avi', 'mov'])) {
+                                            $fileType = 'VIDEO';
+                                            $fileIcon = 'fa-video text-purple-500';
+                                            $badgeClass = 'bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900/50';
+                                        } else {
+                                            // Default jika ekstensi file tidak dikenali atau kolom lampiran kosong
+                                            $fileType = 'DOKUMEN';
+                                            $fileIcon = 'fa-file-alt text-slate-500';
+                                            $badgeClass = 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-850 dark:text-slate-400 dark:border-slate-800';
+                                        }
+                                    }
+                                    
+                                    $uploaderName = $material->creator ? $material->creator->nama : 'N/A';
+                                @endphp
+                                <tr class="material-row hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition"
+                                    data-title="{{ strtolower($material->title) }}"
+                                    data-desc="{{ strtolower($material->description) }}">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-start gap-3">
+                                            <div class="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center flex-shrink-0">
+                                                <i class="fas {{ $fileIcon }} text-lg"></i>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <a href="{{ route('materials.show', $material) }}" class="font-bold text-slate-800 dark:text-white hover:text-[#D65A20] transition break-words block">
+                                                        {{ $material->title }}
+                                                    </a>
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border {{ $badgeClass }}">
+                                                        {{ $fileType }}
+                                                    </span>
+                                                    @if(in_array($material->id, $completedMaterialIds))
+                                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50">
+                                                            <i class="fas fa-check mr-1"></i> Selesai
+                                                        </span>
+                                                    @else
+                                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-550 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                                                            Belum Selesai
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                                                    {{ $material->description ?: 'Tidak ada deskripsi.' }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-slate-600 dark:text-slate-300 text-sm">
+                                            <span>{{ $material->created_at ? $material->created_at->locale('id')->translatedFormat('d F Y') : '-' }}</span>
+                                            <p class="text-xs text-slate-400 mt-0.5">Oleh: {{ $uploaderName }}</p>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="flex flex-wrap items-center justify-center gap-2">
+                                            <a href="{{ route('materials.show', $material) }}" 
+                                               class="bg-[#D65A20] hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition inline-block text-center whitespace-nowrap shadow-sm shadow-orange-500/10">
+                                                Buka Materi
+                                            </a>
+                                            @if(in_array($material->id, $completedMaterialIds))
+                                                <form action="{{ route('materials.incomplete', $material->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-xs transition inline-block text-center whitespace-nowrap shadow-sm shadow-emerald-500/10" title="Batalkan Penyelesaian">
+                                                        <i class="fas fa-check-circle mr-1"></i> Selesai
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <form action="{{ route('materials.complete', $material->id) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button type="submit" class="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-350 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400 hover:border-emerald-250 rounded-lg px-3 py-2 text-xs font-bold transition duration-200 inline-block text-center whitespace-nowrap">
+                                                        Tandai Selesai
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr id="no-materials-row">
+                                    <td colspan="3" class="px-6 py-16 text-center">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <div class="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-2">
+                                                <i class="fas fa-folder-open text-2xl"></i>
+                                            </div>
+                                            <h3 class="text-base font-bold text-slate-800 dark:text-white">Belum ada materi tersedia</h3>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Materi dari guru akan muncul pada halaman ini.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty State Pencarian di Detail Mapel -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm text-center">
+                <div class="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-400 dark:text-slate-500 mb-4">
+                    <i class="fas fa-search text-2xl"></i>
+                </div>
+                <h3 id="empty-state-title" class="text-base font-bold text-slate-800 dark:text-white">Tidak ditemukan materi</h3>
+                <p id="empty-state-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">Coba gunakan kata kunci lain.</p>
+            </div>
+        @endif
+    </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Logika pencarian Page 1 (Daftar Mata Pelajaran)
+            const searchInput = document.getElementById('search-input');
+            const subjectsTableBody = document.getElementById('subjects-table-body');
+            const subjectsRows = document.querySelectorAll('.subject-row');
+            const subjectsTableHeader = document.getElementById('subjects-table-header');
+            
+            // Logika pencarian Page 2 (Daftar Berkas Materi)
+            const searchMateriInput = document.getElementById('search-materi-input');
+            const materialsTableBody = document.getElementById('materials-table-body');
+            const materialsRows = document.querySelectorAll('.material-row');
+            const materialsTableHeader = document.getElementById('materials-table-header');
+            
+            const emptyState = document.getElementById('empty-state');
+            const emptyStateTitle = document.getElementById('empty-state-title');
+            const emptyStateSubtitle = document.getElementById('empty-state-subtitle');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const query = searchInput.value.toLowerCase().trim();
+                    let visibleCount = 0;
+
+                    subjectsRows.forEach(row => {
+                        const name = row.getAttribute('data-name');
+                        const teacher = row.getAttribute('data-teacher');
+                        const matches = name.includes(query) || (teacher && teacher.includes(query));
+
+                        if (matches) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    if (visibleCount === 0) {
+                        if (subjectsTableHeader) subjectsTableHeader.classList.add('hidden');
+                        if (subjectsTableBody) subjectsTableBody.parentElement.classList.add('hidden');
+                        if (emptyState) {
+                            emptyState.classList.remove('hidden');
+                            emptyStateTitle.textContent = 'Tidak ditemukan materi';
+                            emptyStateSubtitle.textContent = 'Coba gunakan kata kunci lain.';
+                        }
+                    } else {
+                        if (subjectsTableHeader) subjectsTableHeader.classList.remove('hidden');
+                        if (subjectsTableBody) subjectsTableBody.parentElement.classList.remove('hidden');
+                        if (emptyState) emptyState.classList.add('hidden');
+                    }
+                });
+            }
+
+            if (searchMateriInput) {
+                searchMateriInput.addEventListener('input', function() {
+                    const query = searchMateriInput.value.toLowerCase().trim();
+                    let visibleCount = 0;
+
+                    materialsRows.forEach(row => {
+                        const title = row.getAttribute('data-title');
+                        const desc = row.getAttribute('data-desc');
+                        const matches = title.includes(query) || (desc && desc.includes(query));
+
+                        if (matches) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    if (visibleCount === 0) {
+                        if (materialsTableHeader) materialsTableHeader.classList.add('hidden');
+                        if (materialsTableBody) materialsTableBody.parentElement.classList.add('hidden');
+                        if (emptyState) {
+                            emptyState.classList.remove('hidden');
+                            emptyStateTitle.textContent = 'Tidak ditemukan materi';
+                            emptyStateSubtitle.textContent = 'Coba gunakan kata kunci lain.';
+                        }
+                    } else {
+                        if (materialsTableHeader) materialsTableHeader.classList.remove('hidden');
+                        if (materialsTableBody) materialsTableBody.parentElement.classList.remove('hidden');
+                        if (emptyState) emptyState.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+    @endpush
+
+@else
+    <!-- ========================================== -->
+    <!-- TAMPILAN GURU & ADMIN (ASLI)               -->
+    <!-- ========================================== -->
+    <div class="space-y-6">
+        @if(!request('subject_id'))
+            <!-- ========================================== -->
+            <!-- HALAMAN 1: PORTAL MATERI                  -->
+            <!-- ========================================== -->
+            <div class="card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm p-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="page-title text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Portal Materi</h1>
+                        <p class="page-subtitle text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-medium">Pilih kelas yang Anda ampu untuk mulai mengelola materi, penugasan, dan melihat progres siswa.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar Pencarian & Filter -->
+            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-6">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="search-input" placeholder="Cari kelas atau mata pelajaran..." class="form-input w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition">
+                </div>
+                <div class="w-full md:w-48">
+                    <select id="tingkat-select" class="form-select w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition bg-white text-slate-700 dark:text-slate-200">
+                        <option value="">Semua Tingkat</option>
+                        <option value="X">Tingkat X</option>
+                        <option value="XI">Tingkat XI</option>
+                        <option value="XII">Tingkat XII</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tabel Kelas Portal Materi -->
+            <div class="card p-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse border border-slate-300">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">NAMA KELAS</th>
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">MATA PELAJARAN</th>
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">JUMLAH SISWA</th>
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 w-36 text-slate-700">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($subjects as $subject)
+                                @php
+                                    $classRoom = $subject->classRoom;
+                                    $className = $classRoom->name ?? 'Belum Ada Kelas';
+                                    $tingkat = $subject->tingkat ?? 'X';
+                                    $studentCount = $classRoom->student_count ?? 0;
+                                @endphp
+                                <tr class="class-row hover:bg-yellow-50 transition border-b border-slate-200" 
+                                     data-name="{{ strtolower($className . ' ' . $subject->nama) }}" 
+                                     data-tingkat="{{ $tingkat }}">
+                                    <td class="px-4 py-2 border border-slate-300 font-semibold text-slate-800 whitespace-nowrap text-center">
+                                        Kelas {{ $className }}
+                                    </td>
+                                    <td class="px-4 py-2 border border-slate-300 text-slate-800 whitespace-nowrap">
+                                        {{ $subject->nama }}
+                                    </td>
+                                    <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">
+                                        {{ $studentCount }} Terdaftar
+                                    </td>
+                                    <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
+                                        <a href="{{ route('materials.index', ['subject_id' => $subject->id, 'class_name' => $className]) }}" 
+                                           class="border border-[#D65A20] text-[#D65A20] hover:bg-[#D65A20] hover:text-white rounded px-3 py-1 text-xs font-bold transition inline-block text-center whitespace-nowrap">
+                                            Masuk Kelas
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="px-6 py-10 text-center border border-slate-300 text-slate-500">
+                                        <div class="flex flex-col items-center justify-center gap-2 py-4">
+                                            <p class="font-semibold text-sm">Belum ada kelas atau mata pelajaran yang diampu.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @else
+            <!-- ========================================== -->
+            <!-- HALAMAN 2: DETAIL MATERI KELAS            -->
+            <!-- ========================================== -->
+            @php
+                $currentSubject = null;
+                if (auth()->user()->isTeacher() && request('class_name')) {
+                    $currentSubject = $subjects->first(function($s) {
+                        return $s->classRoom && $s->classRoom->name === request('class_name');
+                    });
+                }
+                if (!$currentSubject) {
+                    $currentSubject = $subjects->firstWhere('id', request('subject_id')) ?? $subjects->first();
+                }
+                $distinctClasses = $subjects->pluck('classRoom.name')->filter()->unique();
+                $distinctCourses = $subjects->pluck('nama')->filter()->unique();
+            @endphp
+
+            <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <a href="{{ route('materials.index') }}" class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700" title="Kembali ke Portal">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mb-1">Materi {{ $currentSubject->nama ?? '' }}</h1>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 m-0">Daftar materi pembelajaran kelas: <strong>{{ $currentSubject->classRoom->name ?? '' }}</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Materi Card -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-[17px] font-bold text-slate-800 dark:text-slate-100 mb-1">Daftar Materi</h2>
+                        <p class="text-[13px] text-slate-500 m-0">Kelola materi pembelajaran untuk kelas ini.</p>
+                    </div>
+                    <div class="flex gap-3 items-center flex-wrap">
+                        <!-- Dropdown Kelas -->
+                        <div class="w-32">
+                            <select id="select-kelas" onchange="handleDropdownChange()" class="px-3.5 py-2 w-full border border-slate-200 dark:border-slate-700 rounded-lg text-[13px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 focus:border-orange-500 focus:ring-[3px] focus:ring-orange-500/20 outline-none cursor-pointer transition-all">
+                                @foreach($distinctClasses as $cName)
+                                    <option value="{{ $cName }}" {{ ($currentSubject && $currentSubject->classRoom && $currentSubject->classRoom->name === $cName) ? 'selected' : '' }}>
+                                        {{ $cName }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <!-- Dropdown Mata Pelajaran -->
+                        <div class="w-48">
+                            <select id="select-mapel" onchange="handleDropdownChange()" class="px-3.5 py-2 w-full border border-slate-200 dark:border-slate-700 rounded-lg text-[13px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 focus:border-orange-500 focus:ring-[3px] focus:ring-orange-500/20 outline-none cursor-pointer transition-all">
+                                @foreach($distinctCourses as $cCourse)
+                                    <option value="{{ $cCourse }}" {{ ($currentSubject && $currentSubject->nama === $cCourse) ? 'selected' : '' }}>
+                                        {{ $cCourse }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Tombol Tambah Materi -->
+                        @if(auth()->user()->isTeacher() || auth()->user()->isSuperAdmin())
+                        <button type="button" 
+                                onclick="openAddMaterialModal({{ $currentSubject->id ?? '' }}, '{{ $currentSubject->classRoom->name ?? '' }}', '{{ $currentSubject->nama ?? '' }}')" 
+                                class="bg-[#D65A20] hover:bg-[#b84a18] text-white text-[13px] font-bold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-2">
+                            <i class="fas fa-plus"></i> Tambah Materi
+                        </button>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse border border-slate-300">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700" style="width: 52px">NO</th>
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">JUDUL MATERI</th>
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">TANGGAL DIBUAT</th>
+                                <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700" style="width: 120px">AKSI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($materials as $index => $material)
+                            <tr class="hover:bg-yellow-50 transition border-b border-slate-200">
+                                <td class="px-4 py-2 border border-slate-300 text-slate-600 text-center">{{ $index + 1 }}</td>
+                                <td class="px-4 py-2 border border-slate-300">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-8 h-8 rounded-lg bg-orange-50 text-[#D65A20] flex items-center justify-center flex-shrink-0">
+                                            <i class="fas fa-file-alt text-sm"></i>
+                                        </div>
+                                        <div class="flex flex-col min-w-0">
+                                            <div class="flex items-center gap-2">
+                                                <a href="{{ route('materials.show', $material) }}" class="font-bold text-slate-800 hover:text-[#D65A20] transition truncate block" title="{{ $material->title }}">
+                                                    {{ $material->title }}
+                                                </a>
+                                                @if($material->status === 'active' || $material->status === 'aktif')
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">Aktif</span>
+                                                @else
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200">Nonaktif</span>
+                                                @endif
+                                            </div>
+                                            <p class="text-xs text-slate-500 mt-1 line-clamp-1">
+                                                {{ $material->description ?: 'Tidak ada deskripsi.' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-2 border border-slate-300 text-center">
+                                    <div class="flex flex-col items-center">
+                                        <span class="text-sm text-slate-700">{{ $material->created_at->format('d M Y') }}</span>
+                                        <span class="text-xs text-slate-400">Oleh: {{ $material->creator->nama ?? 'N/A' }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <a href="{{ route('materials.show', $material) }}" class="border border-slate-300 text-slate-600 hover:bg-slate-100 rounded px-2.5 py-1 text-xs font-bold transition inline-block text-center" title="Lihat Materi">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if(auth()->user()->isTeacher() || auth()->user()->isSuperAdmin())
+                                        <a href="{{ route('materials.edit', $material) }}" class="border border-amber-300 text-amber-600 hover:bg-amber-50 rounded px-2.5 py-1 text-xs font-bold transition inline-block text-center" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ route('materials.destroy', $material) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus materi ini?')" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="border border-rose-300 text-rose-600 hover:bg-rose-50 rounded px-2.5 py-1 text-xs font-bold transition inline-block text-center" title="Hapus">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center border border-slate-300 text-slate-500">
+                                    <i class="fas fa-folder-open text-slate-300 mb-3 text-4xl block"></i>
+                                    <p class="font-semibold text-sm">Belum ada materi pembelajaran untuk kelas ini.</p>
+                                    @if(auth()->user()->isTeacher() || auth()->user()->isSuperAdmin())
+                                    <button type="button" 
+                                            onclick="openAddMaterialModal({{ $currentSubject->id ?? '' }}, '{{ $currentSubject->classRoom->name ?? '' }}', '{{ $currentSubject->nama ?? '' }}')" 
+                                            class="bg-[#D65A20] hover:bg-[#b84a18] text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition mt-3 inline-block">
+                                        Unggah Materi Pertama
+                                    </button>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
+        @php
+            $fallbackGuruId = null;
+            if (isset($subjects)) {
+                foreach ($subjects as $s) {
+                    $firstAssign = $s->assignments->first();
+                    if ($firstAssign && $firstAssign->guru_id) {
+                        $fallbackGuruId = $firstAssign->guru_id;
+                        break;
+                    }
+                }
+            }
+            if (!$fallbackGuruId && isset($materials) && $materials->isNotEmpty()) {
+                $fallbackGuruId = $materials->first()->guru_id;
+            }
+            if (!$fallbackGuruId) {
+                $fallbackGuruId = 1;
+            }
+            
+            $selectedSubjectIdForModal = request('subject_id') ?? ($subjects->first()->id ?? null);
+            $currentSubjectForModal = $subjects->firstWhere('id', $selectedSubjectIdForModal) ?? $subjects->first();
+        @endphp
+
+        <!-- Main Add Material Floating Overlay -->
+        <div id="add-material-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+            <!-- Modal Container -->
+            <div id="modal-content" class="bg-white dark:bg-slate-900 w-[90vw] max-w-[1100px] max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 md:p-12 relative transition-all transform scale-95 opacity-0 duration-300 my-auto flex flex-col">
+                
+                <!-- Header -->
+                <div class="flex items-start justify-between border-b border-slate-100 dark:border-slate-800/60 pb-6 mb-8">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Tambah Materi</h2>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">Unggah materi pembelajaran yang akan diberikan kepada siswa.</p>
+                    </div>
+                    <button type="button" onclick="closeAddMaterialModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <form action="{{ route('materials.store') }}" method="POST" enctype="multipart/form-data" id="materi-form" class="space-y-8 flex-1">
+                    @csrf
+
+                    <!-- Hidden input fallback for Super Admin -->
+                    @if(auth()->user()->isSuperAdmin())
+                        <input type="hidden" name="uploaded_by" id="modal-uploaded-by" value="{{ $fallbackGuruId }}">
+                    @endif
+
+                    <!-- CARD 1: Informasi Dasar -->
+                    <div class="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-slate-105 dark:border-slate-800 p-6 md:p-8 transition hover:shadow-md duration-300">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/20 text-[#D65A20] flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-info-circle text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Informasi Dasar</h3>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Detail target kelas dan mata pelajaran.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Kelas</label>
+                                <input type="text" id="modal-kelas-display" class="form-input w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 cursor-not-allowed font-medium" readonly value="{{ $currentSubjectForModal->classRoom->name ?? '' }}">
+                                <input type="hidden" name="kelas_name" id="modal-kelas-hidden" value="{{ old('kelas_name', $currentSubjectForModal->classRoom->name ?? '') }}">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Mata Pelajaran</label>
+                                <input type="text" id="modal-mapel-display" class="form-input w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 cursor-not-allowed font-medium" readonly value="{{ $currentSubjectForModal->nama ?? '' }}">
+                                <input type="hidden" name="subject_name" id="modal-subject-name-hidden" value="{{ old('subject_name', $currentSubjectForModal->nama ?? '') }}">
+                                <input type="hidden" name="subject_id" id="modal-subject-id" value="{{ old('subject_id', $currentSubjectForModal->id ?? '') }}">
+                                @error('subject_id') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Judul Materi</label>
+                            <input type="text" name="title" value="{{ old('title') }}" required placeholder="Contoh: Bab 1 Pengenalan Aljabar" 
+                                   class="form-input w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition @error('title') border-rose-500 @enderror">
+                            @error('title') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <!-- CARD 2: Isi Materi -->
+                    <div class="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-slate-105 dark:border-slate-800 p-6 md:p-8 transition hover:shadow-md duration-300">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/20 text-[#D65A20] flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-file-alt text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Isi Materi</h3>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Tulis deskripsi pembelajaran dan pilih jenis materi.</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Deskripsi Materi</label>
+                                <textarea name="description" rows="4" placeholder="Tulis deskripsi singkat mengenai materi ini..." 
+                                          class="form-textarea w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition @error('description') border-rose-500 @enderror">{{ old('description') }}</textarea>
+                                @error('description') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Jenis Materi</label>
+                                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                    @foreach(['pdf' => 'PDF', 'docx' => 'Word', 'pptx' => 'PPT', 'link' => 'Link'] as $val => $label)
+                                        <label class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900/50 hover:border-[#D65A20] cursor-pointer transition select-none text-center gap-1.5" id="type-label-{{ $val }}">
+                                            <input type="radio" name="type" value="{{ $val }}" class="hidden" {{ old('type', 'pdf') === $val ? 'checked' : '' }} onchange="updateTypeSelection(this)">
+                                            @if($val === 'pdf')
+                                                <i class="fas fa-file-pdf text-2xl text-red-500"></i>
+                                            @elseif($val === 'docx')
+                                                <i class="fas fa-file-word text-2xl text-blue-500"></i>
+                                            @elseif($val === 'pptx')
+                                                <i class="fas fa-file-powerpoint text-2xl text-orange-500"></i>
+                                            @elseif($val === 'video')
+                                                <i class="fas fa-video text-2xl text-[#D65A20]"></i>
+                                            @else
+                                                <i class="fas fa-link text-2xl text-emerald-500"></i>
+                                            @endif
+                                            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 mt-1">{{ $label }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 3: Upload & Publikasi -->
+                    <div class="bg-white dark:bg-slate-900/40 rounded-2xl shadow-sm border border-slate-105 dark:border-slate-800 p-6 md:p-8 transition hover:shadow-md duration-300">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/20 text-[#D65A20] flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-cloud-upload-alt text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Upload & Publikasi</h3>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Unggah berkas file pendukung materi dan status publikasi.</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div id="file-upload-container">
+                                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Upload File Materi</label>
+                                <div class="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#D65A20] rounded-xl p-8 transition flex flex-col items-center justify-center gap-3 cursor-pointer bg-slate-50/30 dark:bg-slate-800/10 relative" 
+                                     id="drop-zone" onclick="document.getElementById('file-input').click()">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-slate-400 transition" id="upload-icon"></i>
+                                    <span class="text-sm font-bold text-slate-600 dark:text-slate-300" id="file-label">Klik atau tarik file ke sini</span>
+                                    <span class="text-xs text-slate-400" id="file-format-info">Format: PDF, DOCX, PPTX (Maks 10MB)</span>
+                                    <input type="file" id="file-input" name="file" class="hidden" onchange="handleFileSelected(this)">
+                                </div>
+                                @error('file') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div id="link-url-container" class="hidden">
+                                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Link URL Materi</label>
+                                <div class="relative flex items-center">
+                                    <span class="absolute left-4 text-slate-400">
+                                        <i class="fas fa-link"></i>
+                                    </span>
+                                    <input type="url" name="link_url" id="link-url-input" value="{{ old('link_url') }}" placeholder="Masukkan link tautan materi (contoh: https://example.com)" 
+                                           class="form-input w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition @error('link_url') border-rose-500 @enderror">
+                                </div>
+                                @error('link_url') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Status Publikasi</h4>
+                                        <p class="text-xs text-slate-400 mt-0.5" id="status-hint">Materi langsung dapat diakses siswa.</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                                        <input type="checkbox" id="status-switch" class="sr-only peer" checked onchange="handleStatusSwitchChange(this)">
+                                        <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-[#D65A20]"></div>
+                                        <span class="ml-3 text-sm font-bold text-slate-700 dark:text-slate-300" id="status-label-display">Publikasikan</span>
+                                    </label>
+                                    <!-- Hidden input representing actual state -->
+                                    <input type="hidden" name="status" id="status-hidden-input" value="{{ old('status', 'aktif') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FOOTER BAR: Kiri Batal | Kanan Simpan Draft & Publikasikan -->
+                    <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-6 border-t border-slate-100 dark:border-slate-800/80">
+                        <div>
+                            <button type="button" onclick="closeAddMaterialModal()" 
+                                    class="border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold px-6 py-2.5 rounded-lg transition text-sm text-center block w-full sm:w-auto">
+                                Batal
+                            </button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button type="button" onclick="submitAsDraft()" 
+                                    class="border border-[#D65A20] text-[#D65A20] hover:bg-orange-50 dark:hover:bg-orange-950/20 font-bold px-6 py-2.5 rounded-lg transition text-sm text-center w-full sm:w-auto">
+                                Simpan Draft
+                            </button>
+                            <button type="button" onclick="submitAsPublished()" 
+                                    class="bg-[#D65A20] hover:bg-[#b84a18] text-white font-bold px-6 py-2.5 rounded-lg transition text-sm shadow-sm shadow-[#D65A20]/10 text-center w-full sm:w-auto">
+                                Publikasikan Materi
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        // Define subjects array globally for both pages
+        const subjects = @json($subjects->map(function($s) {
+            return [
+                'id' => $s->id,
+                'class_name' => $s->classRoom->name ?? '',
+                'course_name' => $s->nama
+            ];
+        }));
+
+        // Modal Action Functions
+        function openAddMaterialModal(subjectId, className, subjectName) {
+            const modal = document.getElementById('add-material-modal');
+            if (!modal) return;
+            
+            const modalContent = document.getElementById('modal-content');
+            
+            // If a subject ID is passed dynamically, we can select it in the dropdown
+            if (subjectId) {
+                const modalSubId = document.getElementById('modal-subject-id');
+                if (modalSubId) modalSubId.value = subjectId;
+            }
+            if (className) {
+                const modalKelasDisp = document.getElementById('modal-kelas-display');
+                const modalKelasHid = document.getElementById('modal-kelas-hidden');
+                if (modalKelasDisp) modalKelasDisp.value = className;
+                if (modalKelasHid) modalKelasHid.value = className;
+            }
+            if (subjectName) {
+                const modalMapelDisp = document.getElementById('modal-mapel-display');
+                const modalMapelHid = document.getElementById('modal-subject-name-hidden');
+                if (modalMapelDisp) modalMapelDisp.value = subjectName;
+                if (modalMapelHid) modalMapelHid.value = subjectName;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeAddMaterialModal() {
+            const modal = document.getElementById('add-material-modal');
+            if (!modal) return;
+            
+            const modalContent = document.getElementById('modal-content');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }, 300);
+        }
+
+        function validateFileFormat(file, type) {
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (type === 'pdf') {
+                return extension === 'pdf';
+            } else if (type === 'docx') {
+                return ['doc', 'docx'].includes(extension);
+            } else if (type === 'pptx') {
+                return ['ppt', 'pptx'].includes(extension);
+            } else if (type === 'video') {
+                return ['mp4', 'mov', 'avi', 'mkv', 'webm'].includes(extension) || file.type.startsWith('video/');
+            }
+            return true;
+        }
+
+        function updateTypeSelection(radio) {
+            document.querySelectorAll('#add-material-modal label[id^="type-label-"]').forEach(lbl => {
+                lbl.classList.remove('border-[#D65A20]', 'bg-orange-50/20');
+                lbl.classList.add('border-slate-200', 'dark:border-slate-700');
+            });
+            
+            const activeLabel = document.getElementById('type-label-' + radio.value);
+            if (activeLabel) {
+                activeLabel.classList.remove('border-slate-200', 'dark:border-slate-700');
+                activeLabel.classList.add('border-[#D65A20]', 'bg-orange-50/20');
+            }
+
+            const fileContainer = document.getElementById('file-upload-container');
+            const linkContainer = document.getElementById('link-url-container');
+            const fileInput = document.getElementById('file-input');
+            const linkInput = document.getElementById('link-url-input');
+            const formatInfo = document.getElementById('file-format-info');
+
+            // Clear file input on type change to prevent leftover mismatches
+            if (fileInput) {
+                fileInput.value = '';
+                handleFileSelected(fileInput);
+            }
+
+            if (radio.value === 'link') {
+                if (fileContainer) fileContainer.classList.add('hidden');
+                if (linkContainer) linkContainer.classList.remove('hidden');
+                if (fileInput) fileInput.disabled = true;
+                if (linkInput) {
+                    linkInput.disabled = false;
+                    linkInput.required = true;
+                }
+            } else {
+                if (fileContainer) fileContainer.classList.remove('hidden');
+                if (linkContainer) linkContainer.classList.add('hidden');
+                if (linkInput) {
+                    linkInput.disabled = true;
+                    linkInput.required = false;
+                }
+                if (fileInput) {
+                    fileInput.disabled = false;
+                    
+                    // Set correct accept extensions
+                    if (radio.value === 'pdf') {
+                        fileInput.setAttribute('accept', '.pdf');
+                        if (formatInfo) formatInfo.textContent = 'Format: PDF (Maks 10MB)';
+                    } else if (radio.value === 'docx') {
+                        fileInput.setAttribute('accept', '.doc,.docx');
+                        if (formatInfo) formatInfo.textContent = 'Format: DOC, DOCX (Maks 10MB)';
+                    } else if (radio.value === 'pptx') {
+                        fileInput.setAttribute('accept', '.ppt,.pptx');
+                        if (formatInfo) formatInfo.textContent = 'Format: PPT, PPTX (Maks 10MB)';
+                    } else if (radio.value === 'video') {
+                        fileInput.setAttribute('accept', 'video/*');
+                        if (formatInfo) formatInfo.textContent = 'Format: MP4, MOV, AVI, MKV, WEBM (Maks 10MB)';
+                    }
+                }
+            }
+        }
+
+        function showCustomAlert(message) {
+            if (document.getElementById('custom-alert-overlay')) return;
+            
+            const overlay = document.createElement('div');
+            overlay.id = 'custom-alert-overlay';
+            overlay.style.zIndex = '999999';
+            overlay.className = 'fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-all duration-300 opacity-0';
+            overlay.innerHTML = `
+                <div id="custom-alert-box" class="bg-white dark:bg-slate-900 rounded-[1.5rem] border border-slate-100 dark:border-slate-800/80 shadow-2xl p-6 md:p-8 max-w-sm w-full transform scale-95 opacity-0 transition-all duration-300 flex flex-col items-center">
+                    <div class="w-14 h-14 rounded-2xl bg-orange-50 dark:bg-orange-950/20 text-[#D65A20] flex items-center justify-center mb-5 text-2xl animate-bounce">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3 class="text-lg font-extrabold text-slate-900 dark:text-white mb-2 text-center tracking-tight">Format Berkas Salah</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 text-center mb-6 font-medium leading-relaxed">${message}</p>
+                    <button type="button" id="close-custom-alert-btn" class="w-full bg-[#D65A20] hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl transition text-sm text-center shadow-sm shadow-orange-500/10 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20">
+                        Saya Mengerti
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            
+            const box = document.getElementById('custom-alert-box');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                overlay.classList.add('opacity-100');
+                if (box) {
+                    box.classList.remove('scale-95', 'opacity-0');
+                    box.classList.add('scale-100', 'opacity-100');
+                }
+            }, 10);
+            
+            const closeAlert = () => {
+                if (box) {
+                    box.classList.remove('scale-100', 'opacity-100');
+                    box.classList.add('scale-95', 'opacity-0');
+                }
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => { overlay.remove(); }, 300);
+            };
+            
+            document.getElementById('close-custom-alert-btn').addEventListener('click', closeAlert);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeAlert(); });
+        }
+
+        function handleFileSelected(input) {
+            const label = document.getElementById('file-label');
+            const icon = document.getElementById('upload-icon');
+            const zone = document.getElementById('drop-zone');
+            if (!label || !icon || !zone) return;
+            
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                const selectedType = document.querySelector('#add-material-modal input[name="type"]:checked')?.value || 'pdf';
+                
+                if (!validateFileFormat(file, selectedType)) {
+                    showCustomAlert(`Format berkas tidak sesuai! Untuk tipe ${selectedType.toUpperCase()}, silakan unggah berkas yang valid.`);
+                    input.value = '';
+                    label.textContent = "Klik atau tarik file ke sini";
+                    label.classList.remove('text-[#D65A20]');
+                    icon.className = "fas fa-cloud-upload-alt text-4xl text-slate-400";
+                    zone.classList.remove('border-emerald-500', 'bg-emerald-50/10');
+                    zone.classList.add('border-slate-200', 'dark:border-slate-700');
+                    return;
+                }
+
+                label.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                label.classList.add('text-[#D65A20]');
+                icon.className = "fas fa-check-circle text-4xl text-emerald-500";
+                zone.classList.add('border-emerald-500', 'bg-emerald-50/10');
+                zone.classList.remove('border-slate-200', 'dark:border-slate-700');
+            } else {
+                label.textContent = "Klik atau tarik file ke sini";
+                label.classList.remove('text-[#D65A20]');
+                icon.className = "fas fa-cloud-upload-alt text-4xl text-slate-400";
+                zone.classList.remove('border-emerald-500', 'bg-emerald-50/10');
+                zone.classList.add('border-slate-200', 'dark:border-slate-700');
+            }
+        }
+
+        function handleStatusSwitchChange(checkbox) {
+            const label = document.getElementById('status-label-display');
+            const hidden = document.getElementById('status-hidden-input');
+            if (!label || !hidden) return;
+            
+            if (checkbox.checked) {
+                label.textContent = "Publikasikan";
+                hidden.value = "aktif";
+            } else {
+                label.textContent = "Draft";
+                hidden.value = "nonaktif";
+            }
+        }
+
+        function submitAsDraft() {
+            const hidden = document.getElementById('status-hidden-input');
+            const checkbox = document.getElementById('status-switch');
+            const displayLabel = document.getElementById('status-label-display');
+            const form = document.getElementById('materi-form');
+            
+            if (hidden) hidden.value = "nonaktif";
+            if (checkbox) checkbox.checked = false;
+            if (displayLabel) displayLabel.textContent = "Draft";
+            if (form) form.submit();
+        }
+
+        function submitAsPublished() {
+            const hidden = document.getElementById('status-hidden-input');
+            const checkbox = document.getElementById('status-switch');
+            const displayLabel = document.getElementById('status-label-display');
+            const form = document.getElementById('materi-form');
+            
+            if (hidden) hidden.value = "aktif";
+            if (checkbox) checkbox.checked = true;
+            if (displayLabel) displayLabel.textContent = "Publikasikan";
+            if (form) form.submit();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close modal on click outside modal content
+            const modal = document.getElementById('add-material-modal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeAddMaterialModal();
+                    }
+                });
+            }
+
+            // Setup Drag and Drop events
+            const zone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            
+            if (zone && fileInput) {
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    zone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        zone.classList.add('border-[#D65A20]', 'bg-orange-50/10');
+                    }, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    zone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        zone.classList.remove('border-[#D65A20]', 'bg-orange-50/10');
+                    }, false);
+                });
+                
+                zone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files.length > 0) {
+                        fileInput.files = files;
+                        handleFileSelected(fileInput);
+                    }
+                }, false);
+            }
+
+            // Initialize selectors and radio highlights in modal
+            const activeRadio = document.querySelector('#add-material-modal input[name="type"]:checked');
+            if (activeRadio) {
+                updateTypeSelection(activeRadio);
+            }
+            
+            // Sync the switch state initially
+            const statusSw = document.getElementById('status-switch');
+            if (statusSw) {
+                handleStatusSwitchChange(statusSw);
+            }
+        });
+    </script>
+    
+    @if(!request('subject_id'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-input');
+            const tingkatSelect = document.getElementById('tingkat-select');
+            const rows = document.querySelectorAll('.class-row');
+
+            function filterRows() {
+                const query = searchInput.value.toLowerCase().trim();
+                const tingkat = tingkatSelect.value;
+
+                rows.forEach(row => {
+                    const name = row.getAttribute('data-name');
+                    const rowTingkat = row.getAttribute('data-tingkat');
+
+                    const matchesQuery = !query || name.includes(query);
+                    const matchesTingkat = !tingkat || rowTingkat === tingkat;
+
+                    if (matchesQuery && matchesTingkat) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            if (searchInput) searchInput.addEventListener('input', filterRows);
+            if (tingkatSelect) tingkatSelect.addEventListener('change', filterRows);
+        });
+    </script>
+    @else
+    <script>
+        function handleDropdownChange() {
+            const classVal = document.getElementById('select-kelas').value;
+            const mapelVal = document.getElementById('select-mapel').value;
+            
+            const match = subjects.find(s => s.class_name === classVal && s.course_name === mapelVal);
+            if (match) {
+                window.location.href = "{{ route('materials.index') }}?subject_id=" + match.id + "&class_name=" + encodeURIComponent(classVal);
+            } else {
+                const fallback = subjects.find(s => s.class_name === classVal || s.course_name === mapelVal);
+                if (fallback) {
+                    window.location.href = "{{ route('materials.index') }}?subject_id=" + fallback.id + "&class_name=" + encodeURIComponent(fallback.class_name);
+                }
+            }
+        }
+    </script>
+    @endif
+    
+    @if($errors->any())
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            openAddMaterialModal(
+                "{{ old('subject_id') }}", 
+                "{{ old('kelas_name') }}", 
+                "{{ old('subject_name') }}"
+            );
+        });
+    </script>
+    @endif
+    @endpush
+@endif
+
+@endsection

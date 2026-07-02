@@ -1,0 +1,309 @@
+@extends('layouts.app')
+
+@section('title', 'Tugas & Evaluasi')
+
+@section('content')
+<div class="tg-wrapper">
+
+    @if(session('success'))
+    <div class="tg-alert tg-alert--success">
+        <i class="fas fa-check-circle"></i>
+        <span>{{ session('success') }}</span>
+        <button onclick="this.parentElement.remove()" class="tg-alert__close"><i class="fas fa-times"></i></button>
+    </div>
+    @endif
+
+    {{-- Page Header --}}
+    <div class="tg-page-header">
+        <div>
+            <h1 class="tg-page-title">Tugas & Evaluasi</h1>
+            <p class="tg-page-sub">Kelola tugas berdasarkan mata pelajaran dan kelas yang Anda ampu.</p>
+        </div>
+    </div>
+
+    {{-- Table Card --}}
+    <div class="tg-card">
+        {{-- Card Header --}}
+        <div class="tg-card-header">
+            <div>
+                <h2 class="tg-card-title">Daftar Pengampuan</h2>
+                <p class="tg-card-sub">Pilih mata pelajaran dan kelas untuk mengelola tugas.</p>
+            </div>
+            <div class="tg-filters">
+                <select id="filterMapel" class="tg-select">
+                    <option value="">Semua Mapel</option>
+                    @foreach($courseNames as $name)
+                    <option value="{{ $name }}">{{ $name }}</option>
+                    @endforeach
+                </select>
+                <select id="filterKelas" class="tg-select">
+                    <option value="">Semua Kelas</option>
+                    @foreach($classNames as $name)
+                    <option value="{{ $name }}">{{ $name }}</option>
+                    @endforeach
+                </select>
+                <div class="tg-search">
+                    <i class="fas fa-search tg-search__icon"></i>
+                    <input type="text" id="searchInput" class="tg-search__input" placeholder="Cari pengampuan...">
+                </div>
+            </div>
+        </div>
+
+        {{-- Table --}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse border border-slate-300" id="pengampuanTable">
+                <thead>
+                    <tr class="bg-slate-50">
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700" style="width:52px">NO</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">MATA PELAJARAN</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">KELAS</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">TOTAL TUGAS</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">TUGAS AKTIF</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">TERLAMBAT</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">PENGUMPULAN</th>
+                        <th class="px-4 py-3 font-bold text-center whitespace-nowrap border border-slate-300 text-slate-700">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    @forelse($subjectData as $i => $item)
+                    <tr class="tg-row hover:bg-yellow-50 transition border-b border-slate-200" data-mapel="{{ strtolower($item['course_name']) }}" data-kelas="{{ strtolower($item['class_name']) }}" data-search="{{ strtolower($item['course_name'].' '.$item['class_name']) }}">
+                        <td class="px-4 py-2 border border-slate-300 text-slate-600 text-center tg-td--num">{{ $i + 1 }}</td>
+                        <td class="px-4 py-2 border border-slate-300 font-semibold text-slate-800 whitespace-nowrap">{{ $item['course_name'] }}</td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">{{ $item['class_name'] }}</td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">{{ $item['total_assignments'] }}</td>
+                        <td class="px-4 py-2 border border-slate-300 text-emerald-600 font-bold text-center whitespace-nowrap">{{ $item['active_count'] }}</td>
+                        <td class="px-4 py-2 border border-slate-300 text-rose-600 font-bold text-center whitespace-nowrap">{{ $item['overdue_count'] }}</td>
+                        <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">{{ $item['submitted_count'] }} / {{ $item['total_slots'] }} Terkumpul</td>
+                        <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
+                            <a href="{{ route('assignments.teacher.detail', ['subject' => $item['subject_id'], 'class_name' => $item['class_name']]) }}" class="border border-[#D65A20] text-[#D65A20] hover:bg-[#D65A20] hover:text-white rounded px-3 py-1 text-xs font-bold transition inline-block text-center whitespace-nowrap">
+                                Kelola
+                            </a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="px-6 py-10 text-center border border-slate-300 text-slate-500">
+                            <p class="font-semibold text-sm">Belum ada pengampuan.</p>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Footer: info + pagination --}}
+        <div class="tg-table-footer" id="tableFooter">
+            <span class="tg-info" id="paginationInfo"></span>
+            <div class="tg-pagination" id="paginationControls"></div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function() {
+    const PER_PAGE   = 10;
+    let currentPage  = 1;
+    let filteredRows = [];
+
+    const tbody     = document.getElementById('tableBody');
+    const allRows   = tbody ? Array.from(tbody.querySelectorAll('tr.tg-row')) : [];
+    const infoEl    = document.getElementById('paginationInfo');
+    const pagEl     = document.getElementById('paginationControls');
+    const searchEl  = document.getElementById('searchInput');
+    const mapelSel  = document.getElementById('filterMapel');
+    const kelasSel  = document.getElementById('filterKelas');
+
+    function applyFilters() {
+        const q      = (searchEl ? searchEl.value : '').toLowerCase().trim();
+        const mapel  = (mapelSel ? mapelSel.value : '').toLowerCase();
+        const kelas  = (kelasSel ? kelasSel.value : '').toLowerCase();
+
+        filteredRows = allRows.filter(row => {
+            const s = row.dataset.search || '';
+            const m = row.dataset.mapel  || '';
+            const k = row.dataset.kelas  || '';
+            return (!q || s.includes(q)) && (!mapel || m === mapel) && (!kelas || k === kelas);
+        });
+        currentPage = 1;
+        render();
+    }
+
+    function render() {
+        allRows.forEach(r => r.style.display = 'none');
+        const total     = filteredRows.length;
+        const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+        const start     = (currentPage - 1) * PER_PAGE;
+        const end       = Math.min(start + PER_PAGE, total);
+
+        for (let i = start; i < end; i++) {
+            filteredRows[i].style.display = '';
+            // Renumber
+            filteredRows[i].querySelector('.tg-td--num').textContent = i + 1;
+        }
+
+        infoEl.textContent = total === 0
+            ? 'Tidak ada data ditemukan'
+            : `Menampilkan ${start + 1} sampai ${end} dari ${total} data`;
+
+        buildPagination(totalPages);
+    }
+
+    function buildPagination(totalPages) {
+        pagEl.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        const prev = makeBtn('‹', currentPage > 1, () => { currentPage--; render(); });
+        pagEl.appendChild(prev);
+
+        for (let p = 1; p <= totalPages; p++) {
+            const btn = makeBtn(p, true, () => { currentPage = p; render(); });
+            if (p === currentPage) btn.classList.add('tg-page-btn--active');
+            pagEl.appendChild(btn);
+        }
+
+        const next = makeBtn('›', currentPage < totalPages, () => { currentPage++; render(); });
+        pagEl.appendChild(next);
+    }
+
+    function makeBtn(label, enabled, fn) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.innerHTML = label;
+        b.className = 'tg-page-btn';
+        b.disabled = !enabled;
+        if (enabled) b.addEventListener('click', fn);
+        return b;
+    }
+
+    if (searchEl) searchEl.addEventListener('input', applyFilters);
+    if (mapelSel) mapelSel.addEventListener('change', applyFilters);
+    if (kelasSel) kelasSel.addEventListener('change', applyFilters);
+
+    filteredRows = allRows.slice();
+    render();
+})();
+</script>
+<style>
+/* ═══════════════════════════════════════════════════
+   TEACHER TUGAS — Clean Zebra Table UI
+   Referensi: gambar desain guru (white, soft-gray, orange)
+   ═══════════════════════════════════════════════════ */
+.tg-wrapper { font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif; }
+
+/* Alert */
+.tg-alert { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; margin-bottom:18px; font-size:13px; font-weight:500; }
+.tg-alert--success { background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; }
+.tg-alert__close { margin-left:auto; background:none; border:none; cursor:pointer; color:inherit; opacity:.5; }
+.tg-alert__close:hover { opacity:1; }
+
+/* Page Header */
+.tg-page-header { margin-bottom:22px; }
+.tg-page-title  { font-size:21px; font-weight:700; color:#1e293b; margin:0 0 4px 0; }
+.dark .tg-page-title { color:#f1f5f9; }
+.tg-page-sub    { font-size:13px; color:#94a3b8; margin:0; }
+
+/* Card */
+.tg-card { background:#fff; border:1px solid #e8edf2; border-radius:14px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+.dark .tg-card { background:#0f172a; border-color:#1e293b; }
+
+/* Card Header */
+.tg-card-header { display:flex; justify-content:space-between; align-items:flex-start; padding:20px 24px 16px; flex-wrap:wrap; gap:14px; border-bottom:1px solid #f1f5f9; }
+.dark .tg-card-header { border-color:#1e293b; }
+.tg-card-title  { font-size:15px; font-weight:700; color:#1e293b; margin:0 0 3px 0; }
+.dark .tg-card-title { color:#f1f5f9; }
+.tg-card-sub    { font-size:12.5px; color:#94a3b8; margin:0; }
+
+/* Filters */
+.tg-filters { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.tg-select { padding:7px 30px 7px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:12.5px; color:#475569; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 10px center; appearance:none; outline:none; cursor:pointer; transition:border .15s; font-family:inherit; }
+.tg-select:focus { border-color:#f97316; }
+.dark .tg-select { background-color:#1e293b; border-color:#334155; color:#e2e8f0; }
+
+.tg-search { position:relative; }
+.tg-search__icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:12px; pointer-events:none; }
+.tg-search__input { padding:7px 10px 7px 30px; border:1px solid #e2e8f0; border-radius:8px; font-size:12.5px; color:#334155; background:#fff; outline:none; width:180px; transition:border .15s; font-family:inherit; }
+.tg-search__input::placeholder { color:#94a3b8; }
+.tg-search__input:focus { border-color:#f97316; box-shadow:0 0 0 3px rgba(249,115,22,.07); }
+.dark .tg-search__input { background:#1e293b; border-color:#334155; color:#e2e8f0; }
+
+/* Table */
+.tg-table-wrap { overflow-x:auto; }
+.tg-table { width:100%; border-collapse:collapse; }
+
+.tg-thead-row { background:#f8f9fb; }
+.dark .tg-thead-row { background:#1e293b; }
+.tg-th { padding:12px 18px; text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.055em; color:#94a3b8; border-bottom:1px solid #e8edf2; white-space:nowrap; }
+.dark .tg-th { border-color:#334155; color:#64748b; }
+.tg-th--center { text-align:center; }
+
+/* Zebra rows */
+.tg-row:nth-child(even) { background:#f8f9fb; }
+.dark .tg-row:nth-child(even) { background:#0c1526; }
+.tg-row:nth-child(odd)  { background:#ffffff; }
+.dark .tg-row:nth-child(odd)  { background:#0f172a; }
+.tg-row { transition:background .12s; }
+.tg-row:hover { background:#fff4ee !important; }
+.dark .tg-row:hover { background:#1e293b !important; }
+
+.tg-row:not(:last-child) .tg-td { border-bottom:1px solid #f1f5f9; }
+.dark .tg-row:not(:last-child) .tg-td { border-bottom-color:#1e293b; }
+
+/* Cells */
+.tg-td { padding:13px 18px; font-size:13px; color:#334155; vertical-align:middle; }
+.dark .tg-td { color:#cbd5e1; }
+.tg-td--num      { color:#94a3b8; font-weight:500; font-size:13px; width:52px; }
+.tg-td--mapel    { font-weight:600; color:#1e293b; }
+.dark .tg-td--mapel { color:#f1f5f9; }
+.tg-td--secondary { color:#64748b; }
+.tg-td--center   { text-align:center; }
+.tg-td--empty    { padding:48px 20px; text-align:center; }
+
+/* Numeric indicators */
+.tg-num { display:inline-block; font-weight:600; font-size:13px; }
+.tg-num--active  { color:#16a34a; }
+.tg-num--overdue { color:#ef4444; }
+.tg-num--zero    { color:#94a3b8; }
+
+/* Pengumpulan */
+.tg-collect { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.tg-collect__label { font-weight:600; font-size:12.5px; color:#f97316; white-space:nowrap; }
+.tg-collect__sep   { color:#cbd5e1; font-size:12px; }
+.tg-collect__total { font-size:12.5px; color:#94a3b8; }
+.tg-collect__bar   { width:100%; height:3px; background:#e2e8f0; border-radius:2px; overflow:hidden; margin-top:4px; flex-basis:100%; }
+.tg-collect__fill  { height:100%; background:#16a34a; border-radius:2px; transition:width .4s; }
+
+/* Kelola Button */
+.tg-btn-kelola { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border:1px solid #f97316; border-radius:7px; background:#fff; color:#f97316; font-size:12px; font-weight:600; text-decoration:none; transition:all .15s; white-space:nowrap; font-family:inherit; }
+.tg-btn-kelola i { font-size:9px; transition:transform .15s; }
+.tg-btn-kelola:hover { background:#f97316; color:#fff; }
+.tg-btn-kelola:hover i { transform:translateX(2px); }
+.dark .tg-btn-kelola { background:transparent; border-color:#f97316; }
+
+/* Table Footer */
+.tg-table-footer { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-top:1px solid #f1f5f9; flex-wrap:wrap; gap:10px; }
+.dark .tg-table-footer { border-color:#1e293b; }
+.tg-info { font-size:12.5px; color:#94a3b8; }
+
+/* Pagination */
+.tg-pagination { display:flex; gap:3px; }
+.tg-page-btn { min-width:30px; height:30px; padding:0 7px; border:1px solid #e2e8f0; border-radius:7px; background:#fff; color:#64748b; font-size:12.5px; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; }
+.tg-page-btn:hover:not(:disabled):not(.tg-page-btn--active) { background:#f8fafc; border-color:#cbd5e1; color:#1e293b; }
+.tg-page-btn--active { background:#f97316 !important; border-color:#f97316 !important; color:#fff !important; font-weight:700; }
+.tg-page-btn:disabled { opacity:.35; cursor:not-allowed; }
+.dark .tg-page-btn { background:#1e293b; border-color:#334155; color:#94a3b8; }
+
+/* Empty */
+.tg-empty { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.tg-empty__icon { width:48px; height:48px; border-radius:14px; background:#fff7ed; color:#f97316; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.tg-empty__title { font-size:14px; font-weight:600; color:#475569; margin:0; }
+.tg-empty__desc  { font-size:12.5px; color:#94a3b8; margin:0; }
+
+@media(max-width:768px) {
+    .tg-card-header { flex-direction:column; }
+    .tg-filters { width:100%; }
+    .tg-search__input { width:100%; }
+}
+</style>
+@endpush
+@endsection
