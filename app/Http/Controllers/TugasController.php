@@ -177,8 +177,27 @@ class TugasController extends Controller
             $subjects = JadwalPelajaran::with(['course', 'classRoom'])->get();
         }
 
+        // Calculate Workspace Metrics
+        $totalTugas = $assignments->count();
+        $totalSlots = $totalTugas * $studentCount;
+        $totalSubmissions = 0;
+        $perluDinilai = 0;
+
+        foreach ($assignments as $a) {
+            foreach ($a->submissions as $sub) {
+                // Pastikan yang dihitung adalah yang sudah dikumpulkan (bukan status 'pending' / 'belum')
+                if (in_array($sub->status, ['submitted', 'late', 'terkumpul', 'terlambat', 'graded'])) {
+                    $totalSubmissions++;
+                    if (!$sub->is_graded) {
+                        $perluDinilai++;
+                    }
+                }
+            }
+        }
+
         return view('tugas.teacher_detail', compact(
-            'subject', 'assignments', 'studentCount', 'now', 'subjects'
+            'subject', 'assignments', 'studentCount', 'now', 'subjects',
+            'totalTugas', 'totalSlots', 'totalSubmissions', 'perluDinilai'
         ));
     }
 
@@ -346,17 +365,6 @@ class TugasController extends Controller
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Judul Laporan & Metadata
-        $sheet->setCellValue('A1', 'REKAPITULASI NILAI TUGAS');
-        $sheet->mergeCells('A1:' . chr(65 + 3 + $assignments->count() - 1) . '1');
-        $sheet->getStyle('A1')->getFont()->setName('Arial')->setSize(14)->setBold(true);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-
-        $sheet->setCellValue('A2', 'Mata Pelajaran: ' . $subject->course->nama . ' | Kelas: ' . $subject->classRoom->name);
-        $sheet->mergeCells('A2:' . chr(65 + 3 + $assignments->count() - 1) . '2');
-        $sheet->getStyle('A2')->getFont()->setName('Arial')->setSize(11)->setItalic(true);
-        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-
         // Header Tabel
         $headers = ["NO", "NIS", "NAMA SISWA"];
         foreach ($assignments as $assignment) {
@@ -364,8 +372,48 @@ class TugasController extends Controller
         }
         $headers[] = "RATA-RATA";
 
+        // Judul Laporan & Metadata (Kop Surat Resmi)
         $highestColumnLetter = chr(65 + count($headers) - 1);
-        $sheet->fromArray($headers, null, 'A4');
+        
+        $sheet->setCellValue('A1', 'PEMERINTAH PROVINSI JAWA TENGAH');
+        $sheet->mergeCells("A1:{$highestColumnLetter}1");
+        $sheet->getStyle('A1')->getFont()->setName('Arial')->setSize(11)->setBold(true);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        
+        $sheet->setCellValue('A2', 'DINAS PENDIDIKAN DAN KEBUDAYAAN');
+        $sheet->mergeCells("A2:{$highestColumnLetter}2");
+        $sheet->getStyle('A2')->getFont()->setName('Arial')->setSize(11)->setBold(true);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A3', 'SMA NEGERI 1 CEPOGO');
+        $sheet->mergeCells("A3:{$highestColumnLetter}3");
+        $sheet->getStyle('A3')->getFont()->setName('Arial')->setSize(14)->setBold(true);
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A4', 'Kecamatan Kec. Cepogo, Kabupaten Kab. Boyolali, Provinsi Prov. Jawa Tengah');
+        $sheet->mergeCells("A4:{$highestColumnLetter}4");
+        $sheet->getStyle('A4')->getFont()->setName('Arial')->setSize(9)->setItalic(true);
+        $sheet->getStyle('A4')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Double line border under Kop
+        $sheet->getStyle("A4:{$highestColumnLetter}4")->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_DOUBLE);
+
+        // Title Laporan
+        $sheet->setCellValue('A6', 'LAPORAN REKAPITULASI NILAI TUGAS');
+        $sheet->mergeCells("A6:{$highestColumnLetter}6");
+        $sheet->getStyle('A6')->getFont()->setName('Arial')->setSize(12)->setBold(true);
+        $sheet->getStyle('A6')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Metadata
+        $teacherName = $subject->teacher->nama ?? $subject->teacher->name ?? '-';
+        $metaText = 'Mata Pelajaran: ' . $subject->course->nama . ' | Kelas: ' . $subject->classRoom->name . ' | Guru: ' . $teacherName . ' | TA: ' . ($subject->academic_year ?? '2026/2027');
+        $sheet->setCellValue('A7', $metaText);
+        $sheet->mergeCells("A7:{$highestColumnLetter}7");
+        $sheet->getStyle('A7')->getFont()->setName('Arial')->setSize(10)->setItalic(true);
+        $sheet->getStyle('A7')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Header Tabel di Baris 9
+        $sheet->fromArray($headers, null, 'A9');
 
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'name' => 'Arial', 'size' => 10],
@@ -373,14 +421,14 @@ class TugasController extends Controller
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
                 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
             ],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '10B981']],
-            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => '059669']]]
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D65A20']],
+            'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN, 'color' => ['rgb' => 'B54A18']]]
         ];
-        $sheet->getStyle("A4:{$highestColumnLetter}4")->applyFromArray($headerStyle);
-        $sheet->getRowDimension(4)->setRowHeight(25);
+        $sheet->getStyle("A9:{$highestColumnLetter}9")->applyFromArray($headerStyle);
+        $sheet->getRowDimension(9)->setRowHeight(25);
 
-        // Isi Data
-        $row = 5;
+        // Isi Data di Baris 10
+        $row = 10;
         $idx = 1;
         foreach ($students as $student) {
             $studentSubmissions = $submissions->get($student->id, collect())->keyBy('tugas_id');
@@ -692,8 +740,10 @@ class TugasController extends Controller
         \App\Models\ActivityLog::log('ASSIGNMENT', 'Membuat tugas baru: ' . $request->title);
 
         // Redirect back to the specific subject detail page for better UX
-        return redirect()->route('assignments.teacher.detail', $data['subject_id'])
-            ->with('success', 'Tugas berhasil dibuat.');
+        return redirect()->route('assignments.teacher.detail', [
+            'subject' => $data['subject_id'],
+            'class_name' => $data['class_name'] ?? null
+        ])->with('success', 'Tugas berhasil dibuat.');
     }
 
     public function show(Tugas $assignment)
@@ -977,6 +1027,13 @@ class TugasController extends Controller
 
         \App\Models\ActivityLog::log('ASSIGNMENT', 'Memperbarui tugas: ' . $assignment->title);
 
+        if ($user->isTeacher() || $user->isSuperAdmin()) {
+            return redirect()->route('assignments.teacher.detail', [
+                'subject' => $assignment->mata_pelajaran_id ?: $request->input('subject_id'),
+                'class_name' => $request->query('class_name') ?: $request->input('class_name')
+            ])->with('success', 'Tugas berhasil diperbarui.');
+        }
+
         return redirect()->route('assignments.index')
             ->with('success', 'Tugas berhasil diperbarui.');
     }
@@ -1012,8 +1069,10 @@ class TugasController extends Controller
             strpos($previousUrl, '/assignments/' . $assignment->id) !== false
         ) {
             if ($subjectId) {
-                return redirect()->route('assignments.teacher.detail', $subjectId)
-                    ->with('success', 'Tugas berhasil dihapus.');
+                return redirect()->route('assignments.teacher.detail', [
+                    'subject' => $subjectId,
+                    'class_name' => request('class_name')
+                ])->with('success', 'Tugas berhasil dihapus.');
             }
             return redirect()->route('assignments.index')
                 ->with('success', 'Tugas berhasil dihapus.');

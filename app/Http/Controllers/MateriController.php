@@ -89,7 +89,11 @@ class MateriController extends Controller
             $completedMaterialIds = \App\Models\PelacakanMateri::where('siswa_id', $user->student->id)->pluck('materi_id')->toArray();
         }
 
-        return view('materi.index', compact('materials', 'subjects', 'completedMaterialIds'));
+        // Hitung metrik Workspace (Total Materi & Tanggal Update Terakhir)
+        $totalMateri = collect($materials)->count();
+        $lastUpdated = $totalMateri > 0 ? collect($materials)->max('updated_at')->locale('id')->translatedFormat('j F Y') : '-';
+
+        return view('materi.index', compact('materials', 'subjects', 'completedMaterialIds', 'totalMateri', 'lastUpdated'));
     }
 
 

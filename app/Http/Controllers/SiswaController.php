@@ -25,7 +25,17 @@ class SiswaController extends Controller
         $classList = \App\Models\Kelas::orderBy('name', 'asc')->get();
         $tahunLulusList = Siswa::whereNotNull('tahun_lulus')->distinct()->pluck('tahun_lulus')->sort()->values();
         
-        return view('siswa.index', compact('students', 'pendingCount', 'classList', 'tahunLulusList'));
+        $kelasSorter = function($a, $b) {
+            $map = ['X' => 10, 'XI' => 11, 'XII' => 12];
+            $tA = $map[strtoupper(explode(' ', trim($a))[0] ?? '')] ?? 99;
+            $tB = $map[strtoupper(explode(' ', trim($b))[0] ?? '')] ?? 99;
+            if ($tA === $tB) return strnatcmp($a, $b);
+            return $tA <=> $tB;
+        };
+
+        $daftarKelasAsal = Siswa::active()->pluck('kelas')->filter()->unique()->sort($kelasSorter)->values();
+
+        return view('siswa.index', compact('students', 'pendingCount', 'classList', 'tahunLulusList', 'daftarKelasAsal'));
     }
 
     public function create()
@@ -685,12 +695,12 @@ class SiswaController extends Controller
 
         $mappings = collect($request->input('mapping'))->filter(function ($map) {
             return !empty($map['tujuan']);
-        })->sort(function ($a, $b) {
+        })->sortByDesc(function ($map) {
             $mapGrade = ['X' => 10, 'XI' => 11, 'XII' => 12];
-            $tA = $mapGrade[strtoupper(explode(' ', trim($a['asal']))[0] ?? '')] ?? 99;
-            $tB = $mapGrade[strtoupper(explode(' ', trim($b['asal']))[0] ?? '')] ?? 99;
-            // Descending order (11/XI diproses lebih dulu sebelum 10/X)
-            return $tB <=> $tA;
+            $asalClass = trim($map['asal']);
+            $firstWord = explode(' ', $asalClass)[0];
+            $cleanGrade = preg_replace('/[^A-Z]/i', '', $firstWord);
+            return $mapGrade[strtoupper($cleanGrade)] ?? 99;
         });
 
         if ($mappings->isEmpty()) {

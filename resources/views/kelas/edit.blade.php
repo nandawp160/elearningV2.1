@@ -52,15 +52,17 @@
                     @enderror
                 </div>
 
-                <!-- Jurusan -->
+                <!-- Jurusan / Fase Kurikulum -->
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Jurusan *</label>
+                    <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fase Kurikulum *</label>
                     <div class="relative">
                         <select name="jurusan" required class="w-full rounded-xl border @error('jurusan') border-rose-500 focus:border-rose-500 @else border-slate-200 focus:border-[#D65A20] focus:ring-[#D65A20]/20 @enderror bg-white px-4 py-2.5 text-xs text-slate-700 appearance-none focus:ring-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
-                            <option value="">Pilih Jurusan</option>
-                            <option value="IPA" {{ old('jurusan', $classroom->jurusan) == 'IPA' ? 'selected' : '' }}>IPA</option>
-                            <option value="IPS" {{ old('jurusan', $classroom->jurusan) == 'IPS' ? 'selected' : '' }}>IPS</option>
-                            <option value="Bahasa" {{ old('jurusan', $classroom->jurusan) == 'Bahasa' ? 'selected' : '' }}>Bahasa</option>
+                            <option value="">Pilih Fase</option>
+                            <option value="Fase E" {{ old('jurusan', $classroom->jurusan) == 'Fase E' ? 'selected' : '' }}>Fase E (Umum - Kelas X)</option>
+                            <option value="Fase F" {{ old('jurusan', $classroom->jurusan) == 'Fase F' ? 'selected' : '' }}>Fase F (Pilihan - Kelas XI & XII)</option>
+                            @if(in_array($classroom->jurusan, ['IPA', 'IPS', 'Bahasa']))
+                                <option value="{{ $classroom->jurusan }}" selected>{{ $classroom->jurusan }} (Arsip)</option>
+                            @endif
                         </select>
                         <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                             <i class="fas fa-chevron-down text-[10px]"></i>

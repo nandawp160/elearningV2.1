@@ -33,7 +33,8 @@ class Pengumpulan extends Model
         'attachment',
         'attachment_url',
         'original_name',
-        'file_size'
+        'file_size',
+        'preview_url'
     ];
 
     // Accessors and Mutators for backward compatibility
@@ -134,6 +135,15 @@ class Pengumpulan extends Model
     {
         if ($this->attachment) {
             return route('download.submission', $this->id);
+        }
+        return null;
+    }
+
+    // Accessor: Get preview URL (inline)
+    public function getPreviewUrlAttribute()
+    {
+        if ($this->attachment) {
+            return route('preview.submission', $this->id);
         }
         return null;
     }

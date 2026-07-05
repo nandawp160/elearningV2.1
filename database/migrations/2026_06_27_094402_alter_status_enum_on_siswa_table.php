@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('siswa', function (Blueprint $table) {
+        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() !== 'sqlite') {
             \Illuminate\Support\Facades\DB::statement("ALTER TABLE siswa MODIFY status ENUM('aktif', 'nonaktif', 'lulus', 'mutasi') DEFAULT 'aktif'");
-        });
+        }
     }
 
     /**
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('siswa', function (Blueprint $table) {
+        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() !== 'sqlite') {
             \Illuminate\Support\Facades\DB::statement("ALTER TABLE siswa MODIFY status ENUM('aktif', 'nonaktif') DEFAULT 'aktif'");
-        });
+        }
     }
 };

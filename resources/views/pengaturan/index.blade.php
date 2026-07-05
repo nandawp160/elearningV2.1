@@ -489,8 +489,8 @@
                             <label class="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:border-rose-400 transition">
                                 <input type="checkbox" name="opsi[]" value="plot_kelas" class="mt-0.5 rounded text-rose-500 focus:ring-rose-400" />
                                 <div>
-                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-250">Plotting Kelas & Mengajar</span>
-                                    <span class="block text-[10px] text-slate-400 leading-normal mt-0.5">Mengosongkan penugasan kelas siswa (unenroll) serta melepaskan plotting pembagian mengajar guru.</span>
+                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-250">Plotting Kelas & Pengampuan</span>
+                                    <span class="block text-[10px] text-slate-400 leading-normal mt-0.5">Mengosongkan penugasan kelas siswa (unenroll) serta melepaskan plotting pengampuan guru.</span>
                                 </div>
                             </label>
                         </div>

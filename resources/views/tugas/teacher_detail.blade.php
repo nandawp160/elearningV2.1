@@ -289,11 +289,38 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
 
     {{-- Subject Header Info --}}
     <div class="tgd-subject-header">
-        <h1 class="tgd-subject-title">{{ $subject->course->name ?? $subject->nama ?? '' }} - {{ $subject->classRoom->name ?? '' }}</h1>
-        <div class="tgd-subject-meta">
-            <span><i class="fas fa-user-tie"></i> Guru Pengampu: <strong>{{ $subject->teacher->name ?? '-' }}</strong></span>
+        <nav aria-label="breadcrumb" class="mb-2">
+            <ol class="flex items-center space-x-2 text-[13px] text-slate-500">
+                <li><a href="{{ route('assignments.index') }}" class="hover:text-orange-500 transition font-medium">Tugas</a></li>
+                <li><span class="text-slate-300">></span></li>
+                <li class="font-bold text-slate-600">{{ $subject->classRoom->name ?? '' }}</li>
+                <li><span class="text-slate-300">></span></li>
+                <li class="font-bold text-slate-700">{{ $subject->course->name ?? $subject->nama ?? '' }}</li>
+            </ol>
+        </nav>
+        <h1 class="tgd-subject-title" style="font-size: 24px; margin-bottom:4px;">Workspace Tugas</h1>
+        <div class="tgd-subject-meta" style="margin-bottom: 20px;">
+            <span><i class="fas fa-user-tie"></i> Guru: <strong>{{ $subject->teacher->name ?? '-' }}</strong></span>
             <span class="tgd-sep">•</span>
-            <span><i class="fas fa-calendar-alt"></i> Tahun Ajaran: <strong>{{ $subject->classRoom->academic_year ?? \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026') }}</strong></span>
+            <span><i class="fas fa-calendar-alt"></i> TA: <strong>{{ $subject->classRoom->academic_year ?? \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026') }}</strong></span>
+        </div>
+
+        <!-- Metrik Ringkas -->
+        <div class="flex items-center gap-6 mb-2 px-1 mt-2">
+            <div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tugas</span>
+                <span class="text-base font-extrabold text-slate-800">{{ $totalTugas ?? 0 }}</span>
+            </div>
+            <div class="w-px h-8 bg-slate-200"></div>
+            <div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sudah Dikumpulkan</span>
+                <span class="text-base font-extrabold text-emerald-600">{{ $totalSubmissions ?? 0 }} <span class="text-sm font-semibold text-slate-400">/ {{ $totalSlots ?? 0 }}</span></span>
+            </div>
+            <div class="w-px h-8 bg-slate-200"></div>
+            <div>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Perlu Dinilai</span>
+                <span class="text-base font-extrabold text-rose-600">{{ $perluDinilai ?? 0 }}</span>
+            </div>
         </div>
     </div>
 
@@ -376,17 +403,20 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                             @endif
                         </td>
                         <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
-                            <div class="flex items-center justify-center gap-3 text-lg">
-                                <a href="{{ route('assignments.show', ['assignment' => $a->id, 'class_name' => request('class_name') ?? ($subject->classRoom ? $subject->classRoom->name : '')]) }}" class="text-blue-500 hover:text-blue-700 transition" title="Lihat">
+                            <div class="flex items-center justify-center gap-4 text-lg">
+                                <a href="{{ route('assignments.show', ['assignment' => $a->id, 'class_name' => request('class_name') ?? ($subject->classRoom ? $subject->classRoom->name : '')]) }}" class="flex flex-col items-center gap-1 text-blue-500 hover:text-blue-700 transition group" title="Lihat">
                                     <i class="fas fa-eye"></i>
+                                    <span class="text-[9px] font-bold tracking-wider group-hover:underline">LIHAT</span>
                                 </a>
-                                <a href="{{ route('assignments.edit',$a) }}" class="text-amber-500 hover:text-amber-700 transition" title="Edit">
+                                <a href="{{ route('assignments.edit', ['assignment' => $a->id, 'class_name' => request('class_name') ?? ($subject->classRoom ? $subject->classRoom->name : '')]) }}" class="flex flex-col items-center gap-1 text-amber-500 hover:text-amber-700 transition group" title="Edit">
                                     <i class="fas fa-pencil-alt"></i>
+                                    <span class="text-[9px] font-bold tracking-wider group-hover:underline">EDIT</span>
                                 </a>
-                                <form action="{{ route('assignments.destroy',$a) }}" method="POST" onsubmit="return confirm('Hapus tugas ini?')" style="display:inline">
+                                <form action="{{ route('assignments.destroy', ['assignment' => $a->id, 'class_name' => request('class_name') ?? ($subject->classRoom ? $subject->classRoom->name : '')]) }}" method="POST" onsubmit="return confirm('Hapus tugas ini?')" class="m-0">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-rose-500 hover:text-rose-700 transition" title="Hapus">
+                                    <button type="submit" class="flex flex-col items-center gap-1 text-rose-500 hover:text-rose-700 transition group bg-transparent border-none p-0 cursor-pointer" title="Hapus">
                                         <i class="fas fa-trash"></i>
+                                        <span class="text-[9px] font-bold tracking-wider group-hover:underline">HAPUS</span>
                                     </button>
                                 </form>
                             </div>
@@ -467,7 +497,6 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                     <input type="hidden" name="class_name" :value="selectedClass" />
                     <input type="hidden" name="max_score" value="100" />
                     <input type="hidden" name="type" value="essay" />
-                    <input type="hidden" name="status" value="active" />
 
                     <div class="px-10 pb-8 space-y-6">
 
@@ -478,11 +507,11 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                                     Kelas
                                 </label>
                                 <select id="modal_kelas" x-model="selectedClass" @change="onClassChange()"
-                                    class="select-premium @error('subject_id') border-rose-500 @enderror" required>
+                                    class="select-premium @error('subject_id') border-rose-500 @enderror" disabled required>
                                     <option value="" disabled selected>Pilih kelas...</option>
-                                    <template x-for="c in getUniqueClasses()" :key="c">
-                                        <option :value="c" x-text="c"></option>
-                                    </template>
+                                    @foreach($subjects->pluck('classRoom.name')->filter()->unique()->sort() as $c)
+                                        <option value="{{ $c }}">{{ $c }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -491,11 +520,11 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                                     Mata Pelajaran
                                 </label>
                                 <select id="modal_mapel" x-model="selectedSubjectName" @change="onSubjectChange()"
-                                    class="select-premium @error('subject_id') border-rose-500 @enderror" :disabled="!selectedClass" required>
+                                    class="select-premium @error('subject_id') border-rose-500 @enderror" disabled required>
                                     <option value="" disabled selected>Pilih mata pelajaran...</option>
-                                    <template x-for="s in getSubjectsForClass(selectedClass)" :key="s.id">
-                                        <option :value="s.course_name" x-html="s.course_name"></option>
-                                    </template>
+                                    @foreach($subjects as $subj)
+                                        <option value="{{ $subj->course->name ?? $subj->nama }}">{{ $subj->course->name ?? $subj->nama }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -616,6 +645,37 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                             </div>
                         </div>
 
+                        {{-- Baris 5: Status Tugas --}}
+                        <div>
+                            <label for="modal_status" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Status Tugas
+                            </label>
+                            <div class="relative flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full max-w-md">
+                                <div class="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg shadow-sm transition-all duration-300 ease-in-out" 
+                                     :class="status === 'active' ? 'left-1 bg-[#D65A20] border border-[#c24e18]' : 'left-[calc(50%+2px)] bg-white dark:bg-slate-700 border border-slate-200/50 dark:border-slate-600'"></div>
+                                
+                                <label class="flex-1 text-center cursor-pointer relative z-10 py-2.5 text-[13px] font-bold transition-colors duration-200" 
+                                       :class="status === 'active' ? 'text-white' : 'text-slate-500 hover:text-slate-700'">
+                                    <input type="radio" name="status" value="active" class="hidden" x-model="status" />
+                                    <i class="fas fa-globe mr-1"></i> Publikasikan
+                                </label>
+                                
+                                <label class="flex-1 text-center cursor-pointer relative z-10 py-2.5 text-[13px] font-bold transition-colors duration-200" 
+                                       :class="status === 'inactive' ? 'text-slate-800 dark:text-white' : 'text-slate-500 hover:text-slate-700'">
+                                    <input type="radio" name="status" value="inactive" class="hidden" x-model="status" />
+                                    <i class="fas fa-file-alt mr-1"></i> Simpan Draft
+                                </label>
+                            </div>
+                            <p class="text-[12px] text-slate-500 mt-2" x-show="status === 'active'"><i class="fas fa-info-circle text-[#D65A20] mr-1"></i> Siswa dapat melihat dan mengerjakan tugas ini.</p>
+                            <p class="text-[12px] text-slate-500 mt-2" x-show="status === 'inactive'" x-cloak><i class="fas fa-info-circle text-slate-400 mr-1"></i> Tugas disembunyikan. Hanya Anda yang dapat melihatnya.</p>
+
+                            @error('status')
+                            <p class="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
+                                <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                            </p>
+                            @enderror
+                        </div>
+
                     </div>
 
                     {{-- Modal Footer --}}
@@ -655,11 +715,12 @@ function teacherDetailModals() {
             },
             @endforeach
         ],
-        selectedClass: '',
+        selectedClass: "{!! addslashes(old('class_name', request('class_name') ?? ($subject->classRoom ? $subject->classRoom->name : ''))) !!}",
         selectedSubjectName: '',
-        selectedSubjectId: "{{ old('subject_id', '') }}",
+        selectedSubjectId: "{{ old('subject_id', $subject->id) }}",
         isDraggingCreate: false,
         createFileName: '',
+        status: "{{ old('status', 'active') }}",
 
         getUniqueClasses() {
             const classes = this.subjectsList.map(s => s.class_name).filter(Boolean);
@@ -701,19 +762,32 @@ function teacherDetailModals() {
         },
 
         init() {
-            if (this.selectedSubjectId) {
-                const match = this.subjectsList.find(s => s.id == this.selectedSubjectId);
-                if (match) {
-                    this.selectedClass = match.class_name;
-                    this.selectedSubjectName = match.course_name;
-                }
-            } else {
-                const match = this.subjectsList.find(s => s.id == {{ $subject->id }});
-                if (match) {
-                    this.selectedClass = match.class_name;
-                    this.selectedSubjectName = match.course_name;
-                    this.selectedSubjectId = match.id;
-                }
+            let match = null;
+            
+            // Try to match both ID and Class Name (most accurate)
+            if (this.selectedSubjectId && this.selectedClass) {
+                match = this.subjectsList.find(s => s.id == this.selectedSubjectId && s.class_name == this.selectedClass);
+            }
+            
+            // Fallback to just ID
+            if (!match && this.selectedSubjectId) {
+                match = this.subjectsList.find(s => s.id == this.selectedSubjectId);
+            }
+            
+            // Fallback to page's subject ID + selectedClass
+            if (!match) {
+                match = this.subjectsList.find(s => s.id == {{ $subject->id }} && s.class_name == this.selectedClass);
+            }
+
+            // Ultimate fallback to just page's subject ID
+            if (!match) {
+                match = this.subjectsList.find(s => s.id == {{ $subject->id }});
+            }
+            
+            if (match) {
+                this.selectedClass = match.class_name;
+                this.selectedSubjectName = match.course_name;
+                this.selectedSubjectId = match.id;
             }
         }
     }

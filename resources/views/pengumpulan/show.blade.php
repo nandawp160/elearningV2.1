@@ -59,7 +59,7 @@
                     <div class="mt-6">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Pratinjau Dokumen</p>
                         <div class="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 h-[600px]">
-                            <iframe src="{{ $submission->attachment_url }}#toolbar=0" class="w-full h-full border-none"></iframe>
+                            <iframe src="{{ $submission->preview_url }}#toolbar=0" class="w-full h-full border-none"></iframe>
                         </div>
                     </div>
                     @endif

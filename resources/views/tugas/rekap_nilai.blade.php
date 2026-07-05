@@ -6,12 +6,17 @@
 <div class="tg-wrapper" style="padding: 24px; background-color: #f8fafc; min-height: 100vh;">
     
     {{-- Breadcrumb / Top --}}
-    <div class="flex items-center text-sm text-slate-500 mb-6 no-print">
-        <a href="{{ route('assignments.index') }}" class="hover:text-slate-800 transition">Pengampuan Tugas</a>
-        <span class="mx-2">/</span>
-        <a href="{{ route('assignments.teacher.detail', ['subject' => $subject->id, 'class_name' => $subject->classRoom ? $subject->classRoom->name : null]) }}" class="hover:text-slate-800 transition">{{ $subject->course->name ?? $subject->nama ?? 'Mapel' }} - {{ $subject->classRoom->name ?? '-' }}</a>
-        <span class="mx-2">/</span>
-        <span class="font-semibold text-slate-800">Rekap Nilai</span>
+    <div class="flex items-center justify-between text-sm text-slate-500 mb-6 no-print">
+        <div class="flex items-center">
+            <a href="{{ route('assignments.index') }}" class="hover:text-slate-800 transition">Pengampuan Tugas</a>
+            <span class="mx-2">/</span>
+            <a href="{{ route('assignments.teacher.detail', ['subject' => $subject->id, 'class_name' => $subject->classRoom ? $subject->classRoom->name : null]) }}" class="hover:text-slate-800 transition">{{ $subject->course->name ?? $subject->nama ?? 'Mapel' }} - {{ $subject->classRoom->name ?? '-' }}</a>
+            <span class="mx-2">/</span>
+            <span class="font-semibold text-slate-800">Rekap Nilai</span>
+        </div>
+        <a href="{{ route('assignments.teacher.detail', ['subject' => $subject->id, 'class_name' => $subject->classRoom ? $subject->classRoom->name : null]) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:border-[#D65A20] hover:text-[#D65A20] rounded-xl text-[13px] font-bold text-slate-600 transition shadow-sm">
+            <i class="fas fa-arrow-left"></i> Kembali ke Workspace
+        </a>
     </div>
 
     {{-- Page Header --}}
@@ -30,14 +35,27 @@
         </div>
     </div>
 
-    {{-- Info Laporan untuk Print --}}
-    <div class="print-only mb-6 hidden">
-        <h1 class="text-2xl font-bold text-center mb-4">REKAPITULASI NILAI TUGAS</h1>
-        <div class="grid grid-cols-2 gap-2 text-sm max-w-2xl mx-auto">
-            <div><span class="font-semibold inline-block w-32">Mata Pelajaran</span>: {{ $subject->course->name ?? $subject->nama ?? '-' }}</div>
-            <div><span class="font-semibold inline-block w-32">Kelas</span>: {{ $subject->classRoom->name ?? '-' }}</div>
-            <div><span class="font-semibold inline-block w-32">Guru Pengampu</span>: {{ $subject->teacher->name ?? '-' }}</div>
-            <div><span class="font-semibold inline-block w-32">Tahun Ajaran</span>: {{ $subject->academic_year ?? '-' }}</div>
+    {{-- Header Laporan Resmi (Kop Sekolah) - Hanya Tampil Saat Print --}}
+    <div class="print-only hidden mb-8">
+        <div class="flex items-center justify-center border-b-4 border-double border-slate-900 pb-4 mb-6" style="border-bottom-style: double !important; border-bottom-width: 6px !important;">
+            <!-- School Logo -->
+            <img src="{{ asset('assets/logo/logo.jpeg') }}" alt="Logo" class="w-20 h-20 object-contain mr-6">
+            
+            <div class="text-center">
+                <h2 class="text-lg font-bold uppercase tracking-wider text-slate-900 leading-tight">Pemerintah Provinsi Jawa Tengah</h2>
+                <h2 class="text-lg font-bold uppercase tracking-wider text-slate-900 leading-tight">Dinas Pendidikan dan Kebudayaan</h2>
+                <h1 class="text-2xl font-black uppercase tracking-widest text-slate-900 mt-1">SMA NEGERI 1 CEPOGO</h1>
+                <p class="text-[11px] text-slate-600 mt-1 italic">Kecamatan Kec. Cepogo, Kabupaten Kab. Boyolali, Provinsi Prov. Jawa Tengah</p>
+            </div>
+        </div>
+        
+        <h3 class="text-[15px] font-bold text-center uppercase tracking-wide text-slate-900 mb-6">LAPORAN REKAPITULASI NILAI TUGAS</h3>
+        
+        <div class="grid grid-cols-2 gap-y-2 gap-x-8 text-xs max-w-3xl mx-auto mb-8 border border-slate-300 p-4 rounded-lg bg-slate-50/50">
+            <div><span class="font-bold text-slate-700 inline-block w-36">Mata Pelajaran</span>: <span class="text-slate-950">{{ $subject->course->name ?? $subject->nama ?? '-' }}</span></div>
+            <div><span class="font-bold text-slate-700 inline-block w-36">Kelas</span>: <span class="text-slate-950">{{ $subject->classRoom->name ?? '-' }}</span></div>
+            <div><span class="font-bold text-slate-700 inline-block w-36">Guru Pengampu</span>: <span class="text-slate-950">{{ $subject->teacher->nama ?? $subject->teacher->name ?? '-' }}</span></div>
+            <div><span class="font-bold text-slate-700 inline-block w-36">Tahun Ajaran</span>: <span class="text-slate-950">{{ $subject->academic_year ?? '2026/2027' }}</span></div>
         </div>
     </div>
 
@@ -117,7 +135,7 @@
             background-color: white !important;
             color: black !important;
         }
-        .no-print {
+        .no-print, #sidebar, #sidebar-backdrop, nav, header, footer, button, a {
             display: none !important;
         }
         .print-only {
@@ -131,26 +149,28 @@
             box-shadow: none !important;
             border: none !important;
         }
+        /* Reset layout width and margins for printing */
+        .lg\:ml-72 {
+            margin-left: 0 !important;
+        }
+        main {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
         table {
             width: 100% !important;
             border-collapse: collapse !important;
         }
         th, td {
             border: 1px solid #cbd5e1 !important; /* slate-300 */
+            padding: 8px 12px !important;
         }
         th {
             background-color: #f1f5f9 !important; /* slate-100 */
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
-        }
-        /* Hide sidebar/navbar */
-        .sidebar, .navbar, .top-header, .app-header, header, nav {
-            display: none !important;
-        }
-        main, .content {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
         }
         
         /* Retain badge styling in print */

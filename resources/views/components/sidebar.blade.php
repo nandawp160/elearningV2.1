@@ -492,7 +492,7 @@ if (!function_exists('isActive')) {
                        class="sidebar-link flex items-center justify-between px-4 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ request()->routeIs('teaching-assignments.*') ? 'active' : '' }}">
                         <div class="flex items-center gap-3.5">
                             <i class="fas fa-network-wired w-5 text-center"></i>
-                            Pembagian Mengajar
+                            Pengampuan Guru
                         </div>
                         <i class="fas fa-chevron-right text-[9px] opacity-40"></i>
                     </a>

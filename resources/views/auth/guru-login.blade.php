@@ -37,9 +37,9 @@
                 {{-- Title --}}
                 <h1 class="text-2xl text-white leading-tight flex items-center justify-center gap-2 mb-1">
                     <svg class="w-6 h-6 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    <span class="font-bold tracking-widest uppercase">LOGIN SISWA</span>
+                    <span class="font-bold tracking-widest uppercase">LOGIN GURU</span>
                 </h1>
-                <p class="text-[11px] text-white/70 mt-1 font-medium tracking-widest uppercase">
+                <p class="text-[11px] text-white/70 mt-1 font-medium tracking-widest uppercase text-center">
                     Assignment Control System
                 </p>
 
@@ -54,21 +54,21 @@
             <x-auth-session-status class="mx-8 mb-4" :status="session('status')" />
 
             {{-- Form --}}
-            <form method="POST" action="{{ route('login') }}" class="px-8 pb-8 space-y-4">
+            <form method="POST" action="{{ route('guru.login.store') }}" class="px-8 pb-8 space-y-4">
                 @csrf
 
-                {{-- Username / NIS --}}
+                {{-- Username / Email --}}
                 <div class="space-y-1.5">
                     <label for="email" class="block text-xs font-bold text-white uppercase tracking-wider">
-                        Username / NIS
+                        Username / Email Guru
                     </label>
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                            <i class="fas fa-user text-white/50 text-sm group-focus-within:text-[#D65A20] transition-colors duration-200"></i>
+                            <i class="fas fa-user-tie text-white/50 text-sm group-focus-within:text-[#D65A20] transition-colors duration-200"></i>
                         </div>
                         <input id="email" type="text" name="email" value="{{ old('email') }}"
                                required autofocus autocomplete="username"
-                               placeholder="Masukkan Username / NIS"
+                               placeholder="Masukkan Username atau Email"
                                style="background-color: rgba(0,0,0,0.3); color: white;"
                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-white/20 bg-black/30 text-white text-sm
                                       focus:outline-none focus:ring-2 focus:ring-[#D65A20]/60 focus:border-[#D65A20] focus:bg-black/50
@@ -122,7 +122,7 @@
                                    transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:shadow-md
                                    flex items-center justify-center gap-2 group">
                         <i class="fas fa-right-to-bracket text-xs transition-transform duration-300 group-hover:translate-x-0.5"></i>
-                        <span class="tracking-wider">LOGIN</span>
+                        <span class="tracking-wider">LOGIN GURU</span>
                     </button>
                 </div>
             </form>

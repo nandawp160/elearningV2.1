@@ -35,6 +35,21 @@ class TeachingAssignmentController extends Controller
             rsort($availableYears);
         }
 
+        // Hitung total JP per Guru secara agregasi database untuk menghindari N+1 query
+        $teacherJp = DB::table('guru_kelas')
+            ->join('kelas', 'guru_kelas.kelas_id', '=', 'kelas.id')
+            ->join('mata_pelajaran', 'guru_kelas.mata_pelajaran_id', '=', 'mata_pelajaran.id')
+            ->where('kelas.academic_year', $activeYear)
+            ->select('guru_kelas.guru_id')
+            ->selectRaw('SUM(mata_pelajaran.beban_jp) as total_jp')
+            ->groupBy('guru_kelas.guru_id')
+            ->pluck('total_jp', 'guru_id')
+            ->toArray();
+
+        foreach ($teachers as $t) {
+            $t->calculated_jp = $teacherJp[$t->id] ?? 0;
+        }
+
         // Get all plotting data (Filtered by Active Year to avoid confusion)
         $plottings = GuruKelas::with(['guru', 'kelas' => function($query) {
                 $query->withoutGlobalScope('tahun_ajaran_aktif');
@@ -46,7 +61,7 @@ class TeachingAssignmentController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('pengaturan.teaching_assignments', compact('teachers', 'classes', 'subjects', 'plottings', 'activeYear', 'availableYears'));
+        return view('pengaturan.teaching_assignments', compact('teachers', 'classes', 'subjects', 'plottings', 'activeYear', 'availableYears', 'teacherJp'));
     }
 
     /**
@@ -56,37 +71,56 @@ class TeachingAssignmentController extends Controller
     {
         $request->validate([
             'guru_id' => 'required|exists:guru,id',
-            'kelas_id' => 'required|exists:kelas,id',
+            'kelas_id' => 'required|array|min:1',
+            'kelas_id.*' => 'exists:kelas,id',
             'mata_pelajaran_id' => 'required|exists:mata_pelajaran,id',
         ]);
 
-        // Cek apakah plotting sudah ada untuk menghindari duplikat
-        $exists = GuruKelas::where('guru_id', $request->guru_id)
-            ->where('kelas_id', $request->kelas_id)
-            ->where('mata_pelajaran_id', $request->mata_pelajaran_id)
-            ->exists();
-
-        if ($exists) {
-            return back()->with('error', 'Plotting mengajar tersebut sudah ada di sistem.');
-        }
+        $guru = Guru::find($request->guru_id);
+        $mapel = MataPelajaran::find($request->mata_pelajaran_id);
+        $successCount = 0;
+        $errors = [];
 
         try {
             DB::beginTransaction();
 
-            $plot = GuruKelas::create([
-                'guru_id' => $request->guru_id,
-                'kelas_id' => $request->kelas_id,
-                'mata_pelajaran_id' => $request->mata_pelajaran_id,
-            ]);
+            foreach ($request->kelas_id as $kelasId) {
+                $kelas = Kelas::find($kelasId);
+                
+                // Cek apakah mata pelajaran di kelas ini sudah diampu oleh guru lain (1 Mapel + 1 Kelas = 1 Guru)
+                $conflict = GuruKelas::where('kelas_id', $kelasId)
+                    ->where('mata_pelajaran_id', $request->mata_pelajaran_id)
+                    ->first();
 
-            $guru = Guru::find($request->guru_id);
-            $kelas = Kelas::find($request->kelas_id);
-            $mapel = MataPelajaran::find($request->mata_pelajaran_id);
+                if ($conflict) {
+                    if ($conflict->guru_id == $request->guru_id) {
+                        // Jika sudah ada tapi guru yang sama, skip saja
+                        continue;
+                    } else {
+                        $guruLain = $conflict->guru->nama ?? 'Guru Lain';
+                        $errors[] = "Kelas {$kelas->name}: sudah diampu oleh {$guruLain}.";
+                        continue;
+                    }
+                }
 
-            ActivityLog::log('PLOTTING', "Menambahkan plotting manual: Guru {$guru->nama} mengajar {$mapel->nama} di kelas {$kelas->name}");
+                GuruKelas::create([
+                    'guru_id' => $request->guru_id,
+                    'kelas_id' => $kelasId,
+                    'mata_pelajaran_id' => $request->mata_pelajaran_id,
+                ]);
+
+                ActivityLog::log('PLOTTING', "Menambahkan plotting manual: Guru {$guru->nama} mengajar {$mapel->nama} di kelas {$kelas->name}");
+                $successCount++;
+            }
 
             DB::commit();
-            return back()->with('success', 'Plotting guru berhasil ditambahkan.');
+
+            if (count($errors) > 0) {
+                $errorMsg = 'Berhasil menambah ' . $successCount . ' pengampuan. Namun ada yang gagal: ' . implode(' ', $errors);
+                return back()->with('error', $errorMsg);
+            }
+
+            return back()->with('success', "Berhasil menambahkan {$successCount} kelas untuk pengampuan guru.");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan saat menyimpan plotting: ' . $e->getMessage());

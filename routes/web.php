@@ -144,7 +144,9 @@ Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.
 Route::get('/download/material/{material}', [\App\Http\Controllers\DownloadController::class, 'material'])->name('download.material');
 Route::get('/preview/material/{material}', [\App\Http\Controllers\DownloadController::class, 'previewMaterial'])->name('preview.material');
 Route::get('/download/assignment/{assignment}', [\App\Http\Controllers\DownloadController::class, 'assignment'])->name('download.assignment');
+Route::get('/preview/assignment/{assignment}', [\App\Http\Controllers\DownloadController::class, 'previewAssignment'])->name('preview.assignment');
 Route::get('/download/submission/{submission}', [\App\Http\Controllers\DownloadController::class, 'submission'])->name('download.submission');
+Route::get('/preview/submission/{submission}', [\App\Http\Controllers\DownloadController::class, 'previewSubmission'])->name('preview.submission');
 Route::get('/download/appeal/{appeal}', [\App\Http\Controllers\DownloadController::class, 'appeal'])->name('download.appeal');
 
 // Reports

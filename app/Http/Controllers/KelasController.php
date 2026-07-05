@@ -71,9 +71,7 @@ class KelasController extends Controller
             return $tA <=> $tB;
         };
 
-        $daftarKelasAsal = Siswa::active()->pluck('kelas')->filter()->unique()->sort($kelasSorter)->values();
-
-        return view('kelas.index', compact('classrooms', 'academicYears', 'selectedYear', 'emptyClasses', 'availableTeachers', 'daftarKelasAsal'));
+        return view('kelas.index', compact('classrooms', 'academicYears', 'selectedYear', 'emptyClasses', 'availableTeachers'));
     }
 
     public function create()
@@ -91,7 +89,7 @@ class KelasController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:kelas,name',
             'tingkat' => 'required|in:X,XI,XII',
-            'jurusan' => 'required|in:IPA,IPS,Bahasa',
+            'jurusan' => 'required|in:Fase E,Fase F,IPA,IPS,Bahasa',
             'homeroom_teacher_id' => 'nullable|exists:guru,id',
             'tahunAjaran' => ['required', 'regex:/^\d{4}\/\d{4}$/'],
             'kapasitasMaksimal' => 'required|integer|min:1|max:50',
@@ -99,7 +97,7 @@ class KelasController extends Controller
             'name.required' => 'Nama kelas harus diisi',
             'name.unique' => 'Nama kelas sudah terdaftar',
             'tingkat.required' => 'Tingkat kelas harus dipilih',
-            'jurusan.required' => 'Jurusan harus dipilih',
+            'jurusan.required' => 'Fase Kurikulum harus dipilih',
             'homeroom_teacher_id.exists' => 'Guru yang dipilih tidak valid',
             'tahunAjaran.required' => 'Tahun ajaran harus diisi',
             'tahunAjaran.regex' => 'Format tahun ajaran harus YYYY/YYYY (contoh: 2024/2025)',
@@ -207,7 +205,7 @@ class KelasController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:kelas,name,' . $classroom->id,
             'tingkat' => 'required|in:X,XI,XII',
-            'jurusan' => 'required|in:IPA,IPS,Bahasa',
+            'jurusan' => 'required|in:Fase E,Fase F,IPA,IPS,Bahasa',
             'homeroom_teacher_id' => 'nullable|exists:guru,id',
             'tahunAjaran' => ['required', 'regex:/^\d{4}\/\d{4}$/'],
             'kapasitasMaksimal' => 'required|integer|min:1|max:50',
@@ -215,7 +213,7 @@ class KelasController extends Controller
             'name.required' => 'Nama kelas harus diisi',
             'name.unique' => 'Nama kelas sudah terdaftar',
             'tingkat.required' => 'Tingkat kelas harus dipilih',
-            'jurusan.required' => 'Jurusan harus dipilih',
+            'jurusan.required' => 'Fase Kurikulum harus dipilih',
             'homeroom_teacher_id.exists' => 'Guru yang dipilih tidak valid',
             'tahunAjaran.required' => 'Tahun ajaran harus diisi',
             'tahunAjaran.regex' => 'Format tahun ajaran harus YYYY/YYYY (contoh: 2024/2025)',

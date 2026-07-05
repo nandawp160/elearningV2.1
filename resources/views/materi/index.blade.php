@@ -391,11 +391,11 @@
             <!-- ========================================== -->
             <!-- HALAMAN 1: PORTAL MATERI                  -->
             <!-- ========================================== -->
-            <div class="card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm p-6">
+            <div class="card bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm p-4 mb-6">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 class="page-title text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Portal Materi</h1>
-                        <p class="page-subtitle text-sm text-slate-500 dark:text-slate-400 mt-1.5 font-medium">Pilih kelas yang Anda ampu untuk mulai mengelola materi, penugasan, dan melihat progres siswa.</p>
+                        <h1 class="page-title text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Materi Pembelajaran</h1>
+                        <p class="page-subtitle text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Kelola materi berdasarkan kelas yang Anda ampu.</p>
                     </div>
                 </div>
             </div>
@@ -453,7 +453,7 @@
                                     <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
                                         <a href="{{ route('materials.index', ['subject_id' => $subject->id, 'class_name' => $className]) }}" 
                                            class="border border-[#D65A20] text-[#D65A20] hover:bg-[#D65A20] hover:text-white rounded px-3 py-1 text-xs font-bold transition inline-block text-center whitespace-nowrap">
-                                            Masuk Kelas
+                                            Kelola
                                         </a>
                                     </td>
                                 </tr>
@@ -488,15 +488,36 @@
                 $distinctCourses = $subjects->pluck('nama')->filter()->unique();
             @endphp
 
-            <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
                     <a href="{{ route('materials.index') }}" class="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700" title="Kembali ke Portal">
                         <i class="fas fa-chevron-left"></i>
                     </a>
                     <div>
-                        <h1 class="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mb-1">Materi {{ $currentSubject->nama ?? '' }}</h1>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 m-0">Daftar materi pembelajaran kelas: <strong>{{ $currentSubject->classRoom->name ?? '' }}</strong></p>
+                        <nav aria-label="breadcrumb" class="mb-1">
+                            <ol class="flex items-center space-x-2 text-xs text-slate-500">
+                                <li><a href="{{ route('materials.index') }}" class="hover:text-orange-500 transition font-medium">Materi</a></li>
+                                <li><span class="text-slate-300">></span></li>
+                                <li class="font-bold text-slate-600">{{ $currentSubject->classRoom->name ?? '' }}</li>
+                                <li><span class="text-slate-300">></span></li>
+                                <li class="font-bold text-slate-700">{{ $currentSubject->nama ?? '' }}</li>
+                            </ol>
+                        </nav>
+                        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 dark:text-slate-100 mb-1">Workspace Materi</h1>
                     </div>
+                </div>
+            </div>
+
+            <!-- Metrik Ringkas -->
+            <div class="flex items-center gap-6 mb-5 px-1">
+                <div>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Materi</span>
+                    <span class="text-base font-extrabold text-slate-800">{{ $totalMateri ?? 0 }} Materi</span>
+                </div>
+                <div class="w-px h-8 bg-slate-200"></div>
+                <div>
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Terakhir Diperbarui</span>
+                    <span class="text-sm font-semibold text-slate-700">{{ $lastUpdated ?? '-' }}</span>
                 </div>
             </div>
 
@@ -508,28 +529,6 @@
                         <p class="text-[13px] text-slate-500 m-0">Kelola materi pembelajaran untuk kelas ini.</p>
                     </div>
                     <div class="flex gap-3 items-center flex-wrap">
-                        <!-- Dropdown Kelas -->
-                        <div class="w-32">
-                            <select id="select-kelas" onchange="handleDropdownChange()" class="px-3.5 py-2 w-full border border-slate-200 dark:border-slate-700 rounded-lg text-[13px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 focus:border-orange-500 focus:ring-[3px] focus:ring-orange-500/20 outline-none cursor-pointer transition-all">
-                                @foreach($distinctClasses as $cName)
-                                    <option value="{{ $cName }}" {{ ($currentSubject && $currentSubject->classRoom && $currentSubject->classRoom->name === $cName) ? 'selected' : '' }}>
-                                        {{ $cName }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        
-                        <!-- Dropdown Mata Pelajaran -->
-                        <div class="w-48">
-                            <select id="select-mapel" onchange="handleDropdownChange()" class="px-3.5 py-2 w-full border border-slate-200 dark:border-slate-700 rounded-lg text-[13px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 focus:border-orange-500 focus:ring-[3px] focus:ring-orange-500/20 outline-none cursor-pointer transition-all">
-                                @foreach($distinctCourses as $cCourse)
-                                    <option value="{{ $cCourse }}" {{ ($currentSubject && $currentSubject->nama === $cCourse) ? 'selected' : '' }}>
-                                        {{ $cCourse }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
                         <!-- Tombol Tambah Materi -->
                         @if(auth()->user()->isTeacher() || auth()->user()->isSuperAdmin())
                         <button type="button" 
@@ -565,11 +564,7 @@
                                                 <a href="{{ route('materials.show', $material) }}" class="font-bold text-slate-800 hover:text-[#D65A20] transition truncate block" title="{{ $material->title }}">
                                                     {{ $material->title }}
                                                 </a>
-                                                @if($material->status === 'active' || $material->status === 'aktif')
-                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">Aktif</span>
-                                                @else
-                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200">Nonaktif</span>
-                                                @endif
+
                                             </div>
                                             <p class="text-xs text-slate-500 mt-1 line-clamp-1">
                                                 {{ $material->description ?: 'Tidak ada deskripsi.' }}
@@ -607,12 +602,12 @@
                             <tr>
                                 <td colspan="4" class="px-6 py-12 text-center border border-slate-300 text-slate-500">
                                     <i class="fas fa-folder-open text-slate-300 mb-3 text-4xl block"></i>
-                                    <p class="font-semibold text-sm">Belum ada materi pembelajaran untuk kelas ini.</p>
+                                    <p class="font-semibold text-sm">Belum ada materi.</p>
                                     @if(auth()->user()->isTeacher() || auth()->user()->isSuperAdmin())
                                     <button type="button" 
                                             onclick="openAddMaterialModal({{ $currentSubject->id ?? '' }}, '{{ $currentSubject->classRoom->name ?? '' }}', '{{ $currentSubject->nama ?? '' }}')" 
                                             class="bg-[#D65A20] hover:bg-[#b84a18] text-white font-semibold text-xs px-3 py-1.5 rounded-lg transition mt-3 inline-block">
-                                        Unggah Materi Pertama
+                                        Tambah Materi
                                     </button>
                                     @endif
                                 </td>

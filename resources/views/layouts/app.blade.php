@@ -76,6 +76,7 @@
             display: none !important;
         }
     </style>
+    @stack('styles')
 </head>
 <body class="font-sans antialiased bg-slate-50 dark:bg-slate-950 transition-colors duration-200 preload-hide-dropdowns">
     <script>
@@ -102,7 +103,7 @@
                     (auth()->user()->isStudent() && auth()->user()->student && empty(auth()->user()->student->nis)) ||
                     (auth()->user()->isTeacher() && auth()->user()->teacher && (empty(auth()->user()->teacher->nip) || empty(auth()->user()->teacher->email)))
                 ))
-                <div class="mb-6 p-4 rounded-xl bg-orange-50 border border-orange-200 flex items-start gap-4 shadow-sm">
+                <div class="mb-6 p-4 rounded-xl bg-orange-50 border border-orange-200 flex items-start gap-4 shadow-sm no-print">
                     <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>

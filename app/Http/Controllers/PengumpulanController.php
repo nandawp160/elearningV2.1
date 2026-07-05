@@ -210,6 +210,8 @@ class PengumpulanController extends Controller
                 $statusType = 'terlambat';
             }
             
+            $submission->update(['status' => $telat ? 'late' : 'submitted']);
+            
             $message = 'Koreksi dibatalkan.';
         } else {
             $request->validate([
@@ -233,6 +235,9 @@ class PengumpulanController extends Controller
                     'graded_at' => Carbon::now(),
                 ]
             );
+            
+            $submission->update(['status' => 'graded']);
+            
             $isGraded = true;
             $statusLabel = 'Sudah Dikoreksi';
             $statusClass = 'badge-dikoreksi';

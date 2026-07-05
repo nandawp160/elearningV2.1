@@ -27,7 +27,7 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
         $request->session()->regenerate();
 
-        // Prevent admin from logging in via regular portal
+        // Prevent admin from logging in via regular student portal
         if ($request->user()->isSuperAdmin()) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
@@ -38,9 +38,52 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        \App\Models\ActivityLog::log('AUTH', 'Pengguna "' . $request->user()->nama . '" (Peran: ' . $request->user()->role . ') berhasil masuk ke sistem');
+        // Prevent teachers from logging in via regular student portal
+        if ($request->user()->isTeacher()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            return redirect()->route('login')->withErrors([
+                'email' => 'Akses ditolak. Silakan login melalui portal khusus Guru.',
+            ]);
+        }
+
+        \App\Models\ActivityLog::log('AUTH', 'Siswa "' . $request->user()->nama . '" (NIS: ' . ($request->user()->student->nis ?? '-') . ') berhasil masuk ke sistem');
 
         // Jangan gunakan intended() untuk mencegah bug 403 di HP (stale tabs)
+        return redirect()->route('dashboard');
+    }
+
+    /**
+     * Display the guru login view.
+     */
+    public function createGuru(): View
+    {
+        return view('auth.guru-login');
+    }
+
+    /**
+     * Handle an incoming guru authentication request.
+     */
+    public function storeGuru(LoginRequest $request): RedirectResponse
+    {
+        $request->authenticate();
+        $request->session()->regenerate();
+
+        // Ensure only teacher can login here
+        if (!$request->user()->isTeacher()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            return redirect()->route('guru.login')->withErrors([
+                'email' => 'Akses ditolak. Portal ini khusus untuk Guru.',
+            ]);
+        }
+
+        \App\Models\ActivityLog::log('AUTH', 'Guru "' . $request->user()->nama . '" berhasil masuk ke sistem melalui portal guru');
+
         return redirect()->route('dashboard');
     }
 
@@ -82,10 +125,12 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $isAdmin = false;
+        $isTeacher = false;
 
         if (Auth::check()) {
             $user = Auth::user();
             $isAdmin = $user->isSuperAdmin();
+            $isTeacher = $user->isTeacher();
             \App\Models\ActivityLog::log('AUTH', 'Pengguna "' . $user->nama . '" keluar dari sistem');
         }
 
@@ -95,6 +140,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return $isAdmin ? redirect()->route('admin.login') : redirect('/');
+        if ($isAdmin) {
+            return redirect()->route('admin.login');
+        } elseif ($isTeacher) {
+            return redirect()->route('guru.login');
+        } else {
+            return redirect()->route('login');
+        }
     }
 }

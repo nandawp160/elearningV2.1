@@ -86,6 +86,15 @@ class DownloadController extends Controller
     }
 
     /**
+     * Preview assignment attachment inline
+     */
+    public function previewAssignment(\App\Models\Tugas $assignment)
+    {
+        Gate::authorize('view_tugas');
+        return $this->serveFile($assignment->attachment);
+    }
+
+    /**
      * Download student submission
      */
     public function submission(\App\Models\Pengumpulan $submission)
@@ -101,6 +110,24 @@ class DownloadController extends Controller
         }
         
         return $this->downloadFile($submission->file_tugas, $submission->original_name);
+    }
+
+    /**
+     * Preview student submission inline
+     */
+    public function previewSubmission(\App\Models\Pengumpulan $submission)
+    {
+        $user = auth()->user();
+        $assignment = $submission->assignment;
+        
+        $isOwner = $user->isStudent() && $user->student_id === $submission->siswa_id;
+        $isTeacher = $user->isTeacher() && $assignment->guru_id == $user->teacher_id;
+        
+        if (!$isOwner && !$isTeacher && !$user->isSuperAdmin()) {
+            abort(403, 'Anda tidak memiliki akses ke file pengumpulan ini.');
+        }
+        
+        return $this->serveFile($submission->file_tugas);
     }
 
     /**

@@ -37,13 +37,13 @@
                     @error('grade_level') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="field-label">Jurusan</label>
-                    <select name="major" class="select @error('major') border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 @enderror" required>
-                        <option value="">Pilih Jurusan</option>
-                        <option value="IPA" {{ old('major') == 'IPA' ? 'selected' : '' }}>IPA</option>
-                        <option value="IPS" {{ old('major') == 'IPS' ? 'selected' : '' }}>IPS</option>
+                    <label class="field-label">Fase Kurikulum</label>
+                    <select name="jurusan" class="select @error('jurusan') border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 @enderror" required>
+                        <option value="">Pilih Fase</option>
+                        <option value="Fase E" {{ old('jurusan') == 'Fase E' ? 'selected' : '' }}>Fase E (Umum - Kelas X)</option>
+                        <option value="Fase F" {{ old('jurusan') == 'Fase F' ? 'selected' : '' }}>Fase F (Pilihan - Kelas XI & XII)</option>
                     </select>
-                    @error('major') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    @error('jurusan') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div class="md:col-span-2">
                     <label class="field-label">Wali Kelas (Opsional)</label>

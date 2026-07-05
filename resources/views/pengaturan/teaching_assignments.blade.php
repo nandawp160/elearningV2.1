@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pembagian Mengajar (Plotting Guru)')
+@section('title', 'Pengampuan Guru (Plotting Hak Akses)')
 
 @section('content')
 <!-- Custom Styles -->
@@ -100,8 +100,8 @@
     <!-- Page Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Pembagian Mengajar</h1>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola plotting (pemetaan) Guru, Kelas, dan Mata Pelajaran secara manual maupun otomatis.</p>
+            <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Pengampuan Guru</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola pengampuan (hak akses) Guru, Kelas, dan Mata Pelajaran secara manual maupun otomatis.</p>
         </div>
         
         <div class="flex items-center gap-3">
@@ -113,62 +113,75 @@
 
     <!-- Plotting Form Card -->
     <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm">
-        <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4"><i class="fas fa-user-plus text-[#D65A20] mr-2"></i>Tambah Plotting Manual</h2>
-        <form action="{{ route('teaching-assignments.store') }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4"><i class="fas fa-user-plus text-[#D65A20] mr-2"></i>Tambah Pengampuan Manual</h2>
+        <form action="{{ route('teaching-assignments.store') }}" method="POST" class="space-y-5">
             @csrf
             
-            <!-- Select Guru -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Guru <span class="text-rose-500">*</span></label>
-                <div class="relative">
-                    <select name="guru_id" required class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-sm text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Select Guru -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Guru <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <select name="guru_id" id="guru_select" required class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-sm text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                         <option value="">-- Pilih Guru --</option>
                         @foreach($teachers as $guru)
-                            <option value="{{ $guru->id }}">{{ $guru->nama }} {{ $guru->spesialisasi ? '(' . $guru->spesialisasi . ')' : '' }}</option>
+                            <option value="{{ $guru->id }}" data-spesialisasi="{{ $guru->spesialisasi }}">{{ $guru->nama }} {{ $guru->spesialisasi ? '(' . $guru->spesialisasi . ')' : '' }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <i class="fas fa-chevron-down text-[10px]"></i>
+                        <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <i class="fas fa-chevron-down text-[10px]"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Select Kelas -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Kelas <span class="text-rose-500">*</span></label>
-                <div class="relative">
-                    <select name="kelas_id" required class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-sm text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
-                        <option value="">-- Pilih Kelas --</option>
-                        @foreach($classes as $kelas)
-                            <option value="{{ $kelas->id }}">{{ $kelas->name }}</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <i class="fas fa-chevron-down text-[10px]"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Select Mata Pelajaran -->
-            <div>
-                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Mata Pelajaran <span class="text-rose-500">*</span></label>
-                <div class="relative">
-                    <select name="mata_pelajaran_id" required class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-sm text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
+                <!-- Select Mata Pelajaran -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Mata Pelajaran <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <select name="mata_pelajaran_id" id="mapel_select" required class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-sm text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                         <option value="">-- Pilih Mapel --</option>
                         @foreach($subjects as $mapel)
-                            <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
+                            <option value="{{ $mapel->id }}" data-nama="{{ $mapel->nama }}">{{ $mapel->nama }}</option>
                         @endforeach
                     </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <i class="fas fa-chevron-down text-[10px]"></i>
+                        <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                            <i class="fas fa-chevron-down text-[10px]"></i>
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Select Kelas (Checkboxes) -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Pilih Kelas Diampu (Bisa lebih dari satu) <span class="text-rose-500">*</span></label>
+                
+                @php
+                    $groupedClasses = $classes->groupBy('grade_level');
+                @endphp
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
+                    @foreach($groupedClasses as $grade => $gradeClasses)
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 border-b border-slate-200 dark:border-slate-700 pb-2">
+                                <i class="fas fa-layer-group text-slate-400 mr-1.5"></i> Kelas {{ $grade }}
+                            </h3>
+                            <div class="grid grid-cols-2 gap-y-3 gap-x-2">
+                                @foreach($gradeClasses as $kelas)
+                                    <label class="flex items-center gap-2 cursor-pointer group">
+                                        <input type="checkbox" name="kelas_id[]" value="{{ $kelas->id }}" class="w-4 h-4 rounded border-slate-300 text-[#D65A20] focus:ring-[#D65A20] dark:border-slate-600 dark:bg-slate-700 dark:checked:bg-[#D65A20]">
+                                        <span class="text-sm text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition font-medium">{{ $kelas->name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
             <!-- Submit Button -->
-            <div>
-                <button type="submit" class="btn-orange-solid font-bold px-4 py-2.5 rounded-xl shadow-sm w-full flex items-center justify-center gap-2">
-                    <i class="fas fa-plus"></i> Tambah Plotting
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="btn-orange-solid font-bold px-6 py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2">
+                    <i class="fas fa-plus"></i> Simpan Pengampuan
                 </button>
             </div>
         </form>
@@ -179,10 +192,10 @@
         
         <!-- Table Toolbar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fas fa-list-ul text-[#D65A20] mr-2"></i>Daftar Plotting Mengajar</h2>
+            <h2 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fas fa-list-ul text-[#D65A20] mr-2"></i>Daftar Pengampuan Guru (TA: {{ $activeYear }})</h2>
             
             <div class="relative w-full sm:w-72">
-                <input type="text" id="customSearchInput" placeholder="Cari plotting..." class="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2 text-sm text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500" />
+                <input type="text" id="customSearchInput" placeholder="Cari pengampuan..." class="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2 text-sm text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500" />
                 <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                     <i class="fas fa-search text-xs"></i>
                 </div>
@@ -195,38 +208,64 @@
                     <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                         <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">No</th>
                         <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Guru</th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kelas</th>
                         <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mata Pelajaran</th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center w-24">Aksi</th>
+                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kelas Diampu</th>
+                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24">Total JP</th>
+                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-32">Status Beban</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                    @forelse($plottings as $plot)
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                        <td class="py-3 px-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{{ $loop->iteration }}</td>
-                        <td class="py-3 px-4 text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $plot->guru->nama ?? '-' }}</td>
-                        <td class="py-3 px-4 text-sm text-slate-600 dark:text-slate-300"><span class="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded text-xs font-semibold">{{ $plot->kelas->name ?? '-' }}</span></td>
-                        <td class="py-3 px-4 text-sm text-slate-600 dark:text-slate-300">{{ $plot->subject->nama ?? '-' }}</td>
-                        <td class="py-3 px-4 text-center">
-                            <form action="{{ route('teaching-assignments.destroy', $plot->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus plotting mengajar ini?');" class="inline-block">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 flex items-center justify-center transition tooltip" data-tip="Hapus Plotting">
-                                    <i class="fas fa-trash-alt text-xs"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="py-8 text-center text-slate-500 dark:text-slate-400 text-sm">
-                            <div class="flex flex-col items-center justify-center">
-                                <i class="fas fa-inbox text-4xl mb-3 text-slate-300 dark:text-slate-600"></i>
-                                <p>Belum ada data plotting mengajar.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
+                    @php
+                        $groupedPlottings = $plottings->groupBy('guru_id');
+                        $iterator = 1;
+                    @endphp
+                    @foreach($groupedPlottings as $guruId => $guruPlots)
+                        @php
+                            $firstPlot = $guruPlots->first();
+                            $guru = $firstPlot->guru;
+                            $totalJp = $teacherJp[$guru->id] ?? 0;
+                            
+                            $statusText = 'Normal';
+                            $statusClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400';
+                            $statusIcon = 'fa-check-circle text-emerald-500';
+                            
+                            if ($totalJp < 24) {
+                                $statusText = 'Kurang';
+                                $statusClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
+                                $statusIcon = 'fa-exclamation-triangle text-amber-500';
+                            } elseif ($totalJp > 40) {
+                                $statusText = 'Lebih';
+                                $statusClass = 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400';
+                                $statusIcon = 'fa-exclamation-circle text-rose-500';
+                            }
+                        @endphp
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                            <td class="py-3.5 px-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{{ $iterator++ }}</td>
+                            <td class="py-3.5 px-4 text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $guru->nama ?? '-' }}</td>
+                            <td class="py-3.5 px-4 text-sm text-slate-600 dark:text-slate-300">
+                                {{ $guruPlots->pluck('subject.nama')->unique()->implode(', ') }}
+                            </td>
+                            <td class="py-3.5 px-4 text-sm text-slate-600 dark:text-slate-300">
+                                @foreach($guruPlots as $plot)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold mr-1.5 mb-1.5">
+                                        {{ $plot->kelas->name ?? '-' }}
+                                        <form action="{{ route('teaching-assignments.destroy', $plot->id) }}" method="POST" onsubmit="return confirm('Hapus hak akses mengajar kelas {{ $plot->kelas->name }} untuk guru ini?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-slate-400 hover:text-rose-600 font-bold ml-1 text-xs focus:outline-none">&times;</button>
+                                        </form>
+                                    </span>
+                                @endforeach
+                            </td>
+                            <td class="py-3.5 px-4 text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $totalJp }} JP</td>
+                            <td class="py-3.5 px-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {{ $statusClass }}">
+                                    <i class="fas {{ $statusIcon }}"></i>
+                                    {{ $statusText }}
+                                </span>
+                            </td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
@@ -319,7 +358,7 @@
                     next: '<i class="fas fa-angle-right"></i>',
                     previous: '<i class="fas fa-angle-left"></i>'
                 },
-                emptyTable: "Tidak ada data plotting tersedia",
+                emptyTable: '<div class="flex flex-col items-center justify-center py-8"><i class="fas fa-inbox text-4xl mb-3 text-slate-300 dark:text-slate-600"></i><p>Belum ada data pengampuan guru.</p></div>',
                 zeroRecords: "Tidak ada plotting yang cocok dengan pencarian"
             }
         });
@@ -327,6 +366,65 @@
         // Custom Search Input
         $('#customSearchInput').on('keyup', function() {
             table.search(this.value).draw();
+        });
+
+        // Smart Mapel Filter Logic
+        var originalMapelOptions = [];
+        $('#mapel_select option').each(function() {
+            if ($(this).val() !== '') {
+                originalMapelOptions.push({
+                    value: $(this).val(),
+                    text: $(this).text(),
+                    nama: $(this).data('nama')
+                });
+            }
+        });
+
+        $('#guru_select').on('change', function() {
+            var selectedOption = $(this).find('option:selected');
+            var spesialisasi = selectedOption.data('spesialisasi') || '';
+            
+            var mapelSelect = $('#mapel_select');
+            mapelSelect.empty();
+            mapelSelect.append('<option value="">-- Pilih Mapel --</option>');
+
+            if (spesialisasi) {
+                var relatedMapel = [];
+                var otherMapel = [];
+
+                originalMapelOptions.forEach(function(opt) {
+                    // Check if mapel name contains the specialization string (case-insensitive)
+                    if (opt.nama.toLowerCase().includes(spesialisasi.toLowerCase())) {
+                        relatedMapel.push(opt);
+                    } else {
+                        otherMapel.push(opt);
+                    }
+                });
+
+                if (relatedMapel.length > 0) {
+                    var relatedGroup = $('<optgroup label="Sesuai Spesialisasi (' + spesialisasi + ')"></optgroup>');
+                    relatedMapel.forEach(function(opt) {
+                        relatedGroup.append($('<option></option>').val(opt.value).text(opt.text).attr('data-nama', opt.nama));
+                    });
+                    mapelSelect.append(relatedGroup);
+
+                    // Auto-select the first related mapel
+                    mapelSelect.val(relatedMapel[0].value);
+                }
+
+                if (otherMapel.length > 0) {
+                    var otherGroup = $('<optgroup label="Mata Pelajaran Lainnya"></optgroup>');
+                    otherMapel.forEach(function(opt) {
+                        otherGroup.append($('<option></option>').val(opt.value).text(opt.text).attr('data-nama', opt.nama));
+                    });
+                    mapelSelect.append(otherGroup);
+                }
+            } else {
+                // If no specialization, just append all normally
+                originalMapelOptions.forEach(function(opt) {
+                    mapelSelect.append($('<option></option>').val(opt.value).text(opt.text).attr('data-nama', opt.nama));
+                });
+            }
         });
     });
 </script>

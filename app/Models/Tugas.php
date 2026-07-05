@@ -48,6 +48,7 @@ class Tugas extends Model
         'uploaded_by',
         'is_overdue',
         'time_remaining',
+        'preview_url',
     ];
 
     public function getStatusAttribute($value)
@@ -229,6 +230,18 @@ class Tugas extends Model
                 return $this->attachment;
             }
             return route('download.assignment', $this->id);
+        }
+        return null;
+    }
+
+    // Accessor: Get preview URL (inline)
+    public function getPreviewUrlAttribute()
+    {
+        if ($this->attachment) {
+            if (filter_var($this->attachment, FILTER_VALIDATE_URL) || str_starts_with($this->attachment, 'http://') || str_starts_with($this->attachment, 'https://')) {
+                return $this->attachment;
+            }
+            return route('preview.assignment', $this->id);
         }
         return null;
     }

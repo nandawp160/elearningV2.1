@@ -12,17 +12,22 @@
 @if($isOwner)
     <!-- REDESIGNED TEACHER VIEW -->
     <div class="space-y-6" x-data="teacherAssignmentPreview()">
+        @php
+            $backUrl = auth()->user()->isTeacher() 
+                ? route('assignments.teacher.detail', ['subject' => $assignment->mata_pelajaran_id, 'class_name' => request('class_name')]) 
+                : route('assignments.index');
+        @endphp
         {{-- Breadcrumb & Title --}}
         <div class="mb-6">
             <div class="flex items-center gap-2 text-sm text-slate-500 mb-3">
-                <a href="{{ route('assignments.index') }}" class="hover:text-[#D65A20] transition font-medium">Tugas</a>
+                <a href="{{ $backUrl }}" class="hover:text-[#D65A20] transition font-medium">Tugas</a>
                 <span class="text-slate-350">/</span>
-                <a href="{{ route('assignments.index') }}" class="hover:text-[#D65A20] transition font-medium">Daftar Tugas</a>
+                <a href="{{ $backUrl }}" class="hover:text-[#D65A20] transition font-medium">Daftar Tugas</a>
                 <span class="text-slate-355">/</span>
                 <span class="text-[#D65A20] font-bold">Detail Tugas</span>
             </div>
             <div class="flex items-center gap-4">
-                <a href="{{ route('assignments.index') }}" class="text-slate-900 dark:text-white hover:text-[#D65A20] transition text-3xl font-extrabold flex items-center gap-3">
+                <a href="{{ $backUrl }}" class="text-slate-900 dark:text-white hover:text-[#D65A20] transition text-3xl font-extrabold flex items-center gap-3">
                     <i class="fas fa-chevron-left text-2xl"></i>
                     {{ $assignment->title }}
                 </a>
@@ -45,7 +50,7 @@
                     </p>
                     <div class="flex items-center gap-2 flex-wrap pt-2">
                         @if($assignment->attachment)
-                            <button type="button" @click="initPreview('{{ $assignment->attachment_url }}', '{{ addslashes(basename($assignment->attachment)) }}')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition" title="Lihat/Unduh Lampiran">
+                            <button type="button" @click="initPreview('{{ $assignment->preview_url }}', '{{ addslashes(basename($assignment->attachment)) }}')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition" title="Lihat/Unduh Lampiran">
                                 <i class="fas fa-paperclip text-slate-500"></i>
                                 {{ basename($assignment->attachment) }}
                             </button>
@@ -81,7 +86,7 @@
                 </div>
                 
                 <div>
-                    <a href="{{ route('assignments.edit', $assignment) }}" class="inline-flex items-center justify-center px-5 py-3 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <a href="{{ route('assignments.edit', ['assignment' => $assignment->id, 'class_name' => request('class_name')]) }}" class="inline-flex items-center justify-center px-5 py-3 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
                         Edit Instruksi
                     </a>
                 </div>
@@ -223,7 +228,7 @@
                                     <div class="flex items-center justify-center gap-2 actions-container">
                                         {{-- Button Pratinjau --}}
                                         <button type="button" 
-                                            @click="initPreview(submissions[{{ $subId }}].attachment_url, submissions[{{ $subId }}].original_name, 'Jawaban dari: ' + submissions[{{ $subId }}].student_name)" 
+                                            @click="initPreview(submissions[{{ $subId }}].preview_url, submissions[{{ $subId }}].original_name, 'Jawaban dari: ' + submissions[{{ $subId }}].student_name)" 
                                             class="inline-flex items-center justify-center gap-1 px-4 py-2 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm">
                                             <i class="fas fa-eye mr-1"></i> Pratinjau
                                         </button>
@@ -1066,6 +1071,7 @@
                             feedback: '{{ $monitor->submission->grade ? addslashes($monitor->submission->grade->feedback) : '' }}',
                             original_name: '{{ addslashes($monitor->submission->original_name) }}',
                             attachment_url: '{{ $monitor->submission->attachment_url }}',
+                            preview_url: '{{ $monitor->submission->preview_url }}',
                             student_name: '{{ addslashes($monitor->student->name) }}'
                         },
                     @endif

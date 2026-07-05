@@ -14,10 +14,10 @@
     @endif
 
     {{-- Page Header --}}
-    <div class="tg-page-header">
+    <div class="tg-page-header" style="margin-bottom: 16px;">
         <div>
-            <h1 class="tg-page-title">Tugas & Evaluasi</h1>
-            <p class="tg-page-sub">Kelola tugas berdasarkan mata pelajaran dan kelas yang Anda ampu.</p>
+            <h1 class="tg-page-title">Tugas Pembelajaran</h1>
+            <p class="tg-page-sub">Kelola tugas berdasarkan kelas yang Anda ampu.</p>
         </div>
     </div>
 
