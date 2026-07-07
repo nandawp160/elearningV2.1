@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\MataPelajaranController;
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\MasterKelasController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\TugasController;
 use App\Http\Controllers\MateriController;
@@ -75,6 +76,13 @@ Route::get('teachers/{teacher}/resolved-subjects', [GuruController::class, 'getR
 // Classrooms Management
 Route::get('rolling-kelas', [KelasController::class, 'rollingIndex'])->name('rolling-kelas.index');
 Route::post('rolling-kelas', [KelasController::class, 'rollingStore'])->name('rolling-kelas.store');
+
+// Master Kelas Management
+Route::get('master-classes/export', [MasterKelasController::class, 'exportExcel'])->name('master-classes.export');
+Route::resource('master-classes', MasterKelasController::class);
+
+// Classrooms Management
+Route::post('classrooms/generate', [KelasController::class, 'generateFromMaster'])->name('classrooms.generate');
 Route::post('classrooms/import', [KelasController::class, 'import'])->name('classrooms.import');
 Route::post('classrooms/clone', [KelasController::class, 'clone'])->name('classrooms.clone');
 Route::resource('classrooms', KelasController::class);

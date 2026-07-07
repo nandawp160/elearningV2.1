@@ -331,7 +331,7 @@ if (!function_exists('isActive')) {
                 </div>
                 <li>
                     <a href="{{ route('academic-years.index') }}"
-                       class="sidebar-link flex items-center justify-between px-4 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ request()->routeIs('academic-years.*') ? 'active' : '' }}">
+                       class="sidebar-link flex items-center justify-between px-4 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ request()->routeIs('academic-years.*') || request()->routeIs('classrooms.*') || request()->routeIs('homeroom-setup.*') ? 'active' : '' }}">
                         <div class="flex items-center gap-3.5">
                             <i class="fas fa-calendar-alt w-5 text-center"></i>
                             Tahun Ajaran
@@ -360,11 +360,11 @@ if (!function_exists('isActive')) {
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('classrooms.index') }}"
-                       class="sidebar-link flex items-center justify-between px-4 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ request()->routeIs('classrooms.*') || request()->routeIs('homeroom-setup.*') ? 'active' : '' }}">
+                    <a href="{{ route('master-classes.index') }}"
+                       class="sidebar-link flex items-center justify-between px-4 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ request()->routeIs('master-classes.*') ? 'active' : '' }}">
                         <div class="flex items-center gap-3.5">
-                            <i class="fas fa-chalkboard w-5 text-center"></i>
-                            Kelas
+                            <i class="fas fa-sitemap w-5 text-center"></i>
+                            Master Kelas
                         </div>
                         <i class="fas fa-chevron-right text-[9px] opacity-40"></i>
                     </a>

@@ -74,6 +74,35 @@ class KelasController extends Controller
         return view('kelas.index', compact('classrooms', 'academicYears', 'selectedYear', 'emptyClasses', 'availableTeachers'));
     }
 
+    public function generateFromMaster(Request $request)
+    {
+        Gate::authorize('create_kelas');
+        
+        $targetYear = $request->input('target_year', \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026'));
+        $masterClasses = \App\Models\MasterKelas::all();
+        
+        $createdCount = 0;
+        foreach ($masterClasses as $master) {
+            $exists = Kelas::withoutGlobalScopes()
+                           ->where('academic_year', $targetYear)
+                           ->where('name', $master->name)
+                           ->exists();
+                           
+            if (!$exists) {
+                Kelas::create([
+                    'name' => $master->name,
+                    'grade_level' => $master->grade_level,
+                    'major' => $master->major,
+                    'academic_year' => $targetYear,
+                    'max_students' => 36,
+                ]);
+                $createdCount++;
+            }
+        }
+        
+        return redirect()->back()->with('success', "Berhasil me-generate $createdCount rombel baru untuk Tahun Ajaran $targetYear dari Master Kelas.");
+    }
+
     public function create()
     {
         Gate::authorize('create_kelas');
@@ -203,31 +232,17 @@ class KelasController extends Controller
         Gate::authorize('edit_kelas');
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:kelas,name,' . $classroom->id,
-            'tingkat' => 'required|in:X,XI,XII',
-            'jurusan' => 'required|in:Fase E,Fase F,IPA,IPS,Bahasa',
             'homeroom_teacher_id' => 'nullable|exists:guru,id',
-            'tahunAjaran' => ['required', 'regex:/^\d{4}\/\d{4}$/'],
             'kapasitasMaksimal' => 'required|integer|min:1|max:50',
         ], [
-            'name.required' => 'Nama kelas harus diisi',
-            'name.unique' => 'Nama kelas sudah terdaftar',
-            'tingkat.required' => 'Tingkat kelas harus dipilih',
-            'jurusan.required' => 'Fase Kurikulum harus dipilih',
             'homeroom_teacher_id.exists' => 'Guru yang dipilih tidak valid',
-            'tahunAjaran.required' => 'Tahun ajaran harus diisi',
-            'tahunAjaran.regex' => 'Format tahun ajaran harus YYYY/YYYY (contoh: 2024/2025)',
             'kapasitasMaksimal.required' => 'Kapasitas maksimal harus diisi',
             'kapasitasMaksimal.min' => 'Kapasitas minimal adalah 1 siswa',
             'kapasitasMaksimal.max' => 'Kapasitas maksimal adalah 50 siswa',
         ]);
 
         $classroom->update([
-            'name' => $validated['name'],
-            'grade_level' => $validated['tingkat'],
-            'major' => $validated['jurusan'],
             'homeroom_teacher_id' => $validated['homeroom_teacher_id'] ?? null,
-            'academic_year' => $validated['tahunAjaran'],
             'max_students' => $validated['kapasitasMaksimal'],
         ]);
 

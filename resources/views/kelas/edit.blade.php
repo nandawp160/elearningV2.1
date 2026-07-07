@@ -25,7 +25,7 @@
             <!-- Baris 1: namaKelas -->
             <div>
                 <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Kelas *</label>
-                <input type="text" id="inputNamaKelas" name="namaKelas" value="{{ old('namaKelas', $classroom->name) }}" required placeholder="Contoh: X IPA 1" class="w-full rounded-xl border @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 @else border-slate-200 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 @enderror bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
+                <input type="text" id="inputNamaKelas" name="namaKelas" value="{{ old('namaKelas', $classroom->name) }}" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" />
                 @error('name')
                     <p class="text-rose-500 text-xs mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>
                 @enderror
@@ -37,7 +37,7 @@
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tingkat Kelas *</label>
                     <div class="relative">
-                        <select name="tingkat" required class="w-full rounded-xl border @error('tingkat') border-rose-500 focus:border-rose-500 @else border-slate-200 focus:border-[#D65A20] focus:ring-[#D65A20]/20 @enderror bg-white px-4 py-2.5 text-xs text-slate-700 appearance-none focus:ring-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
+                        <select name="tingkat" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed appearance-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
                             <option value="">Pilih Tingkat</option>
                             <option value="X" {{ old('tingkat', $classroom->tingkat) == 'X' ? 'selected' : '' }}>Kelas X</option>
                             <option value="XI" {{ old('tingkat', $classroom->tingkat) == 'XI' ? 'selected' : '' }}>Kelas XI</option>
@@ -56,7 +56,7 @@
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Fase Kurikulum *</label>
                     <div class="relative">
-                        <select name="jurusan" required class="w-full rounded-xl border @error('jurusan') border-rose-500 focus:border-rose-500 @else border-slate-200 focus:border-[#D65A20] focus:ring-[#D65A20]/20 @enderror bg-white px-4 py-2.5 text-xs text-slate-700 appearance-none focus:ring-2 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
+                        <select name="jurusan" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed appearance-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
                             <option value="">Pilih Fase</option>
                             <option value="Fase E" {{ old('jurusan', $classroom->jurusan) == 'Fase E' ? 'selected' : '' }}>Fase E (Umum - Kelas X)</option>
                             <option value="Fase F" {{ old('jurusan', $classroom->jurusan) == 'Fase F' ? 'selected' : '' }}>Fase F (Pilihan - Kelas XI & XII)</option>
@@ -101,7 +101,7 @@
                 <!-- Tahun Ajaran -->
                 <div>
                     <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tahun Ajaran *</label>
-                    <input type="text" name="tahunAjaran" value="{{ old('tahunAjaran', $classroom->tahunAjaran) }}" required class="w-full rounded-xl border @error('tahunAjaran') border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 @else border-slate-200 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 @enderror bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" placeholder="Contoh: 2025/2026" />
+                    <input type="text" name="tahunAjaran" value="{{ old('tahunAjaran', $classroom->tahunAjaran) }}" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400" placeholder="Contoh: 2025/2026" />
                     @error('tahunAjaran')
                         <p class="text-rose-500 text-xs mt-1"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>
                     @enderror

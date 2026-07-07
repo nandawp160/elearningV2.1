@@ -119,6 +119,16 @@
 </div>
 @endif
 
+<!-- Tab Navigation for Tahun Ajaran & Rombel -->
+<div class="flex border-b border-slate-200 dark:border-slate-800 gap-2 mb-6">
+    <a href="{{ route('academic-years.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition">
+        ⚙️ Pengaturan Tahun Ajaran
+    </a>
+    <a href="{{ route('classrooms.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition">
+        🏫 Rombel Aktif
+    </a>
+</div>
+
 <div class="flex flex-col gap-6" style="height: calc(100vh - 152px);"> <!-- 152px is approx padding top & bottom from layout -->
     <!-- Static Header & Summary Cards Container -->
     <div class="flex-shrink-0 space-y-6">
@@ -262,11 +272,15 @@
                 </div>
 
                 @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('admin'))
-                <!-- Tambah Manual -->
-                <button type="button" onclick="openAddModal()" class="btn btn-orange-solid font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/15 transition flex items-center gap-2 text-xs">
-                    <i class="fas fa-plus"></i>
-                    <span>Tambah Kelas</span>
-                </button>
+                <!-- Generate Rombel -->
+                <form action="{{ route('classrooms.generate') }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin men-generate Rombel dari Master Kelas untuk Tahun Ajaran yang sedang tampil?')">
+                    @csrf
+                    <input type="hidden" name="target_year" value="{{ $selectedYear }}">
+                    <button type="submit" class="btn btn-orange-solid font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/15 transition flex items-center gap-2 text-xs">
+                        <i class="fas fa-magic"></i>
+                        <span>Generate dari Master</span>
+                    </button>
+                </form>
                 @endif
             </div>
         </div>

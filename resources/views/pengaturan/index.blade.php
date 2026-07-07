@@ -70,6 +70,16 @@
     @endif
 
     @if(isset($active_page) && $active_page === 'academic-year')
+    <!-- Tab Navigation for Tahun Ajaran & Rombel -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 gap-2 mb-6">
+        <a href="{{ route('academic-years.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition">
+            ⚙️ Pengaturan Tahun Ajaran
+        </a>
+        <a href="{{ route('classrooms.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition">
+            🏫 Rombel Aktif
+        </a>
+    </div>
+
     <div class="space-y-6">
         <!-- Section 1: Periode Aktif & Form -->
         <!-- Section 1A: Periode Aktif Global -->
