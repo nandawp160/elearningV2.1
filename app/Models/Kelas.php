@@ -52,7 +52,7 @@ class Kelas extends Model
 
     public function getMaxStudentsAttribute($value)
     {
-        return $value ?? 40;
+        return $value ?? 36;
     }
 
     public function getAcademicYearAttribute($value)
@@ -102,12 +102,22 @@ class Kelas extends Model
     // Relationship: Class has many subjects (for scheduling)
     public function subjects()
     {
-        return $this->hasMany(JadwalPelajaran::class, 'tingkat', 'grade_level');
+        return $this->belongsToMany(
+            JadwalPelajaran::class,
+            'guru_kelas',
+            'kelas_id',
+            'mata_pelajaran_id'
+        )->distinct();
     }
 
     public function mataPelajaran()
     {
-        return $this->hasMany(JadwalPelajaran::class, 'tingkat', 'grade_level');
+        return $this->belongsToMany(
+            JadwalPelajaran::class,
+            'guru_kelas',
+            'kelas_id',
+            'mata_pelajaran_id'
+        )->distinct();
     }
 
     // Accessors & Mutators for Indonesian nomenclature

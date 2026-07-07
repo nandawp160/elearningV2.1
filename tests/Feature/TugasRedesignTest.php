@@ -291,7 +291,8 @@ class TugasRedesignTest extends TestCase
 
         // 4. Toggle correction status (first toggle: mark as corrected)
         $response = $this->actingAs($teacher)->post(route('submissions.toggle-koreksi', $submission), [
-            'feedback' => 'Selesai dengan catatan Bagus!'
+            'nilai' => 100,
+            'catatan' => 'Selesai dengan catatan Bagus!'
         ]);
         $response->assertStatus(302); // Redirects back
         
@@ -359,7 +360,7 @@ class TugasRedesignTest extends TestCase
         // 4. Toggle via AJAX (first toggle: mark as completed/graded)
         $response = $this->actingAs($teacher)->postJson(
             route('submissions.toggle-koreksi', $submission),
-            ['feedback' => 'Sangat rapi!']
+            ['nilai' => 100, 'catatan' => 'Sangat rapi!']
         );
         $response->assertStatus(200);
         $response->assertJson([

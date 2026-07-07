@@ -57,6 +57,7 @@ Route::post('students/auto-plot', [SiswaController::class, 'autoPlot'])->name('s
 Route::get('students/by-classes', [SiswaController::class, 'getByClasses'])->name('students.by-classes');
 Route::post('students/bulk-graduate', [SiswaController::class, 'bulkGraduate'])->name('students.bulk-graduate');
 Route::post('students/bulk-promote', [SiswaController::class, 'bulkPromote'])->name('students.bulk-promote');
+Route::post('students/promote-students', [SiswaController::class, 'promoteStudents'])->name('students.promote-students');
 Route::post('students/{student}/mutasi', [SiswaController::class, 'prosesMutasiKeluar'])->name('students.mutasi');
 Route::resource('students', SiswaController::class);
 
@@ -124,6 +125,7 @@ Route::resource('grades', NilaiController::class)->except(['create', 'store', 'e
         Route::get('homeroom/attendance', [WaliKelasController::class, 'attendance'])->name('homeroom.attendance');
         Route::get('homeroom/rekap-nilai', [WaliKelasController::class, 'rekapNilai'])->name('homeroom.rekap_nilai');
         Route::get('homeroom/leger-nilai', [WaliKelasController::class, 'legerNilai'])->name('homeroom.leger_nilai');
+        Route::get('homeroom/leger-nilai/export', [WaliKelasController::class, 'exportLegerMentahExcel'])->name('homeroom.leger_nilai.export');
         Route::get('homeroom/rekap-nilai/export', [WaliKelasController::class, 'exportLegerExcel'])->name('homeroom.rekap_nilai.export');
         Route::get('homeroom/appeals', [WaliKelasController::class, 'appeals'])->name('homeroom.appeals');
         Route::get('homeroom/academic-chart', [WaliKelasController::class, 'academicChart'])->name('homeroom.academic_chart');
@@ -156,7 +158,8 @@ Route::get('/reports/system', [LaporanController::class, 'system'])->name('repor
 Route::middleware(['is.superadmin'])->group(function () {
     Route::get('/settings', [PengaturanController::class, 'index'])->name('settings.index');
     Route::post('/settings', [PengaturanController::class, 'update'])->name('settings.update');
-    Route::post('/settings/unlock-maintenance', [PengaturanController::class, 'unlockMaintenance'])->name('settings.unlock-maintenance');
+    Route::post('/settings/admin-view-year', [PengaturanController::class, 'changeAdminViewYear'])->name('settings.admin-view-year');
+    Route::post('/settings/global-active-year', [PengaturanController::class, 'setGlobalActiveYear'])->name('settings.global-active-year');    Route::post('/settings/unlock-maintenance', [PengaturanController::class, 'unlockMaintenance'])->name('settings.unlock-maintenance');
     Route::post('/settings/lock-maintenance', [PengaturanController::class, 'lockMaintenance'])->name('settings.lock-maintenance');
     Route::post('/settings/add-academic-year', [PengaturanController::class, 'addAcademicYear'])->name('settings.add-academic-year');
     Route::post('/settings/delete-academic-year', [PengaturanController::class, 'deleteAcademicYear'])->name('settings.delete-academic-year');
@@ -188,7 +191,8 @@ Route::middleware(['is.superadmin'])->group(function () {
     Route::post('/permissions/lock', [PengaturanController::class, 'lockPermissions'])->name('permissions.lock');
     Route::get('/activity-logs', [PengaturanController::class, 'activityLogs'])->name('activity-logs.index');
     
-    Route::get('/academic-years', function() { return "Halaman Tahun Ajaran (Placeholder)"; })->name('academic-years.index');
+    Route::get('/academic-years', [PengaturanController::class, 'index'])->name('academic-years.index');
+    Route::get('/academic-years/archive-detail/{year}', [PengaturanController::class, 'archiveDetail'])->name('academic-years.archive-detail');
     
     Route::get('/teaching-assignments', [TeachingAssignmentController::class, 'index'])->name('teaching-assignments.index');
     Route::post('/teaching-assignments', [TeachingAssignmentController::class, 'store'])->name('teaching-assignments.store');

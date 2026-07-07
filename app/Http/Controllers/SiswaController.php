@@ -722,9 +722,41 @@ class SiswaController extends Controller
             $totalPromoted = 0;
             $logDetails = [];
 
+            // Pre-calculate how many students are moving OUT of each class in this batch
+            $movingOutCounts = [];
+            foreach ($mappings as $map) {
+                $asal = $map['asal'];
+                $movingOutCounts[$asal] = Siswa::where('kelas', $asal)->active()->count();
+            }
+
+            // Group mappings by target class to calculate projected capacity
+            $targetCounts = [];
             foreach ($mappings as $map) {
                 $asal = $map['asal'];
                 $tujuan = $map['tujuan'];
+                
+                $studentsToMove = $movingOutCounts[$asal];
+                if (!isset($targetCounts[$tujuan])) {
+                    // Current in DB MINUS students moving out in this same batch
+                    $currentInDb = Siswa::where('kelas', $tujuan)->active()->count();
+                    $movingOut = isset($movingOutCounts[$tujuan]) ? $movingOutCounts[$tujuan] : 0;
+                    $targetCounts[$tujuan] = max(0, $currentInDb - $movingOut);
+                }
+                
+                // Kapasitas default adalah 36
+                $kapasitas = 36;
+                $kelasObj = \App\Models\Kelas::where('name', $tujuan)->first();
+                if ($kelasObj && $kelasObj->max_students) {
+                    $kapasitas = $kelasObj->max_students;
+                }
+
+                if (($targetCounts[$tujuan] + $studentsToMove) > $kapasitas) {
+                    DB::rollBack();
+                    return redirect()->route('students.index')->with('error', "Gagal: Kapasitas kelas $tujuan tidak mencukupi untuk menampung tambahan $studentsToMove siswa dari $asal. (Maksimal: $kapasitas)");
+                }
+                
+                // Update tracker
+                $targetCounts[$tujuan] += $studentsToMove;
 
                 $updated = Siswa::where('kelas', $asal)->active()->update([
                     'kelas' => $tujuan
@@ -745,6 +777,52 @@ class SiswaController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal menaikkan kelas siswa: ' . $e->getMessage());
+        }
+    }
+
+    public function promoteStudents(Request $request)
+    {
+        Gate::authorize('edit_siswa');
+
+        $request->validate([
+            'id_siswa' => 'required|array',
+            'id_siswa.*' => 'exists:siswa,id',
+            'tujuan' => 'required|array',
+            'tujuan.*' => 'nullable|string',
+        ]);
+
+        $promotedCount = 0;
+        
+        try {
+            DB::beginTransaction();
+
+            $idSiswas = $request->input('id_siswa');
+            $tujuans = $request->input('tujuan');
+
+            foreach ($idSiswas as $id) {
+                if (!empty($tujuans[$id])) {
+                    $student = Siswa::find($id);
+                    if ($student && $student->status === 'active') {
+                        $kelasLama = $student->kelas;
+                        $kelasBaru = $tujuans[$id];
+                        
+                        $student->update([
+                            'kelas' => $kelasBaru
+                        ]);
+                        $promotedCount++;
+                    }
+                }
+            }
+
+            if ($promotedCount > 0) {
+                \App\Models\ActivityLog::log('STUDENT', 'Melakukan penjurusan/kenaikan kelas X ke XI untuk ' . $promotedCount . ' siswa.');
+            }
+
+            DB::commit();
+            return redirect()->route('students.index')->with('success', "$promotedCount siswa berhasil dipetakan ke kelas barunya.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal memproses penjurusan siswa: ' . $e->getMessage());
         }
     }
 

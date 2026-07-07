@@ -43,7 +43,7 @@ class WaliKelasController extends Controller
         $averageGrade = $averageGrade ? round($averageGrade, 1) : 84.5;
 
         $gradeLevel = $classRoom->grade_level;
-        $overdueAssignmentsQuery = \App\Models\Tugas::tugas()
+        $overdueAssignmentsQuery = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
             ->whereHas('subject', function($q) use ($gradeLevel) {
@@ -107,7 +107,7 @@ class WaliKelasController extends Controller
         $sslPathCount = 0;
         $blockedCount = 0;
 
-        $allClassAssignments = \App\Models\Tugas::tugas()
+        $allClassAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->whereHas('subject', function($q) use ($gradeLevel) {
                 $q->where('tingkat', $gradeLevel);
@@ -159,34 +159,6 @@ class WaliKelasController extends Controller
         $sslHeight = max(4, round(($sslPercent / 100) * 150));
         $blockedHeight = max(4, round(($blockedPercent / 100) * 150));
 
-        // Mock data fallback if no real data exists to match the high-fidelity design mockup
-        if ($ewsStudents->isEmpty() && count($students) > 0) {
-            $ewsStudents->push((object)[
-                'name' => $students->get(0)->nama ?? 'Siswa 1',
-                'tunggakan_count' => 4,
-                'subject_name' => 'B. Indonesia',
-                'appeal_status' => 'Menunggu Guru'
-            ]);
-            if (count($students) > 1) {
-                $ewsStudents->push((object)[
-                    'name' => $students->get(1)->nama ?? 'Siswa 2',
-                    'tunggakan_count' => 5,
-                    'subject_name' => 'Kimia',
-                    'appeal_status' => 'Banding Ditolak'
-                ]);
-            }
-            if (count($students) > 2) {
-                $ewsStudents->push((object)[
-                    'name' => $students->get(2)->nama ?? 'Siswa 3',
-                    'tunggakan_count' => 4,
-                    'subject_name' => 'Mat. Wajib',
-                    'appeal_status' => 'Belum Mengajukan'
-                ]);
-            }
-            if ($totalSslLockedCount === 0) {
-                $totalSslLockedCount = 3;
-            }
-        }
 
         return view('wali_kelas.dashboard', compact(
             'classRoom', 
@@ -249,7 +221,7 @@ class WaliKelasController extends Controller
         $gradeLevel = $classRoom->grade_level;
 
         // Ambil daftar tugas yang sudah lewat batas waktu (overdue)
-        $overdueAssignments = \App\Models\Tugas::tugas()
+        $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
             ->whereHas('subject', function($q) use ($gradeLevel) {
@@ -327,7 +299,7 @@ class WaliKelasController extends Controller
         $gradeLevel = $classRoom->grade_level;
 
         // Ambil daftar tugas yang sudah lewat batas waktu (overdue)
-        $overdueAssignments = \App\Models\Tugas::tugas()
+        $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
             ->whereHas('subject', function($q) use ($gradeLevel) {
@@ -549,7 +521,7 @@ class WaliKelasController extends Controller
         $gradeLevel = $classRoom->grade_level;
 
         // Fetch overdue assignments for the class grade level
-        $overdueAssignments = \App\Models\Tugas::tugas()
+        $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
             ->whereHas('subject', function($q) use ($gradeLevel) {
@@ -657,7 +629,7 @@ class WaliKelasController extends Controller
         $gradeLevel = $classRoom->grade_level;
 
         // Fetch overdue assignments for the class grade level
-        $overdueAssignments = \App\Models\Tugas::tugas()
+        $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
             ->whereHas('subject', function($q) use ($gradeLevel) {
@@ -762,7 +734,7 @@ class WaliKelasController extends Controller
         $students = $classRoom->daftarSiswa()->get();
         $gradeLevel = $classRoom->grade_level;
 
-        $overdueAssignments = \App\Models\Tugas::tugas()
+        $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
             ->whereHas('subject', function($q) use ($gradeLevel) {
@@ -974,7 +946,7 @@ class WaliKelasController extends Controller
         $subjects = $classRoom->mataPelajaran()->with(['course'])->get();
 
         // Ambil semua tugas aktif untuk tingkat kelas ini
-        $assignments = \App\Models\Tugas::tugas()
+        $assignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->whereHas('subject', function($q) use ($gradeLevel) {
                 $q->where('tingkat', $gradeLevel);
@@ -1022,5 +994,239 @@ class WaliKelasController extends Controller
         }
 
         return view('wali_kelas.leger_nilai', compact('classRoom', 'subjects', 'assignmentsBySubject', 'students', 'submissionMap', 'search', 'totalAssignments'));
+    }
+
+    public function exportLegerMentahExcel(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user->isHomeroomTeacher() && !$user->isSuperAdmin()) {
+            abort(403);
+        }
+
+        $classRoom = \App\Models\Kelas::where('homeroom_teacher_id', $user->teacher_id)->first();
+        if (!$classRoom && $user->isSuperAdmin()) {
+            $classRoom = \App\Models\Kelas::first();
+        }
+
+        if (!$classRoom) {
+            abort(404, 'Kelas tidak ditemukan.');
+        }
+
+        $gradeLevel = $classRoom->grade_level;
+        $subjects = $classRoom->mataPelajaran()->with(['course'])->get();
+
+        $assignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
+            ->where('status', 'aktif')
+            ->whereHas('subject', function($q) use ($gradeLevel) {
+                $q->where('tingkat', $gradeLevel);
+            })
+            ->get();
+
+        $assignmentsBySubject = [];
+        foreach ($subjects as $subject) {
+            $assignmentsBySubject[$subject->id] = $assignments->where('mata_pelajaran_id', $subject->id)->sortBy('created_at')->values();
+        }
+
+        $students = $classRoom->daftarSiswa()->get();
+        
+        $studentIds = $students->pluck('id');
+        $assignmentIds = $assignments->pluck('id');
+        
+        $submissions = \App\Models\Pengumpulan::with('grade')
+            ->whereIn('siswa_id', $studentIds)
+            ->whereIn('tugas_id', $assignmentIds)
+            ->get();
+
+        $submissionMap = [];
+        foreach ($submissions as $sub) {
+            $score = '-';
+            if ($sub->grade) {
+                $score = round((float) $sub->grade->score);
+            } else if (in_array($sub->status, ['submitted', 'terkumpul', 'late', 'terlambat'])) {
+                $score = 'Dinilai...'; 
+            }
+            $submissionMap[$sub->siswa_id][$sub->tugas_id] = $score;
+        }
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $spreadsheet->removeSheetByIndex(0);
+
+        foreach ($subjects as $subject) {
+            $sheet = $spreadsheet->createSheet();
+            $sheetName = substr(preg_replace('/[^a-zA-Z0-9\-_ ]/', '', $subject->course->nama), 0, 31);
+            if (empty($sheetName)) $sheetName = "Mapel " . $subject->id;
+            $sheet->setTitle($sheetName);
+
+            // Judul Laporan & Metadata
+            $sheet->setCellValue('A1', 'LEGER NILAI TUGAS SISWA - ' . strtoupper($subject->course->nama));
+            
+            $assignmentCount = count($assignmentsBySubject[$subject->id]);
+            $colCount = 3 + ($assignmentCount > 0 ? $assignmentCount : 1);
+            $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount);
+            
+            // Ensure title has enough space to not be cut off (merge at least 7 columns)
+            $headerMergeCount = max($colCount, 7);
+            $headerMergeLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($headerMergeCount);
+            
+            $sheet->mergeCells("A1:{$headerMergeLetter}1");
+            $sheet->getStyle('A1')->getFont()->setName('Arial')->setSize(14)->setBold(true);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->setCellValue('A2', 'Kelas: ' . $classRoom->name . ' | Tahun Ajaran: ' . $classRoom->academic_year);
+            $sheet->mergeCells("A2:{$headerMergeLetter}2");
+            $sheet->getStyle('A2')->getFont()->setName('Arial')->setSize(11)->setItalic(true);
+            $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $sheet->setCellValue('A3', 'Wali Kelas: ' . $user->name . ' | Diekspor pada: ' . date('d-m-Y H:i') . ' WIB');
+            $sheet->mergeCells("A3:{$headerMergeLetter}3");
+            $sheet->getStyle('A3')->getFont()->setName('Arial')->setSize(10);
+            $sheet->getStyle('A3')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            // Header Tabel
+            $headers = ["NO", "NIS", "NAMA SISWA"];
+            if ($assignmentCount > 0) {
+                foreach ($assignmentsBySubject[$subject->id] as $idx => $assignment) {
+                    $headers[] = "TGS " . ($idx + 1);
+                }
+            } else {
+                $headers[] = "BELUM ADA TUGAS";
+            }
+
+            $sheet->fromArray($headers, null, 'A5');
+
+            $headerStyle = [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => 'FFFFFF'],
+                    'name' => 'Arial',
+                    'size' => 10
+                ],
+                'alignment' => [
+                    'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                    'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                ],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => '475569'] // Slate 600 (Abu-abu Formal)
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => '1E293B'] // Slate 800 (Batas Gelap)
+                    ]
+                ]
+            ];
+            $sheet->getStyle("A5:{$lastColLetter}5")->applyFromArray($headerStyle);
+            $sheet->getRowDimension(5)->setRowHeight(25);
+
+            // Isi Data
+            $row = 6;
+            $idx = 1;
+            foreach ($students as $student) {
+                $rowData = [$idx++, $student->nis, $student->nama];
+                
+                if ($assignmentCount > 0) {
+                    foreach ($assignmentsBySubject[$subject->id] as $assignment) {
+                        $score = $submissionMap[$student->id][$assignment->id] ?? '-';
+                        $rowData[] = $score;
+                    }
+                } else {
+                    $rowData[] = "-";
+                }
+                
+                $sheet->fromArray($rowData, null, "A{$row}");
+
+                // Row Styling
+                $rowStyle = [
+                    'font' => ['name' => 'Arial', 'size' => 10],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => 'E2E8F0']
+                        ]
+                    ],
+                    'alignment' => [
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                    ]
+                ];
+                $sheet->getStyle("A{$row}:{$lastColLetter}{$row}")->applyFromArray($rowStyle);
+                $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                
+                if ($assignmentCount > 0) {
+                    $colIndex = 4;
+                    foreach ($assignmentsBySubject[$subject->id] as $assignment) {
+                        $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                        $sheet->getStyle($colLetter . $row)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                        
+                        $score = $submissionMap[$student->id][$assignment->id] ?? '-';
+                        if ($score === 'Dinilai...') {
+                            $sheet->getStyle($colLetter . $row)->getFont()->getColor()->setRGB('F59E0B');
+                        } elseif (is_numeric($score)) {
+                            if ($score < 75) {
+                                $sheet->getStyle($colLetter . $row)->getFont()->getColor()->setRGB('EF4444');
+                            } elseif ($score >= 85) {
+                                $sheet->getStyle($colLetter . $row)->getFont()->getColor()->setRGB('10B981');
+                            } else {
+                                $sheet->getStyle($colLetter . $row)->getFont()->getColor()->setRGB('F59E0B');
+                            }
+                            $sheet->getStyle($colLetter . $row)->getFont()->setBold(true);
+                        } else {
+                            $sheet->getStyle($colLetter . $row)->getFont()->getColor()->setRGB('94A3B8');
+                        }
+                        
+                        $colIndex++;
+                    }
+                } else {
+                    $sheet->getStyle("D{$row}")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle("D{$row}")->getFont()->getColor()->setRGB('94A3B8');
+                }
+
+                if ($row % 2 === 0) {
+                    $sheet->getStyle("A{$row}:{$lastColLetter}{$row}")->getFill()->applyFromArray([
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F8FAFC']
+                    ]);
+                }
+                
+                $sheet->getRowDimension($row)->setRowHeight(20);
+                $row++;
+            }
+            
+            for ($i = 1; $i <= $colCount; $i++) {
+                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+                $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+            }
+        }
+        
+        if ($spreadsheet->getSheetCount() == 0) {
+            $sheet = $spreadsheet->createSheet();
+            $sheet->setTitle("Data Kosong");
+            $sheet->setCellValue('A1', "BELUM ADA MATA PELAJARAN");
+        }
+        
+        $spreadsheet->setActiveSheetIndex(0);
+
+        $filename = "leger_nilai_tugas_" . strtolower(str_replace(' ', '_', $classRoom->name)) . "_" . date('Ymd_His') . ".xlsx";
+
+        $headers = [
+            "Content-Type"        => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "Content-Disposition" => "attachment; filename=\"$filename\"",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+
+        $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+        $callback = function() use ($writer) {
+            $writer->save('php://output');
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

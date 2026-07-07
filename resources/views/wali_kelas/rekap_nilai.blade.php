@@ -165,41 +165,34 @@
 
     <!-- Table Card -->
     <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full border-collapse">
-                <thead>
-                    <tr class="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/80">
-                        <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center w-16">NO</th>
-                        <th class="px-6 py-4 text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-left min-w-64">NAMA SISWA</th>
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 600px;">
+            <table class="w-full border-collapse border border-slate-300 dark:border-slate-700 text-[10px] sm:text-xs">
+                <thead class="sticky top-0 z-10">
+                    <tr class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <th class="border border-slate-300 dark:border-slate-700 px-2 py-2 text-center font-bold w-12 shadow-sm">NO</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold min-w-48 shadow-sm">NAMA SISWA</th>
                         @foreach($subjects as $subject)
-                        <th class="px-4 py-4 text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-center">
+                        <th class="border border-slate-300 dark:border-slate-700 px-2 py-2 text-center font-bold w-20 shadow-sm" title="{{ $subject->course->nama }}">
                             {{ strtoupper(substr($subject->course->nama, 0, 10)) }}
                         </th>
                         @endforeach
                         <!-- Vertical Border Separator & Total header -->
-                        <th class="px-8 py-4 text-[11px] font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider text-center border-l-2 border-slate-200 dark:border-slate-800 min-w-52">
-                            <span class="block">TOTAL TUNGGAKAN</span>
-                            <span class="text-[9px] text-slate-400 dark:text-slate-550 block font-bold tracking-widest mt-0.5">AKUMULASI</span>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold bg-slate-200 dark:bg-slate-700 w-28 shadow-sm">
+                            <span class="block">AKUMULASI</span>
+                            <span class="text-[9px] text-slate-500 dark:text-slate-400 block tracking-widest mt-0.5">KASUS (LOCK)</span>
                         </th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($studentsData as $idx => $data)
-                    <tr class="hover:bg-slate-50/40 dark:hover:bg-slate-800/20 transition even:bg-slate-50/10 dark:even:bg-slate-900/5">
+                    <tr class="hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300">
                         <!-- Number -->
-                        <td class="px-6 py-4 text-xs font-semibold text-slate-500 text-center">{{ $idx + 1 }}</td>
+                        <td class="border border-slate-300 dark:border-slate-700 px-2 py-1.5 text-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">{{ $idx + 1 }}</td>
                         
                         <!-- Student Profile -->
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-950 flex items-center justify-center text-slate-600 dark:text-slate-350 font-bold text-xs">
-                                    {{ substr($data->student->nama, 0, 1) }}
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-800 dark:text-white leading-snug">{{ $data->student->nama }}</p>
-                                    <p class="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">{{ $data->student->nis }}</p>
-                                </div>
-                            </div>
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5">
+                            <span class="font-bold text-slate-800 dark:text-white">{{ $data->student->nama }}</span>
+                            <span class="font-mono text-[9px] sm:text-[10px] font-semibold text-slate-400 dark:text-slate-500 ml-2 block sm:inline">NIS. {{ $data->student->nis }}</span>
                         </td>
 
                         <!-- Subject Overdue Columns -->
@@ -209,43 +202,43 @@
                                 $tunggakan = $subjectData['count'];
                                 $hasAssignments = $subjectData['has_assignments'];
                             @endphp
-                            <td class="px-4 py-4 text-center">
+                            <td class="border border-slate-300 dark:border-slate-700 px-2 py-1.5 text-center">
                                 @if(!$hasAssignments)
-                                    <span class="text-slate-400 dark:text-slate-500 text-xs italic font-medium">Tidak Ada Tugas</span>
+                                    <span class="text-slate-300 dark:text-slate-600 text-[10px] sm:text-xs italic">-</span>
                                 @elseif($tunggakan === 0)
-                                    <span class="text-emerald-500 dark:text-emerald-400 font-extrabold text-xs">Aman</span>
+                                    <span class="text-emerald-500 dark:text-emerald-400 font-extrabold text-[10px] sm:text-xs">✔</span>
                                 @elseif($tunggakan >= 3)
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-450 border border-rose-250 dark:border-rose-900/30">
-                                        {{ $tunggakan }} Tertunda
+                                    <span class="text-rose-600 dark:text-rose-450 font-black text-[10px] sm:text-xs">
+                                        {{ $tunggakan }}
                                     </span>
                                 @else
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-450 border border-amber-250 dark:border-amber-900/30">
-                                        {{ $tunggakan }} Tertunda
+                                    <span class="text-amber-600 dark:text-amber-450 font-black text-[10px] sm:text-xs">
+                                        {{ $tunggakan }}
                                     </span>
                                 @endif
                             </td>
                         @endforeach
 
                         <!-- Total Overdue Column (Vertical divider) -->
-                        <td class="px-8 py-4 text-center border-l-2 border-slate-200 dark:border-slate-800">
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center bg-slate-50/50 dark:bg-slate-800/50">
                             @if($data->total_lock === 0)
-                                <span class="inline-block px-5 py-1.5 rounded-full text-xs font-black bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-450 border border-emerald-300 dark:border-emerald-900/50">
-                                    0 Kasus
+                                <span class="font-bold text-emerald-600 dark:text-emerald-450 text-[10px] sm:text-xs">
+                                    0
                                 </span>
                             @elseif($data->total_lock >= 3)
-                                <span class="inline-block px-5 py-1.5 rounded-full text-xs font-black bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-450 border border-rose-300 dark:border-rose-900/50">
-                                    {{ $data->total_lock }} Kasus
+                                <span class="font-bold text-rose-600 dark:text-rose-450 text-[10px] sm:text-xs">
+                                    {{ $data->total_lock }}
                                 </span>
                             @else
-                                <span class="inline-block px-5 py-1.5 rounded-full text-xs font-black bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-900/50">
-                                    {{ $data->total_lock }} Kasus
+                                <span class="font-bold text-amber-600 dark:text-amber-450 text-[10px] sm:text-xs">
+                                    {{ $data->total_lock }}
                                 </span>
                             @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ count($subjects) + 3 }}" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500 font-semibold text-sm">
+                        <td colspan="{{ count($subjects) + 3 }}" class="border border-slate-300 dark:border-slate-700 px-3 py-8 text-center text-slate-400 font-medium text-xs sm:text-sm">
                             Tidak ditemukan siswa dengan kriteria "{{ $search }}" di kelas ini.
                         </td>
                     </tr>

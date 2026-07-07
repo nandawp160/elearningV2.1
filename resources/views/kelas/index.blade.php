@@ -225,7 +225,7 @@
                         <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <!-- Dropdown List -->
-                    <div x-show="open" x-transition class="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-20 py-1.5">
+                    <div x-show="open" x-transition class="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
                         <button type="button" onclick="openPlottingModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
                             <span class="text-sm">🎲</span>
                             <span class="font-medium">Plotting Wali Kelas</span>
@@ -247,7 +247,7 @@
                         <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <!-- Dropdown List -->
-                    <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-10 py-1.5">
+                    <div x-show="open" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
                         <button type="button" onclick="downloadExcel(); open = false" class="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
                             <i class="fas fa-download text-slate-400"></i>
                             <span>Download Excel</span>
@@ -291,74 +291,74 @@
 
         <!-- Main Table View -->
         <div id="classroomsTableContainer" class="overflow-x-auto flex-1 min-h-0 overflow-y-auto pb-4">
-            <table id="classroomsTable" class="w-full border-collapse border border-slate-300 dark:border-slate-600 bg-white text-sm whitespace-nowrap">
-                <thead>
-                    <tr class="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600">
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">No</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Kelas</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Tingkat / Jurusan</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Wali Kelas</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Jumlah Siswa</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Kapasitas</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Status</th>
-                        <th class="px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Aksi</th>
+            <table id="classroomsTable" class="w-full border-collapse border border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm whitespace-nowrap">
+                <thead class="sticky top-0 z-20">
+                    <tr class="shadow-sm">
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">No</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Kelas</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Tingkat / Jurusan</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Wali Kelas</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Jumlah Siswa</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Kapasitas</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Status</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky right-0 top-0 z-30">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($classrooms as $index => $classroom)
-                    <tr class="hover:bg-sky-50 dark:hover:bg-slate-700/50 transition border-b border-slate-300 dark:border-slate-600">
+                    <tr class="even:bg-slate-50 dark:even:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition group">
                         <!-- No -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-700 dark:text-slate-300 text-center">{{ $index + 1 }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-700 dark:text-slate-300 text-center">{{ $index + 1 }}</td>
                         
                         <!-- Kelas -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5">
                             <div class="min-w-0">
-                                <span class="font-medium text-slate-800 dark:text-slate-100 block">{{ $classroom->name }}</span>
-                                <span class="text-[11px] text-slate-500 block">T.A. {{ $classroom->tahunAjaran }}</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-100 block">{{ $classroom->name }}</span>
+                                <span class="text-[11px] text-slate-500 block font-mono">T.A. {{ $classroom->tahunAjaran }}</span>
                             </div>
                         </td>
                         
                         <!-- Tingkat / Jurusan -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2">
-                            <span class="text-slate-800 dark:text-slate-100 font-medium">Kelas {{ $classroom->tingkat }}</span>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5">
+                            <span class="text-slate-800 dark:text-slate-100 font-bold">Kelas {{ $classroom->tingkat }}</span>
                             <span class="text-slate-500 ml-1">({{ $classroom->jurusan }})</span>
                         </td>
                         
                         <!-- Wali Kelas -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-700 dark:text-slate-300">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-700 dark:text-slate-300 font-bold">
                             @if($classroom->waliKelas)
-                                <span class="font-medium">{{ $classroom->waliKelas->name }}</span>
+                                <span class="font-bold">{{ $classroom->waliKelas->name }}</span>
                             @else
-                                <span class="text-slate-400 italic">Belum Ditentukan</span>
+                                <span class="text-slate-400 italic font-normal">Belum Ditentukan</span>
                             @endif
                         </td>
                         
                         <!-- Jumlah Siswa -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-medium text-slate-700 dark:text-slate-300">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-300">
                             {{ $classroom->siswa_count }}
                         </td>
                         
                         <!-- Kapasitas -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center text-slate-500 dark:text-slate-400">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center text-slate-500 dark:text-slate-400">
                             {{ $classroom->kapasitasMaksimal }}
                         </td>
                         
                         <!-- Status -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center">
                             @php
                                 $percent = ($classroom->kapasitasMaksimal > 0) ? ($classroom->siswa_count / $classroom->kapasitasMaksimal) * 100 : 0;
                             @endphp
                             @if($percent >= 100)
-                                <span class="text-rose-600 font-medium">Penuh</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400">Penuh</span>
                             @elseif($percent >= 80)
-                                <span class="text-amber-600 font-medium">Hampir Penuh</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">Hampir Penuh</span>
                             @else
-                                <span class="text-emerald-600 font-medium">Tersedia</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">Tersedia</span>
                             @endif
                         </td>
                         
                         <!-- Aksi -->
-                        <td class="px-3 py-2 text-center">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center bg-white dark:bg-slate-900 group-even:bg-slate-50 dark:group-even:bg-slate-800/30 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50 sticky right-0 z-10 transition-colors">
                             <div class="inline-flex items-center gap-1.5">
                                 <a href="{{ route('classrooms.show', $classroom) }}" class="px-2 py-1 text-[11px] font-medium text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-700 hover:text-white rounded transition">
                                     Detail

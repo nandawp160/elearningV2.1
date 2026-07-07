@@ -71,9 +71,21 @@ return new class extends Migration
         // });
         
         Schema::table('pelacakan_materi', function (Blueprint $table) {
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $table->dropForeign(['siswa_id']);
+            }
             $table->dropForeign(['tugas_id']);
+        });
+
+        Schema::table('pelacakan_materi', function (Blueprint $table) {
             $table->dropUnique(['siswa_id', 'tugas_id']);
         });
+
+        if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+            Schema::table('pelacakan_materi', function (Blueprint $table) {
+                $table->foreign('siswa_id')->references('id')->on('siswa')->onDelete('cascade');
+            });
+        }
 
         Schema::table('tugas', function (Blueprint $table) {
             $table->dropForeign(['prasyarat_materi_id']);

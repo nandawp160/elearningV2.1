@@ -110,7 +110,7 @@ class SiswaGraduationPromotionTest extends TestCase
     public function test_can_get_students_by_classes_via_ajax()
     {
         $response = $this->actingAs($this->admin)
-            ->getJson(route('students.by-classes', ['classes' => 'XII IPA 1']));
+            ->getJson(route('students.by-classes', ['kelas' => 'XII IPA 1']));
 
         $response->assertStatus(200);
         $response->assertJsonCount(2);
@@ -125,7 +125,7 @@ class SiswaGraduationPromotionTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->post(route('students.bulk-graduate'), [
                 'kelas' => ['XII IPA 1'],
-                'student_ids' => [$this->student2->id], // only student 2 checked
+                'id_siswa' => [$this->student2->id], // only student 2 checked
             ]);
 
         $response->assertRedirect(route('students.index'));
@@ -139,12 +139,12 @@ class SiswaGraduationPromotionTest extends TestCase
         $this->assertEquals('lulus', $this->student2->status);
         $this->assertNull($this->student2->kelas);
 
-        // Student 3 was excluded (not in student_ids list) and should remain active and in class
+        // Student 3 was excluded (not in id_siswa list) and should remain active and in class
         $this->assertEquals('active', $this->student3->status);
         $this->assertEquals('XII IPA 1', $this->student3->kelas);
     }
 
-    public function test_bulk_promotion_with_exclusions()
+    public function test_bulk_promotion()
     {
         // Create another student in X IPA 1
         $user4 = User::create([
@@ -163,12 +163,15 @@ class SiswaGraduationPromotionTest extends TestCase
             'pengguna_id' => $user4->id
         ]);
 
-        // Promote Student 1 (1001) to XI IPA 1, but exclude Student 4 (1004 - stays in X IPA 1)
+        // Promote X IPA 1 to XI IPA 1 using mapping payload
         $response = $this->actingAs($this->admin)
             ->post(route('students.bulk-promote'), [
-                'kelas_asal' => 'X IPA 1',
-                'kelas_tujuan' => 'XI IPA 1',
-                'student_ids' => [$this->student1->id], // only student 1 checked
+                'mapping' => [
+                    [
+                        'asal' => 'X IPA 1',
+                        'tujuan' => 'XI IPA 1',
+                    ]
+                ]
             ]);
 
         $response->assertRedirect(route('students.index'));
@@ -178,10 +181,8 @@ class SiswaGraduationPromotionTest extends TestCase
         $this->student1->refresh();
         $student4->refresh();
 
-        // Student 1 should be promoted to XI IPA 1
+        // Both Student 1 and Student 4 should be promoted to XI IPA 1
         $this->assertEquals('XI IPA 1', $this->student1->kelas);
-
-        // Student 4 was excluded and should remain in X IPA 1
-        $this->assertEquals('X IPA 1', $student4->kelas);
+        $this->assertEquals('XI IPA 1', $student4->kelas);
     }
 }

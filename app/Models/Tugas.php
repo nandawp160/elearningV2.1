@@ -145,6 +145,11 @@ class Tugas extends Model
         return $this->belongsTo(JadwalPelajaran::class, 'mata_pelajaran_id');
     }
 
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class, 'kelas_id');
+    }
+
     // Relationship: Assignment belongs to a teacher (creator)
     public function creator()
     {

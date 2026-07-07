@@ -27,10 +27,12 @@ class DownloadController extends Controller
                 $kelas = \App\Models\Kelas::where('name', $kelasName)->first();
                 if ($kelas) {
                     $teacherIds = $kelas->guruPengampu()->pluck('guru.id')->toArray();
-                    $allowed = in_array($material->uploaded_by, $teacherIds);
+                    $allowedKelas = ($material->kelas_id === null || $material->kelas_id === $kelas->id);
+                    $allowedTeacher = in_array($material->uploaded_by, $teacherIds);
+                    $allowed = $allowedKelas && $allowedTeacher;
                     
                     if ($allowed && $material->subject) {
-                        $allowed = ($material->subject->tingkat === $tingkat);
+                        $allowed = ($material->subject->tingkat === null || $material->subject->tingkat === $tingkat);
                     }
                 }
             }
@@ -39,7 +41,12 @@ class DownloadController extends Controller
             }
         }
         
-        return $this->downloadFile($material->file_path);
+        $extension = pathinfo($material->file_path, PATHINFO_EXTENSION);
+        $cleanTitle = preg_replace('/[^a-zA-Z0-9\s\-\(\)\._]/', '', $material->title);
+        $cleanTitle = trim($cleanTitle) ?: 'materi';
+        $downloadName = $cleanTitle . '.' . $extension;
+        
+        return $this->downloadFile($material->file_path, $downloadName);
     }
 
     /**
@@ -61,10 +68,12 @@ class DownloadController extends Controller
                 $kelas = \App\Models\Kelas::where('name', $kelasName)->first();
                 if ($kelas) {
                     $teacherIds = $kelas->guruPengampu()->pluck('guru.id')->toArray();
-                    $allowed = in_array($material->uploaded_by, $teacherIds);
+                    $allowedKelas = ($material->kelas_id === null || $material->kelas_id === $kelas->id);
+                    $allowedTeacher = in_array($material->uploaded_by, $teacherIds);
+                    $allowed = $allowedKelas && $allowedTeacher;
                     
                     if ($allowed && $material->subject) {
-                        $allowed = ($material->subject->tingkat === $tingkat);
+                        $allowed = ($material->subject->tingkat === null || $material->subject->tingkat === $tingkat);
                     }
                 }
             }
@@ -82,7 +91,13 @@ class DownloadController extends Controller
     public function assignment(\App\Models\Tugas $assignment)
     {
         Gate::authorize('view_tugas');
-        return $this->downloadFile($assignment->attachment);
+        
+        $extension = pathinfo($assignment->attachment, PATHINFO_EXTENSION);
+        $cleanTitle = preg_replace('/[^a-zA-Z0-9\s\-\(\)\._]/', '', $assignment->title);
+        $cleanTitle = trim($cleanTitle) ?: 'tugas';
+        $downloadName = $cleanTitle . '.' . $extension;
+
+        return $this->downloadFile($assignment->attachment, $downloadName);
     }
 
     /**

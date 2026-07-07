@@ -202,19 +202,19 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-            <table id="plottingTable" class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-16">No</th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Guru</th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mata Pelajaran</th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kelas Diampu</th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-24">Total JP</th>
-                        <th class="py-3 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-32">Status Beban</th>
+        <div class="overflow-x-auto flex-1 min-h-0 overflow-y-auto pb-4">
+            <table id="plottingTable" class="w-full border-collapse border border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm whitespace-nowrap text-left">
+                <thead class="sticky top-0 z-20">
+                    <tr class="shadow-sm">
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 w-16">No</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Nama Guru</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Mata Pelajaran</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Kelas Diampu</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 w-24">Total JP</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 w-32">Status Beban</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                <tbody>
                     @php
                         $groupedPlottings = $plottings->groupBy('guru_id');
                         $iterator = 1;
@@ -239,32 +239,32 @@
                                 $statusIcon = 'fa-exclamation-circle text-rose-500';
                             }
                         @endphp
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                            <td class="py-3.5 px-4 text-sm text-slate-600 dark:text-slate-300 font-medium">{{ $iterator++ }}</td>
-                            <td class="py-3.5 px-4 text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $guru->nama ?? '-' }}</td>
-                            <td class="py-3.5 px-4 text-sm text-slate-600 dark:text-slate-300">
-                                {{ $guruPlots->pluck('subject.nama')->unique()->implode(', ') }}
-                            </td>
-                            <td class="py-3.5 px-4 text-sm text-slate-600 dark:text-slate-300">
-                                @foreach($guruPlots as $plot)
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold mr-1.5 mb-1.5">
-                                        {{ $plot->kelas->name ?? '-' }}
-                                        <form action="{{ route('teaching-assignments.destroy', $plot->id) }}" method="POST" onsubmit="return confirm('Hapus hak akses mengajar kelas {{ $plot->kelas->name }} untuk guru ini?');" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-slate-400 hover:text-rose-600 font-bold ml-1 text-xs focus:outline-none">&times;</button>
-                                        </form>
-                                    </span>
-                                @endforeach
-                            </td>
-                            <td class="py-3.5 px-4 text-sm font-semibold text-slate-800 dark:text-slate-200">{{ $totalJp }} JP</td>
-                            <td class="py-3.5 px-4">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {{ $statusClass }}">
-                                    <i class="fas {{ $statusIcon }}"></i>
-                                    {{ $statusText }}
-                                </span>
-                            </td>
-                        </tr>
+                          <tr class="even:bg-slate-50 dark:even:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition group">
+                              <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center text-slate-700 dark:text-slate-300">{{ $iterator++ }}</td>
+                              <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-bold text-slate-800 dark:text-slate-100">{{ $guru->nama ?? '-' }}</td>
+                              <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-700 dark:text-slate-300 font-bold whitespace-normal min-w-[200px]">
+                                  {{ $guruPlots->pluck('subject.nama')->unique()->implode(', ') }}
+                              </td>
+                              <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 whitespace-normal min-w-[250px]">
+                                  @foreach($guruPlots as $plot)
+                                      <span class="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded text-xs font-bold mr-1 mb-1 shadow-sm">
+                                          {{ $plot->kelas->name ?? '-' }}
+                                          <form action="{{ route('teaching-assignments.destroy', $plot->id) }}" method="POST" onsubmit="return confirm('Hapus hak akses mengajar kelas {{ $plot->kelas->name }} untuk guru ini?');" class="inline">
+                                              @csrf
+                                              @method('DELETE')
+                                              <button type="submit" class="text-rose-400 hover:text-rose-600 font-bold ml-1 text-xs focus:outline-none">&times;</button>
+                                          </form>
+                                      </span>
+                                  @endforeach
+                              </td>
+                              <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100">{{ $totalJp }} JP</td>
+                              <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center">
+                                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold {{ $statusClass }}">
+                                      <i class="fas {{ $statusIcon }}"></i>
+                                      {{ $statusText }}
+                                  </span>
+                              </td>
+                          </tr>
                     @endforeach
                 </tbody>
             </table>

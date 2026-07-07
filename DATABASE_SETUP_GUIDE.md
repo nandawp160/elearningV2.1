@@ -1,96 +1,83 @@
-# Setup Database Lengkap - Sistem E-Learning
+# Panduan Instalasi dan Setup Database - SMA N 1 Cepogo
 
-## Step 1: Buat Database di phpMyAdmin
+Dokumen ini berisi panduan langkah demi langkah untuk melakukan instalasi dan setup database aplikasi E-Learning SMA N 1 Cepogo pada server produksi.
 
-1. Buka **phpMyAdmin** (dari Laragon atau `localhost/phpmyadmin`)
-2. Klik tab **"Databases"** atau **"Basis Data"**
-3. Di kolom **"Create database"**, ketik: `sistem_e_learning`
-4. Pilih **Collation**: `utf8mb4_unicode_ci` (recommended)
-5. Klik **"Create"** / **"Buat"**
-
-✅ Database `sistem_e_learning` sudah dibuat!
+## Persyaratan Sistem
+Sebelum memulai, pastikan server Anda telah memenuhi prasyarat berikut:
+- PHP >= 8.1
+- Composer
+- MySQL / MariaDB
+- Web Server (Apache/Nginx)
 
 ---
 
-## Step 2: Run Migrations (Buat Semua Tables)
+## Langkah 1: Konfigurasi Environment (`.env`)
 
-Buka **Terminal** di VSCode atau PowerShell, lalu jalankan:
+1. Buka folder utama aplikasi.
+2. Salin file `.env.example` dan ubah namanya menjadi `.env`.
+3. Buka file `.env` dan pastikan konfigurasi database sudah sesuai dengan server Anda:
+
+```ini
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=db_elearning
+DB_USERNAME=root
+DB_PASSWORD=
+```
+*(Sesuaikan password dengan kredensial MySQL di server Anda).*
+
+---
+
+## Langkah 2: Buat Database di MySQL
+
+1. Buka aplikasi manajemen database (phpMyAdmin, atau MySQL CLI).
+2. Buat database baru dengan nama: **`db_elearning`**
+3. Gunakan *collation* `utf8mb4_unicode_ci`.
+
+---
+
+## Langkah 3: Eksekusi Migrasi 
+
+Buka aplikasi **Terminal** (atau PowerShell), arahkan direktori aktif ke folder utama aplikasi, lalu jalankan perintah berikut untuk membangun struktur tabel yang bersih:
 
 ```bash
-cd c:\laragon\www\sistem-e_learning
 php artisan migrate
 ```
 
-Ini akan membuat semua table:
-- ✅ users (untuk login - super admin, guru, siswa)
-- ✅ teachers (data guru)
-- ✅ students (data siswa)
-- ✅ courses (mata pelajaran)
-- ✅ class_rooms (kelas)
-- ✅ subjects (jadwal mengajar - mapping guru ke kelas)
-- ✅ enrollments (siswa masuk kelas mana)
-- ✅ assignments (tugas)
-- ✅ materials (materi)
-- ✅ submissions (pengumpulan tugas)
-- ✅ grades (nilai)
-- ✅ attendances (absensi)
+---
+
+## Langkah 4: Impor Data Awal (Master Data)
+
+Silakan impor file *SQL Dump* yang disertakan dalam paket aplikasi (berisi data riil guru, jadwal, dan siswa) langsung melalui menu **Import** di phpMyAdmin ke dalam database `db_elearning`.
 
 ---
 
-## Step 3: Insert Data Dummy
+## Langkah 5: Kredensial & Rute Akses Pengguna
 
-### A. Insert Super Admin User (Manual via SQL)
+Setelah database berhasil diimpor, sistem sudah siap digunakan. Sistem ini telah membagi *routing* dan *dashboard* menjadi 3 hak akses utama (Admin, Guru, dan Siswa).
 
-Di phpMyAdmin, pilih database `sistem_e_learning`, klik tab **SQL**, paste:
+Sistem ini menggunakan halaman login yang terpisah untuk masing-masing hak akses. Silakan akses URL berikut sesuai dengan peran Anda (sesuaikan `domain-sekolah.com` dengan domain asli sekolah):
 
-```sql
-INSERT INTO `users` (`name`, `email`, `password`, `role`, `email_verified_at`, `created_at`, `updated_at`) 
-VALUES ('Super Admin', 'admin@edulearn.com', '$2y$12$qwertyuiopasdfghjklzxc', 'super_admin', NOW(), NOW(), NOW());
-```
+**1. Akses Super Admin**
+- **URL Login:** `http://domain-sekolah.com/admin/login`
+- Menggunakan kredensial utama Admin (diserahkan terpisah).
+- Akses penuh ke pengaturan sistem, pemeliharaan, dan manajemen *user*.
 
-**Note:** Password hash adalah untuk "password" (tapi nanti set ulang via reset password atau tinker)
+**2. Akses Guru / Wali Kelas**
+- **URL Login:** `http://domain-sekolah.com/guru/login`
+- Menggunakan email resmi guru (misal: `@guru.smansago.com`) atau via integrasi *Google Sign-In*.
+- Untuk manajemen tugas, nilai, dan rekap wali kelas.
 
-### B. Insert 40 Siswa Dummy
-
-Copy semua isi file **`insert_students_phpmyadmin.sql`** (sudah dibuat), paste ke SQL tab phpMyAdmin.
-
----
-
-## Step 4: Set Admin Password yang Benar
-
-Via terminal, jalankan:
-
-```bash
-php artisan tinker --execute="DB::table('users')->where('email', 'admin@edulearn.com')->update(['password' => Hash::make('password')]);"
-```
-
-Atau via phpMyAdmin SQL:
-
-```sql
-UPDATE users SET password = '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' WHERE email = 'admin@edulearn.com';
-```
+**3. Akses Siswa**
+- **URL Login:** `http://domain-sekolah.com/siswa/login`
+- Menggunakan email resmi siswa (misal: `@siswa.smansago.com`) atau via integrasi *Google Sign-In*.
+- Untuk pengumpulan tugas dan pengajuan banding.
 
 ---
 
-## Step 5: Test Login!
+## Troubleshooting Umum
 
-1. Buka browser: `http://127.0.0.1:8001/login`
-2. Login dengan:
-   - Email: `admin@edulearn.com`
-   - Password: `password`
-
----
-
-## Troubleshooting
-
-**Error "Database not found":**
-- Check `.env` file, pastikan `DB_DATABASE=sistem_e_learning`
-- Restart server: `php artisan serve`
-
-**Migration error:**
-- Drop database dan buat ulang
-- Atau: `php artisan migrate:fresh` (WARNING: hapus semua data!)
-
-**Login error:**
-- Clear cache: `php artisan cache:clear`
-- Clear config: `php artisan config:clear`
+- **Error 500 / Connection Refused:** Pastikan kredensial database di `.env` sudah benar dan layanan MySQL sedang berjalan.
+- **Error "No application encryption key has been specified":** Jalankan perintah `php artisan key:generate` pada terminal.
+- **Halaman Blank atau Error Cache:** Jalankan perintah `php artisan optimize:clear` untuk membersihkan cache konfigurasi lama.

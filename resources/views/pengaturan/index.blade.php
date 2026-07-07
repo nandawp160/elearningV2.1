@@ -45,13 +45,19 @@
     <div class="card p-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
+                @if(isset($active_page) && $active_page === 'academic-year')
+                <h1 class="page-title text-2xl font-extrabold text-slate-800 dark:text-white">Tahun Ajaran Aktif</h1>
+                <p class="page-subtitle text-slate-500 text-sm mt-1">Kelola periode akademik yang aktif pada sistem e-learning.</p>
+                @else
                 <h1 class="page-title text-2xl font-extrabold text-slate-800 dark:text-white">Pengaturan Sistem</h1>
                 <p class="page-subtitle text-slate-500 text-sm mt-1">Konfigurasi parameter operasional e-learning, integrasi gerbang notifikasi, dan profil sekolah.</p>
+                @endif
             </div>
             <!-- Tombol Kunci Halaman dihapus dari header global dan dipindahkan khusus ke tab pemeliharaan -->
         </div>
     </div>
 
+    @if(!isset($active_page) || $active_page !== 'academic-year')
     <!-- Tab Switching Navigation -->
     <div class="flex border-b border-slate-200 dark:border-slate-800 gap-2 mb-6">
         <button type="button" onclick="switchSettingsTab('umum')" id="tab-umum" class="px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition">
@@ -61,7 +67,145 @@
             🛠️ Pemeliharaan Data (Maintenance)
         </button>
     </div>
+    @endif
 
+    @if(isset($active_page) && $active_page === 'academic-year')
+    <div class="space-y-6">
+        <!-- Section 1: Periode Aktif & Form -->
+        <!-- Section 1A: Periode Aktif Global -->
+        <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm">
+            <form action="{{ route('settings.global-active-year') }}" method="POST">
+                @csrf
+                <div class="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
+                    <i class="fas fa-globe text-emerald-500 text-lg"></i>
+                    <h3 class="text-base font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">Tahun Ajaran Global (Sistem)</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <div class="mb-4">
+                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tahun Ajaran Aktif Saat Ini</p>
+                            <div class="flex items-center gap-3">
+                                <span class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{{ $global_tahun_ajaran_aktif }}</span>
+                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 text-[10px] font-extrabold uppercase rounded-lg flex items-center gap-1"><i class="fas fa-circle text-[8px]"></i> Aktif Global</span>
+                            </div>
+                            @if(isset($tahun_ajaran_updated_at) && $tahun_ajaran_updated_at)
+                            <p class="text-[11px] text-slate-400 mt-1.5"><i class="fas fa-clock mr-1"></i> Terakhir diperbarui: {{ \Carbon\Carbon::parse($tahun_ajaran_updated_at)->isoFormat('D MMMM Y') }}</p>
+                            @endif
+                        </div>
+                        
+                        <div class="mt-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="field-label block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Aktifkan Tahun Ajaran Baru</label>
+                            </div>
+                            <div class="flex gap-3">
+                                <select name="global_tahun_ajaran" id="selectTahunAjaranAktif" onchange="handleSelectYearChange(this)" class="input font-mono flex-1 text-sm">
+                                    @foreach($daftar_tahun_ajaran as $tahun)
+                                        <option value="{{ $tahun }}" {{ $global_tahun_ajaran_aktif == $tahun ? 'selected' : '' }}>{{ $tahun }}</option>
+                                    @endforeach
+                                    <option value="ADD_NEW" class="text-orange-500 font-semibold">+ Tambah Baru...</option>
+                                </select>
+                                <button type="submit" class="btn bg-rose-500 hover:bg-rose-600 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-rose-500/15 transition duration-150 flex items-center gap-2 whitespace-nowrap" onclick="return confirm('Peringatan: Mengubah Tahun Ajaran Global akan berdampak pada SELURUH PENGGUNA (Guru & Siswa). Yakin ingin melanjutkan?')">
+                                    <i class="fas fa-power-off"></i> Aktifkan Global
+                                </button>
+                            </div>
+                            @error('global_tahun_ajaran') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                    <div class="bg-rose-50 dark:bg-rose-900/20 rounded-2xl p-5 border border-rose-100 dark:border-rose-800/30">
+                        <p class="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-3"><i class="fas fa-exclamation-triangle mr-1"></i> Perhatian:</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">Pengaturan ini bersifat <strong>Global</strong>. Mengubah tahun ajaran di sini akan langsung mengubah data yang dilihat dan digunakan oleh <strong>seluruh Guru dan Siswa</strong> pada sistem (misal: pengumpulan tugas, entri nilai).</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Section 1B: Periode Tampilan Admin -->
+        <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm">
+            <form action="{{ route('settings.admin-view-year') }}" method="POST">
+                @csrf
+                <div class="flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-slate-800 mb-6">
+                    <i class="fas fa-eye text-indigo-500 text-lg"></i>
+                    <h3 class="text-base font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">Ubah Tampilan Data (Session Admin)</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <div class="mb-4">
+                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tahun Ajaran Yang Sedang Anda Lihat</p>
+                            <div class="flex items-center gap-3">
+                                <span class="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{{ $settings['tahun_ajaran_aktif'] }}</span>
+                                @if($settings['tahun_ajaran_aktif'] === $global_tahun_ajaran_aktif)
+                                    <span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 text-[10px] font-extrabold uppercase rounded-lg">Sinkron Global</span>
+                                @else
+                                    <span class="px-2.5 py-1 bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 text-[10px] font-extrabold uppercase rounded-lg"><i class="fas fa-exclamation-circle mr-1"></i> Mode Preview</span>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="field-label block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Tahun Ajaran</label>
+                                <button type="button" onclick="openManageAcademicYearsModal()" class="text-[11px] font-bold text-orange-500 hover:text-orange-600 transition flex items-center gap-1">
+                                    <i class="fas fa-cog"></i> Kelola
+                                </button>
+                            </div>
+                            <div class="flex gap-3">
+                                <select name="admin_tahun_ajaran" onchange="handleSelectYearChange(this)" class="input font-mono flex-1 text-sm">
+                                    @foreach($daftar_tahun_ajaran as $tahun)
+                                        <option value="{{ $tahun }}" {{ $settings['tahun_ajaran_aktif'] == $tahun ? 'selected' : '' }}>{{ $tahun }}</option>
+                                    @endforeach
+                                    <option value="ADD_NEW" class="text-orange-500 font-semibold">+ Tambah Baru...</option>
+                                </select>
+                                <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-500/15 transition duration-150 flex items-center gap-2 whitespace-nowrap">
+                                    <i class="fas fa-sync"></i> Ubah Tampilan
+                                </button>
+                            </div>
+                            @error('admin_tahun_ajaran') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-800/30">
+                        <p class="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-3"><i class="fas fa-info-circle mr-1"></i> Info Tampilan:</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300">Gunakan fitur ini untuk <strong>melihat data dari tahun ajaran lain</strong> (arsip masa lalu atau persiapan tahun depan) tanpa memengaruhi operasional pengguna lain (Guru/Siswa).</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Section 2: Riwayat Periode Akademik -->
+        <div class="card p-0 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"><i class="fas fa-history text-slate-400 mr-2"></i> Riwayat Periode Akademik</h3>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                @foreach($daftar_tahun_ajaran as $tahun)
+                <div class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-calendar text-slate-300 dark:text-slate-600"></i>
+                        <span class="font-bold text-slate-700 dark:text-slate-200 font-mono text-base">{{ $tahun }}</span>
+                    </div>
+                    @if($settings['tahun_ajaran_aktif'] === $tahun)
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 text-xs font-extrabold uppercase rounded-lg">Aktif</span>
+                            <a href="{{ route('academic-years.archive-detail', str_replace('/', '-', $tahun)) }}" class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200">
+                                <i class="fas fa-eye mr-1"></i> Detail
+                            </a>
+                        </div>
+                    @else
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 text-xs font-bold uppercase rounded-lg">Arsip</span>
+                            <a href="{{ route('academic-years.archive-detail', str_replace('/', '-', $tahun)) }}" class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200">
+                                <i class="fas fa-eye mr-1"></i> Detail
+                            </a>
+                        </div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @else
     <!-- Tab Konten: Pengaturan Umum -->
     <div id="tab-konten-umum" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Side: Form Configurations -->
@@ -147,33 +291,6 @@
                         <p class="text-xxs text-slate-400 leading-normal"><i class="fas fa-info-circle mr-1"></i> Notifikasi WhatsApp Fonnte digunakan untuk mengirimkan peringatan otomatis kepada orang tua ketika siswa terlambat mengumpulkan tugas sekolah.</p>
                     </div>
 
-                    <!-- Section 1.5: Tahun Ajaran Aktif -->
-                    <div class="space-y-4 pt-4">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                            <i class="fas fa-calendar-alt text-orange-500 text-sm"></i>
-                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Periode Akademik Aktif</h3>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4">
-                            <div class="max-w-md">
-                                <div class="flex items-center justify-between mb-1.5">
-                                    <label class="field-label block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tahun Ajaran Aktif</label>
-                                    <button type="button" onclick="openManageAcademicYearsModal()" class="text-[11px] font-bold text-orange-500 hover:text-orange-600 transition flex items-center gap-1">
-                                        <i class="fas fa-cog"></i>
-                                        Kelola Tahun Ajaran
-                                    </button>
-                                </div>
-                                <select name="tahun_ajaran_aktif" id="selectTahunAjaranAktif" onchange="handleSelectYearChange(this)" class="input font-mono">
-                                    @foreach($daftar_tahun_ajaran as $tahun)
-                                        <option value="{{ $tahun }}" {{ $settings['tahun_ajaran_aktif'] == $tahun ? 'selected' : '' }}>T.A. {{ $tahun }}</option>
-                                    @endforeach
-                                    <option value="ADD_NEW" class="text-orange-500 font-semibold">+ Tambah Tahun Ajaran Baru...</option>
-                                </select>
-                                <p class="text-[11px] text-slate-400 mt-1">Pilih periode akademik aktif untuk seluruh sistem saat ini, atau pilih "+ Tambah Tahun Ajaran Baru..." untuk mendaftarkan periode baru.</p>
-                                @error('tahun_ajaran_aktif') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Submit Button -->
                     <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -550,6 +667,7 @@
         @endif
     </div>
     <!-- End tab-konten-pemeliharaan -->
+    @endif
 </div>
 
 <!-- Manage Academic Years Modal -->

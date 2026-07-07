@@ -53,7 +53,7 @@ class JadwalPelajaran extends Model
     // Relationship: Subject belongs to a ClassRoom
     public function classRoom()
     {
-        return $this->belongsTo(Kelas::class, 'id');
+        return $this->belongsTo(Kelas::class, 'kelas_id');
     }
 
     public function getTeacherAttribute()

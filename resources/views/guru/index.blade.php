@@ -216,7 +216,7 @@
                         <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <!-- Dropdown List -->
-                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-10 py-1.5">
+                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
                         <button type="button" onclick="downloadExcel(); open = false" class="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
                             <i class="fas fa-download text-slate-400"></i>
                             <span>Download Excel</span>
@@ -239,7 +239,7 @@
                         <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <!-- Dropdown List -->
-                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-10 py-1.5">
+                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
                         <!-- Plotting Otomatis -->
                         <button type="button" onclick="openPlottingModal(); open = false" class="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
                             <i class="fas fa-random text-slate-400"></i>
@@ -277,39 +277,39 @@
 
         <!-- Main Table View -->
         <div id="teachersTableContainer" class="overflow-x-auto flex-1 min-h-0 overflow-y-auto pb-4">
-            <table id="teachersTable" class="w-full border-collapse border border-slate-300 dark:border-slate-600 bg-white text-sm whitespace-nowrap">
-                <thead>
-                    <tr class="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600">
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">No</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">NIP</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Nama Lengkap & Gelar</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Mata Pelajaran</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Total JTM</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Status</th>
-                        <th class="px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Aksi</th>
+            <table id="teachersTable" class="w-full border-collapse border border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm whitespace-nowrap">
+                <thead class="sticky top-0 z-20">
+                    <tr class="shadow-sm">
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">No</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">NIP</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Nama Lengkap & Gelar</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Mata Pelajaran</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Total JTM</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Status</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky right-0 top-0 z-30">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @php $no = 1; @endphp
                     @foreach($teachers as $teacher)
-                    <tr class="hover:bg-sky-50 dark:hover:bg-slate-700/50 transition border-b border-slate-300 dark:border-slate-600">
+                    <tr class="even:bg-slate-50 dark:even:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition group">
                         <!-- No -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-700 dark:text-slate-300 text-center">{{ $no++ }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-700 dark:text-slate-300 text-center">{{ $no++ }}</td>
                         <!-- NIP -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 font-mono text-slate-700 dark:text-slate-300">{{ $teacher->nip }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{{ $teacher->nip }}</td>
                         <!-- Profil / Nama Lengkap -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5">
                             <div class="min-w-0">
-                                <span class="font-medium text-slate-800 dark:text-slate-100 block">{{ $teacher->nama }}</span>
+                                <span class="font-bold text-slate-800 dark:text-slate-100 block">{{ $teacher->nama }}</span>
                                 <span class="text-[11px] text-slate-500 block font-mono">{{ $teacher->email }}</span>
                             </div>
                         </td>
                         <!-- Mata Pelajaran -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-700 dark:text-slate-300">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-700 dark:text-slate-300 font-bold">
                             {{ $teacher->mataPelajaran->nama ?? $teacher->spesialisasi ?? '-' }}
                         </td>
                         <!-- Total JTM -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center">
                             @php
                                 $jtm = $teacher->total_jtm;
                                 $jtmTextClass = 'text-slate-700 dark:text-slate-300';
@@ -322,15 +322,15 @@
                             </span>
                         </td>
                         <!-- Status -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center">
                             @if($teacher->status === 'active')
-                            <span class="text-emerald-600 font-medium">Aktif</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">Aktif</span>
                             @else
-                            <span class="text-rose-600 font-medium">Nonaktif</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400">Nonaktif</span>
                             @endif
                         </td>
                         <!-- Aksi -->
-                        <td class="px-3 py-2 text-center">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center bg-white dark:bg-slate-900 group-even:bg-slate-50 dark:group-even:bg-slate-800/30 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50 sticky right-0 z-10 transition-colors">
                             <div class="inline-flex items-center gap-1.5">
                                 @if(auth()->user()->isSuperAdmin() && !$teacher->pengguna_id)
                                 <form action="{{ route('teachers.create-user', $teacher) }}" method="POST" class="inline" onsubmit="return confirm('Buat akun login untuk guru ini?')">

@@ -207,7 +207,7 @@
                         <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <!-- Dropdown List -->
-                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-10 py-1.5">
+                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
                         <button type="button" onclick="downloadExcel(); open = false" class="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
                             <i class="fas fa-download text-slate-400"></i>
                             <span>Download Excel</span>
@@ -230,15 +230,8 @@
                         <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <!-- Dropdown List -->
-                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-10 py-1.5">
-                        <!-- Generate Akun -->
-                        <form action="{{ route('students.generate-accounts') }}" method="POST" onsubmit="return confirm('Generate akun login otomatis untuk siswa yang belum memilikinya?')">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
-                                <i class="fas fa-users-cog text-sky-500 w-4 text-center"></i>
-                                <span class="font-medium">Generate Akun Login</span>
-                            </button>
-                        </form>
+                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
+
                         <!-- Plotting Otomatis -->
                         <button type="button" onclick="openPlottingModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
                             <i class="fas fa-random text-indigo-500 w-4 text-center"></i>
@@ -282,50 +275,50 @@
 
         <!-- Main Table View -->
         <div id="studentsTableContainer" class="overflow-x-auto flex-1 min-h-0 overflow-y-auto pb-4">
-            <table id="studentsTable" class="w-full border-collapse border border-slate-300 dark:border-slate-600 bg-white text-sm whitespace-nowrap">
-                <thead>
-                    <tr class="bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600">
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">No</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">NIS</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Nama Lengkap</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Email</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Kelas</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">L/P</th>
-                        <th class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Status</th>
+            <table id="studentsTable" class="w-full border-collapse border border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-sm whitespace-nowrap">
+                <thead class="sticky top-0 z-20">
+                    <tr class="shadow-sm">
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">No</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">NIS</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Nama Lengkap</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Email</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Kelas</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">L/P</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Status</th>
                         <th class="hidden">Tahun Lulus</th>
-                        <th class="px-3 py-2 text-center font-semibold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">Aksi</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky right-0 top-0 z-30">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @php $no = 1; @endphp
                     @foreach($students as $student)
-                    <tr class="hover:bg-sky-50 dark:hover:bg-slate-700/50 transition border-b border-slate-300 dark:border-slate-600">
+                    <tr class="even:bg-slate-50 dark:even:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition group">
                         <!-- No -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-700 dark:text-slate-300 text-center">{{ $no++ }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-700 dark:text-slate-300 text-center">{{ $no++ }}</td>
                         <!-- NIS -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 font-mono text-slate-700 dark:text-slate-300">{{ $student->nis }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{{ $student->nis }}</td>
                         <!-- Nama Lengkap -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 font-medium text-slate-800 dark:text-slate-100">{{ $student->nama }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-bold text-slate-800 dark:text-slate-100">{{ $student->nama }}</td>
                         <!-- Email -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-slate-500 dark:text-slate-400">{{ $student->user->email ?? '-' }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-500 dark:text-slate-400">{{ $student->user->email ?? '-' }}</td>
                         <!-- Kelas -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center text-slate-700 dark:text-slate-300">{{ $student->kelas ?? '-' }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center text-slate-800 dark:text-slate-300 font-bold">{{ $student->kelas ?? '-' }}</td>
                         <!-- L/P -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center text-slate-700 dark:text-slate-300">{{ $student->jenis_kelamin == 'Laki-laki' ? 'L' : 'P' }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center text-slate-700 dark:text-slate-300">{{ $student->jenis_kelamin == 'Laki-laki' ? 'L' : 'P' }}</td>
                         <!-- Status -->
-                        <td class="border-r border-slate-300 dark:border-slate-600 px-3 py-2 text-center">
-                            @if($student->status == 'active')
-                            <span class="text-emerald-600 font-medium">Aktif</span>
-                            @elseif($student->status == 'lulus')
-                            <span class="text-slate-500 font-medium">Lulus</span>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center">
+                            @if($student->status === 'active')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">Aktif</span>
+                            @elseif($student->status === 'lulus')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400">Lulus</span>
                             @else
-                            <span class="text-rose-600 font-medium">Nonaktif</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400">Nonaktif</span>
                             @endif
                         </td>
                         <!-- Tahun Lulus (Hidden) -->
                         <td class="hidden">{{ $student->tahun_lulus ?? '-' }}</td>
                         <!-- Aksi -->
-                        <td class="px-3 py-2 text-center">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center bg-white dark:bg-slate-900 group-even:bg-slate-50 dark:group-even:bg-slate-800/30 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50 sticky right-0 z-10 transition-colors">
                             <div class="inline-flex items-center gap-1.5">
                                 @if(auth()->user()->isSuperAdmin() && $student->status == 'inactive')
                                 <form action="{{ route('students.approve', $student->id) }}" method="POST" class="inline">
@@ -643,11 +636,14 @@
         
         <!-- Tab Navigation -->
         <div class="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex-shrink-0">
-            <button type="button" onclick="switchTab('kelulusan')" id="tab-kelulusan" class="w-1/2 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition">
+            <button type="button" onclick="switchTab('kelulusan')" id="tab-kelulusan" class="flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition">
                 🎓 Kelulusan Kelas XII
             </button>
-            <button type="button" onclick="switchTab('kenaikan')" id="tab-kenaikan" class="w-1/2 py-3 text-sm font-bold text-slate-500 hover:text-slate-750 dark:hover:text-slate-350 border-b-2 border-transparent transition">
-                📈 Kenaikan Kelas (X & XI)
+            <button type="button" onclick="switchTab('kenaikan')" id="tab-kenaikan" class="flex-1 py-3 text-sm font-bold text-slate-500 hover:text-slate-750 dark:hover:text-slate-350 border-b-2 border-transparent transition">
+                📈 Kenaikan Kelas (XI ke XII)
+            </button>
+            <button type="button" onclick="switchTab('penjurusan')" id="tab-penjurusan" class="flex-1 py-3 text-sm font-bold text-slate-500 hover:text-slate-750 dark:hover:text-slate-350 border-b-2 border-transparent transition">
+                🎯 Penjurusan (X ke XI)
             </button>
         </div>
 
@@ -727,14 +723,21 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            @foreach($daftarKelasAsal->filter(fn($c) => stripos($c, 'xii') !== 0 && stripos($c, '12') !== 0) as $index => $kelas)
+                            @foreach($daftarKelasAsal->filter(function($c) {
+                                $parts = explode(' ', trim($c));
+                                $grade = strtoupper($parts[0]);
+                                return $grade === 'XI' || $grade === '11';
+                            }) as $index => $kelas)
                             <tr class="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900 dark:even:bg-slate-800/10 hover:bg-slate-100/50 dark:hover:bg-slate-800/35 transition-colors">
                                 <td class="py-2.5 px-4 w-1/2">
                                     <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $kelas }}</span>
                                     <input type="hidden" name="mapping[{{ $index }}][asal]" value="{{ $kelas }}">
                                 </td>
                                 <td class="py-2.5 px-4 w-1/2">
-                                    <select name="mapping[{{ $index }}][tujuan]" class="input py-1.5 px-3 text-xs w-full auto-mapping-select" data-asal="{{ $kelas }}">
+                                    @php
+                                        $originCount = \App\Models\Siswa::where('kelas', $kelas)->count();
+                                    @endphp
+                                    <select name="mapping[{{ $index }}][tujuan]" class="input py-1.5 px-3 text-xs w-full auto-mapping-select" data-asal="{{ $kelas }}" data-students-count="{{ $originCount }}">
                                         <option value="">-- Jangan Naikkan Dulu --</option>
                                         @php
                                             $parts = explode(' ', trim($kelas));
@@ -749,8 +752,8 @@
                                             $classroomsRaw = \App\Models\Kelas::orderBy('name', 'asc')->get();
                                             $filteredClasses = $classroomsRaw->filter(function($c) use ($jurusan, $tingkatTujuan) {
                                                 $name = strtoupper($c->name);
-                                                // Filter jurusan (IPA/IPS dll)
-                                                if ($jurusan !== '' && strpos($name, strtoupper($jurusan)) === false) return false;
+                                                // Filter jurusan dihilangkan agar semua kelas tujuan di tingkat tersebut bisa dipilih (Support Kurikulum Merdeka)
+                                                // if ($jurusan !== '' && strpos($name, strtoupper($jurusan)) === false) return false;
                                                 
                                                 // Filter tingkat kelas selanjutnya
                                                 if (!empty($tingkatTujuan)) {
@@ -766,7 +769,11 @@
                                             });
                                         @endphp
                                         @foreach($filteredClasses as $k)
-                                            <option value="{{ $k->name }}">{{ $k->name }}</option>
+                                            @php
+                                                $currentStudents = \App\Models\Siswa::where('kelas', $k->name)->count();
+                                                $capacity = $k->max_students ?? 36; // Default capacity 36
+                                            @endphp
+                                            <option value="{{ $k->name }}" data-capacity="{{ $capacity }}" data-current="{{ $currentStudents }}">{{ $k->name }} (Isi: {{ $currentStudents }}/{{ $capacity }})</option>
                                         @endforeach
                                     </select>
                                 </td>
@@ -779,6 +786,65 @@
                 <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                     <button type="button" onclick="closeKelulusanKenaikanModal()" class="btn border border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs">Batal</button>
                     <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl shadow-md text-xs">Proses Kenaikan Massal</button>
+                </div>
+            </form>
+
+            <!-- TAB: PENJURUSAN X ke XI -->
+            <form id="formPenjurusan" action="{{ route('students.promote-students') }}" method="POST" class="space-y-4 hidden flex-col h-full">
+                @csrf
+                <div class="space-y-2 flex-shrink-0">
+                    <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Kelas X Asal</label>
+                    <select id="kelasXSelector" class="w-full sm:w-1/2 rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" onchange="loadStudentsForPenjurusan(this.value)">
+                        <option value="">-- Pilih Kelas X --</option>
+                        @foreach($daftarKelasAsal->filter(function($c) {
+                            $parts = explode(' ', trim($c));
+                            $grade = strtoupper($parts[0]);
+                            return $grade === 'X' || $grade === '10';
+                        }) as $kelas)
+                            <option value="{{ $kelas }}">{{ $kelas }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <div id="penjurusanStudentsSection" class="hidden flex-1 flex flex-col min-h-0">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="field-label block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Daftar Siswa & Pilihan Kelas XI</label>
+                        <span class="text-[10px] text-slate-400 font-bold ml-1" id="penjurusanStudentCount">0 siswa</span>
+                    </div>
+                    
+                    <div class="overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl flex-1 max-h-[50vh]">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 dark:bg-slate-800/50 sticky top-0 z-10">
+                                <tr>
+                                    <th class="py-2 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">Nama Siswa</th>
+                                    <th class="py-2 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">Kelas Tujuan (XI)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="penjurusanStudentsList" class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 flex-shrink-0 mt-auto">
+                    <button type="button" onclick="closeKelulusanKenaikanModal()" class="btn border border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs">Batal</button>
+                    <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl shadow-md text-xs" id="btnProsesPenjurusan" disabled>Simpan Penjurusan</button>
+                </div>
+                
+                <!-- Helper data for JS: list of class XI -->
+                <div id="kelasXIOptions" class="hidden">
+                    <option value="">-- Pilih Kelas XI Tujuan --</option>
+                    @php
+                        $kelasXI = \App\Models\Kelas::orderBy('name', 'asc')->get()->filter(function($c) {
+                            $parts = explode(' ', trim($c->name));
+                            $grade = strtoupper($parts[0]);
+                            return $grade === 'XI' || $grade === '11';
+                        });
+                    @endphp
+                    @foreach($kelasXI as $k)
+                        <option value="{{ $k->name }}">{{ $k->name }} (Isi: {{ \App\Models\Siswa::where('kelas', $k->name)->active()->count() }}/{{ $k->max_students ?? 36 }})</option>
+                    @endforeach
                 </div>
             </form>
         </div>
@@ -817,15 +883,28 @@
         if (tab === 'kenaikan') {
             $('#tab-kenaikan').addClass('text-orange-500 border-orange-500').removeClass('text-slate-500 border-transparent');
             $('#tab-kelulusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
+            $('#tab-penjurusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
             
             $('#formKenaikan').removeClass('hidden');
             $('#formKelulusan').addClass('hidden');
+            $('#formPenjurusan').addClass('hidden').removeClass('flex');
         }
         if (tab === 'kelulusan') {
             $('#tab-kelulusan').addClass('text-orange-500 border-orange-500').removeClass('text-slate-500 border-transparent');
             $('#tab-kenaikan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
+            $('#tab-penjurusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
             
             $('#formKelulusan').removeClass('hidden');
+            $('#formKenaikan').addClass('hidden');
+            $('#formPenjurusan').addClass('hidden').removeClass('flex');
+        }
+        if (tab === 'penjurusan') {
+            $('#tab-penjurusan').addClass('text-orange-500 border-orange-500').removeClass('text-slate-500 border-transparent');
+            $('#tab-kelulusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
+            $('#tab-kenaikan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
+            
+            $('#formPenjurusan').removeClass('hidden').addClass('flex');
+            $('#formKelulusan').addClass('hidden');
             $('#formKenaikan').addClass('hidden');
         }
     }
@@ -874,6 +953,49 @@
         $('#gradSelectedCount').text(`${checked} dari ${total} siswa terpilih`);
     }
 
+    function loadStudentsForPenjurusan(kelas) {
+        if (!kelas) {
+            $('#penjurusanStudentsSection').addClass('hidden');
+            $('#btnProsesPenjurusan').prop('disabled', true);
+            return;
+        }
+
+        const optionsHTML = $('#kelasXIOptions').html();
+
+        fetch(`{{ route('students.by-classes') }}?kelas=${kelas}`)
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                if (data.length === 0) {
+                    html = '<tr><td colspan="2" class="py-4 text-center text-xs text-slate-400">Tidak ada siswa aktif di kelas ini.</td></tr>';
+                    $('#btnProsesPenjurusan').prop('disabled', true);
+                } else {
+                    data.forEach(student => {
+                        html += `
+                            <tr class="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900 dark:even:bg-slate-800/10 hover:bg-slate-100/50 dark:hover:bg-slate-800/35 transition-colors">
+                                <td class="py-2.5 px-4">
+                                    <div class="flex items-center gap-2">
+                                        <input type="hidden" name="id_siswa[]" value="${student.id}">
+                                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">${student.nama}</span>
+                                        <span class="text-[10px] text-slate-400 font-mono">(${student.nis})</span>
+                                    </div>
+                                </td>
+                                <td class="py-2.5 px-4">
+                                    <select name="tujuan[${student.id}]" class="input py-1.5 px-3 text-xs w-full">
+                                        ${optionsHTML}
+                                    </select>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    $('#btnProsesPenjurusan').prop('disabled', false);
+                }
+                $('#penjurusanStudentsList').html(html);
+                $('#penjurusanStudentCount').text(`${data.length} siswa`);
+                $('#penjurusanStudentsSection').removeClass('hidden').addClass('flex');
+            });
+    }
+
     // Bind event handler for search input inside modal
     $(document).on('keyup', '#searchGradStudents', function() {
         const keyword = $(this).val().toLowerCase();
@@ -912,48 +1034,70 @@
 
     // Auto Match Classes function
     function autoMatchClasses() {
+        // Track already selected target classes so we don't map multiple origin classes to the same target class
+        const usedTargets = new Set();
+        
+        // Track all origin classes in this bulk promotion to know which ones will be emptied
+        const originClasses = new Set();
+        document.querySelectorAll('.auto-mapping-select').forEach(select => {
+            const asal = select.getAttribute('data-asal');
+            if (asal) originClasses.add(asal.trim().toUpperCase());
+        });
+        
         document.querySelectorAll('.auto-mapping-select').forEach(select => {
             const asal = select.getAttribute('data-asal');
             if (!asal) return;
             
+            const originCount = parseInt(select.getAttribute('data-students-count')) || 0;
             const cleanAsal = asal.trim().toUpperCase();
             
             // Tentukan pola nama kelas tujuan yang diharapkan (misal XI F 1 -> XII F 1)
             let targetName = '';
-            if (cleanAsal.startsWith('XI ')) {
-                targetName = cleanAsal.replace(/^XI /, 'XII ');
-            } else if (cleanAsal.startsWith('XI.')) {
-                targetName = cleanAsal.replace(/^XI\./, 'XII.');
-            } else if (cleanAsal.startsWith('XI')) {
-                targetName = cleanAsal.replace(/^XI/, 'XII');
-            } else if (cleanAsal.startsWith('X ')) {
-                targetName = cleanAsal.replace(/^X /, 'XI ');
-            } else if (cleanAsal.startsWith('X.')) {
-                targetName = cleanAsal.replace(/^X\./, 'XI.');
-            } else if (cleanAsal.startsWith('X')) {
-                targetName = cleanAsal.replace(/^X/, 'XI');
-            }
+            if (cleanAsal.startsWith('XI ')) targetName = cleanAsal.replace(/^XI /, 'XII ');
+            else if (cleanAsal.startsWith('XI.')) targetName = cleanAsal.replace(/^XI\./, 'XII.');
+            else if (cleanAsal.startsWith('XI')) targetName = cleanAsal.replace(/^XI/, 'XII');
+            else if (cleanAsal.startsWith('X ')) targetName = cleanAsal.replace(/^X /, 'XI ');
+            else if (cleanAsal.startsWith('X.')) targetName = cleanAsal.replace(/^X\./, 'XI.');
+            else if (cleanAsal.startsWith('X')) targetName = cleanAsal.replace(/^X/, 'XI');
             
-            // 1. Coba pencocokan nama secara persis (Exact Match)
             let found = false;
+            
+            // Function to check if option is valid (not used + has capacity)
+            const isValidOption = (optVal, optionElement) => {
+                if (usedTargets.has(optVal)) return false;
+                const capacity = parseInt(optionElement.getAttribute('data-capacity')) || 36;
+                let current = parseInt(optionElement.getAttribute('data-current')) || 0;
+                
+                // If the target class is ALSO an origin class in this promotion, 
+                // assume its current students will leave, making it empty.
+                if (originClasses.has(optVal)) {
+                    current = 0;
+                }
+                
+                return (current + originCount) <= capacity;
+            };
+
+            // 1. Exact Match Check
             for (let i = 0; i < select.options.length; i++) {
                 const optVal = select.options[i].value.trim().toUpperCase();
-                if (optVal === targetName) {
+                if (optVal === targetName && isValidOption(optVal, select.options[i])) {
                     select.selectedIndex = i;
+                    usedTargets.add(optVal);
                     found = true;
                     break;
                 }
             }
             
-            // 2. Jika tidak cocok persis (misal ada rombel yang berubah format), cocokkan berdasarkan akhiran/suffix (misal F 1, F 2.1)
+            // 2. Suffix Match Check
             if (!found && targetName) {
                 const parts = cleanAsal.split(' ');
                 if (parts.length > 1) {
                     const suffix = parts.slice(1).join(' ');
                     for (let i = 0; i < select.options.length; i++) {
                         const optVal = select.options[i].value.trim().toUpperCase();
-                        if (optVal.endsWith(suffix)) {
+                        if (optVal.endsWith(suffix) && isValidOption(optVal, select.options[i])) {
                             select.selectedIndex = i;
+                            usedTargets.add(optVal);
                             found = true;
                             break;
                         }
@@ -961,29 +1105,15 @@
                 }
             }
 
-            // 3. Khusus Kelas X (X.1 s.d X.7) yang dipetakan ke XI penjurusan (XI F 1 s.d XI F 4.2)
-            if (!found && (cleanAsal.startsWith('X.') || cleanAsal.startsWith('X '))) {
-                const numMatch = cleanAsal.match(/\d+$/);
-                if (numMatch) {
-                    const num = parseInt(numMatch[0]);
-                    let targetKeyword = '';
-                    if (num === 1) targetKeyword = 'F 1';
-                    else if (num === 2) targetKeyword = 'F 2.1';
-                    else if (num === 3) targetKeyword = 'F 3.1';
-                    else if (num === 4) targetKeyword = 'F 4.1';
-                    else if (num === 5) targetKeyword = 'F 2.2';
-                    else if (num === 6) targetKeyword = 'F 3.2';
-                    else if (num === 7) targetKeyword = 'F 4.2';
-                    
-                    if (targetKeyword) {
-                        for (let i = 0; i < select.options.length; i++) {
-                            const optVal = select.options[i].value.trim().toUpperCase();
-                            if (optVal.includes(targetKeyword)) {
-                                select.selectedIndex = i;
-                                found = true;
-                                break;
-                            }
-                        }
+            // 3. Sequential Mapping for Kurikulum Merdeka (if no exact match, just take the first available valid class)
+            if (!found) {
+                for (let i = 1; i < select.options.length; i++) { // Skip index 0 ("-- Jangan Naikkan Dulu --")
+                    const optVal = select.options[i].value.trim().toUpperCase();
+                    if (optVal !== '' && isValidOption(optVal, select.options[i])) {
+                        select.selectedIndex = i;
+                        usedTargets.add(optVal);
+                        found = true;
+                        break;
                     }
                 }
             }

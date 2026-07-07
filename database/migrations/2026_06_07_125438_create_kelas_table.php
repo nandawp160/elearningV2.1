@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->enum('grade_level', ['X', 'XI', 'XII']);
-            $table->enum('major', ['IPA', 'IPS']);
+            $table->string('major')->nullable();
             $table->foreignId('homeroom_teacher_id')->nullable()->constrained('guru')->onDelete('set null');
             $table->string('academic_year');
-            $table->integer('max_students')->default(40);
+            $table->integer('max_students')->default(36);
             $table->timestamps();
         });
     }

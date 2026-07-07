@@ -351,11 +351,16 @@ class GuruController extends Controller
             $unassignedClasses = [];
 
             // 3. Ambil semua kelas di tahun ajaran target (Prioritaskan kelas XII, XI, X)
-            $allClassrooms = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
-                ->where('academic_year', $tahunAjaran)
-                ->orderByRaw("FIELD(grade_level, 'XII', 'XI', 'X')") 
-                ->orderBy('name')
-                ->get();
+            $classroomsQuery = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+                ->where('academic_year', $tahunAjaran);
+
+            if (DB::connection()->getDriverName() === 'sqlite') {
+                $classroomsQuery->orderByRaw("CASE grade_level WHEN 'XII' THEN 1 WHEN 'XI' THEN 2 WHEN 'X' THEN 3 ELSE 4 END");
+            } else {
+                $classroomsQuery->orderByRaw("FIELD(grade_level, 'XII', 'XI', 'X')");
+            }
+
+            $allClassrooms = $classroomsQuery->orderBy('name')->get();
 
             // 4. Ambil semua mata pelajaran yang ada (sebagai kebutuhan kelas)
             $allSubjects = \App\Models\MataPelajaran::where('status', 'aktif')->get();

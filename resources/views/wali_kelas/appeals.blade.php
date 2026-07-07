@@ -46,81 +46,79 @@
 
     <!-- Appeals Table Card -->
     <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="table-ui w-full" id="studentTable">
-                <thead>
-                    <tr>
-                        <th class="px-6 py-4 text-left">Nama Siswa & NIS</th>
-                        <th class="px-6 py-4 text-left">Total Terkena Lock</th>
-                        <th class="px-6 py-4 text-left">Status Terakhir</th>
-                        <th class="px-6 py-4 text-center" style="width: 200px;">Riwayat / Bukti</th>
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 600px;">
+            <table class="w-full border-collapse border border-slate-300 dark:border-slate-700 text-xs" id="studentTable">
+                <thead class="sticky top-0 z-10">
+                    <tr class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-12 shadow-sm">NO</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold min-w-64 shadow-sm">NAMA SISWA & NIS</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold min-w-32 shadow-sm">TOTAL TERKENA LOCK</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold min-w-48 shadow-sm">STATUS TERAKHIR</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-24 shadow-sm">RIWAYAT / BUKTI</th>
                     </tr>
                 </thead>
-                <tbody id="studentTableBody">
-                    @forelse($studentsData as $data)
-                    <tr class="student-table-row hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition text-sm text-slate-700 dark:text-slate-350"
+                <tbody id="studentTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                    @forelse($studentsData as $idx => $data)
+                    <tr class="student-table-row hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300"
                         data-name="{{ strtolower($data->student->nama) }}" 
                         data-nis="{{ strtolower($data->student->nis) }}"
                         data-lock-count="{{ $data->total_lock }}">
                         
+                        <!-- Row Number -->
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
+                            {{ $idx + 1 }}
+                        </td>
+
                         <!-- Student Profile -->
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-[#D65A20]/80 text-white flex items-center justify-center font-extrabold text-xs shadow-sm flex-shrink-0">
-                                    {{ strtoupper(substr($data->student->nama, 0, 1)) }}
-                                </div>
-                                <div class="min-w-0">
-                                    <span class="font-extrabold text-slate-800 dark:text-white block truncate">{{ $data->student->nama }}</span>
-                                    <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 block mt-0.5 font-mono">NIS. {{ $data->student->nis }}</span>
-                                </div>
-                            </div>
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5">
+                            <span class="font-bold text-slate-800 dark:text-white">{{ $data->student->nama }}</span>
+                            <span class="font-mono text-[10px] font-semibold text-slate-400 dark:text-slate-500 ml-2 block sm:inline">NIS. {{ $data->student->nis }}</span>
                         </td>
                         
                         <!-- Total Terkena Lock -->
-                        <td class="px-6 py-4">
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center">
                             @if($data->total_lock >= 3)
-                                <span class="bg-rose-50 text-rose-600 border border-rose-100 rounded-full px-4 py-1 text-xs font-black font-mono inline-block dark:bg-rose-950/20 dark:text-rose-450 dark:border-rose-900/30">
-                                    {{ $data->total_lock }} Kali
+                                <span class="bg-rose-50 text-rose-600 border border-rose-100 rounded px-2 py-0.5 text-[10px] font-black font-mono inline-block dark:bg-rose-950/20 dark:text-rose-450 dark:border-rose-900/30">
+                                    {{ $data->total_lock }} KALI
                                 </span>
                             @elseif($data->total_lock > 0)
-                                <span class="bg-amber-50 text-amber-600 border border-amber-100 rounded-full px-4 py-1 text-xs font-black font-mono inline-block dark:bg-amber-950/20 dark:text-amber-450 dark:border-amber-900/30">
-                                    {{ $data->total_lock }} Kali
+                                <span class="bg-amber-50 text-amber-600 border border-amber-100 rounded px-2 py-0.5 text-[10px] font-black font-mono inline-block dark:bg-amber-950/20 dark:text-amber-450 dark:border-amber-900/30">
+                                    {{ $data->total_lock }} KALI
                                 </span>
                             @else
-                                <span class="bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full px-4 py-1 text-xs font-black font-mono inline-block dark:bg-emerald-950/20 dark:text-emerald-450 dark:border-emerald-900/30">
-                                    {{ $data->total_lock }} Kali
+                                <span class="bg-emerald-50 text-emerald-600 border border-emerald-100 rounded px-2 py-0.5 text-[10px] font-black font-mono inline-block dark:bg-emerald-950/20 dark:text-emerald-450 dark:border-emerald-900/30">
+                                    {{ $data->total_lock }} KALI
                                 </span>
                             @endif
                         </td>
                         
                         <!-- Status Terakhir -->
-                        <td class="px-6 py-4">
-                            <span class="font-extrabold block {{ $data->status_color_class }}">
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5">
+                            <span class="font-bold text-[11px] block {{ $data->status_color_class }}">
                                 {{ $data->status_label }}
                             </span>
-                            <span class="text-xs text-slate-400 dark:text-slate-500 block mt-0.5 truncate max-w-xs">
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500 block mt-0.5 truncate max-w-xs">
                                 {{ $data->status_subtext }}
                             </span>
                         </td>
                         
                         <!-- Actions / Riwayat / Bukti -->
-                        <td class="px-6 py-4 text-center">
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center bg-slate-50/30 dark:bg-slate-900/30">
                             @if($data->appeals_history->isNotEmpty())
                                 <button onclick="openHistoryModal({{ json_encode($data->student) }}, {{ json_encode($data->appeals_history) }})" 
-                                        class="w-full inline-flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition">
-                                    <i class="far fa-file-alt text-xs"></i>
-                                    <span>Lihat Bukti</span>
+                                        class="text-slate-500 hover:text-[#D65A20] dark:text-slate-400 dark:hover:text-[#D65A20] p-1 transition" title="Lihat Bukti">
+                                    <i class="far fa-file-alt"></i>
                                 </button>
                             @else
-                                <button class="w-full inline-flex items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-650 px-4 py-2 rounded-xl text-xs font-semibold cursor-not-allowed" disabled>
-                                    Tidak ada data
-                                </button>
+                                <span class="text-slate-300 dark:text-slate-650" title="Tidak ada data">
+                                    <i class="fas fa-minus text-[10px]"></i>
+                                </span>
                             @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-slate-400 font-medium">Belum ada data siswa di kelas ini.</td>
+                        <td colspan="5" class="border border-slate-300 dark:border-slate-700 px-3 py-8 text-center text-slate-400 font-medium">Belum ada data siswa di kelas ini.</td>
                     </tr>
                     @endforelse
                 </tbody>

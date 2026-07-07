@@ -10,6 +10,7 @@ class Materi extends Model
 
     protected $fillable = [
         'subject_id',
+        'kelas_id',
         'title',
         'description',
         'type',
@@ -21,6 +22,12 @@ class Materi extends Model
     protected $casts = [
         'type' => 'string'
     ];
+
+    // Relationship: Material belongs to a class
+    public function classRoom()
+    {
+        return $this->belongsTo(Kelas::class, 'kelas_id');
+    }
 
     // Relationship: Material belongs to a subject
     public function subject()

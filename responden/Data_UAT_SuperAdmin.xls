@@ -1,0 +1,8 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'></head><body>
+<h3>Data UAT - E-Learning</h3>
+<table border='1'>
+<tr><th>Nama Responden</th><th>Pertanyaan 1</th><th>Pertanyaan 2</th><th>Pertanyaan 3</th><th>Pertanyaan 4</th><th>Pertanyaan 5</th><th>Pertanyaan 6</th><th>Total Skor</th></tr>
+<tr><td>Super Admin (IT 1)</td><td style='text-align: center;'>5</td><td style='text-align: center;'>5</td><td style='text-align: center;'>4</td><td style='text-align: center;'>5</td><td style='text-align: center;'>5</td><td style='text-align: center;'>5</td><td style='text-align: center; font-weight: bold;'>29</td></tr>
+<tr><td>Super Admin (IT 2)</td><td style='text-align: center;'>5</td><td style='text-align: center;'>4</td><td style='text-align: center;'>4</td><td style='text-align: center;'>5</td><td style='text-align: center;'>4</td><td style='text-align: center;'>5</td><td style='text-align: center; font-weight: bold;'>27</td></tr>
+</table></body></html>

@@ -1,0 +1,1 @@
+<?php $k1 = App\Models\Kelas::withoutGlobalScopes()->where("name", "XII F.4")->first(); if($k1) { $k1->update(["name" => "XII F 4.1"]); } App\Models\Kelas::withoutGlobalScopes()->create(["name" => "XII F 4.2", "grade_level" => "XII", "major" => "Fase F", "academic_year" => "2026/2027", "max_students" => 36]);

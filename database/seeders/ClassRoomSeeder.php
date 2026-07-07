@@ -12,7 +12,7 @@ class ClassRoomSeeder extends Seeder
         $classes = [
             'X' => ['X.1', 'X.2', 'X.3', 'X.4', 'X.5', 'X.6', 'X.7'],
             'XI' => ['XI F 1', 'XI F 2.1', 'XI F 2.2', 'XI F 3.1', 'XI F 3.2', 'XI F 4.1', 'XI F 4.2'],
-            'XII' => ['XII F 1', 'XII F 2.1', 'XII F 2.2', 'XII F 3.1', 'XII F 3.2', 'XII F.4']
+            'XII' => ['XII F 1', 'XII F 2.1', 'XII F 2.2', 'XII F 3.1', 'XII F 3.2', 'XII F 4.1', 'XII F 4.2']
         ];
         
         $academicYear = '2026/2027';

@@ -242,112 +242,7 @@ if (!function_exists('isActive')) {
 </style>
 @endif
 
-@if(request()->routeIs('homeroom.*'))
-<style>
-    /* OVERRIDE SIDEBAR STYLING FOR WALI KELAS MODE (WHITE THEME WITH ORANGE ACCENTS) */
-    #sidebar {
-        background-color: #ffffff !important;
-        border-right: 1px solid #f1f5f9 !important;
-    }
-    .dark #sidebar {
-        background-color: #0f172a !important;
-        border-right-color: #1e293b !important;
-    }
-    #sidebar .border-b {
-        border-color: #f1f5f9 !important;
-    }
-    .dark #sidebar .border-b {
-        border-color: #1e293b !important;
-    }
-    .sidebar-link {
-        color: #475569 !important;
-        background-color: transparent !important;
-        transition: all 150ms ease-in-out;
-        border: none !important;
-        box-shadow: none !important;
-        font-weight: 600 !important;
-        display: flex;
-        align-items: center;
-    }
-    .dark .sidebar-link {
-        color: #cbd5e1 !important;
-    }
-    .sidebar-link i {
-        color: #94a3b8 !important;
-        transition: all 150ms ease-in-out;
-    }
-    .dark .sidebar-link i {
-        color: #64748b !important;
-    }
-    .sidebar-link:hover {
-        background-color: #fdf2ec !important;
-        color: #D65A20 !important;
-    }
-    .dark .sidebar-link:hover {
-        background-color: rgba(214, 90, 32, 0.1) !important;
-    }
-    .sidebar-link:hover i {
-        color: #D65A20 !important;
-    }
-    .sidebar-link.active {
-        background-color: #fdf2ec !important;
-        color: #D65A20 !important;
-        border-left: 4px solid #D65A20 !important;
-        border-top-left-radius: 0px !important;
-        border-bottom-left-radius: 0px !important;
-    }
-    .dark .sidebar-link.active {
-        background-color: rgba(214, 90, 32, 0.15) !important;
-    }
-    .sidebar-link.active i {
-        color: #D65A20 !important;
-    }
-    #sidebar .text-white\/60 {
-        color: #94a3b8 !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-    }
-    .dark #sidebar .text-white\/60 {
-        color: #64748b !important;
-    }
-    #sidebar .border-t {
-        border-color: #f1f5f9 !important;
-    }
-    .dark #sidebar .border-t {
-        border-color: #1e293b !important;
-    }
-    #sidebar .border-t > div {
-        background-color: #f8fafc !important;
-        border: 1px solid #f1f5f9 !important;
-        padding: 0.75rem !important;
-    }
-    .dark #sidebar .border-t > div {
-        background-color: rgba(255, 255, 255, 0.02) !important;
-        border-color: #1e293b !important;
-    }
-    #sidebar .border-t p.text-gray-900,
-    #sidebar .border-t p.dark\:text-white {
-        color: #1e293b !important;
-    }
-    .dark #sidebar .border-t p.text-gray-900,
-    .dark #sidebar .border-t p.dark\:text-white {
-        color: #ffffff !important;
-    }
-    #sidebar .border-t p.text-gray-400,
-    #sidebar .border-t p.dark\:text-slate-550 {
-        color: #64748b !important;
-    }
-    #sidebar .border-t button {
-        color: #64748b !important;
-    }
-    #sidebar .border-t button:hover {
-        background-color: rgba(239, 68, 68, 0.1) !important;
-        color: #ef4444 !important;
-    }
-</style>
-@endif
+
 
 <nav id="sidebar"
      class="fixed inset-y-0 left-0 z-30 flex flex-col w-72 bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 shadow-sm transition-transform duration-300 -translate-x-full lg:translate-x-0"
@@ -355,13 +250,14 @@ if (!function_exists('isActive')) {
 
     <!-- Logo -->
     @if(request()->routeIs('homeroom.*'))
-    <div class="flex flex-col gap-1 px-6 py-5 border-b border-gray-100 dark:border-slate-800 relative w-full">
-        <div class="inline-flex items-center justify-center bg-[#D65A20] text-white font-extrabold px-4 py-2.5 rounded-xl text-center tracking-wider text-sm shadow-sm" style="background-color: #D65A20 !important; color: #ffffff !important;">
-            E_LEARNING
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-slate-800 relative w-full">
+        <img src="{{ asset('assets/logo/logo.jpeg') }}" alt="Logo SMAN 1 Cepogo" class="w-10 h-10 object-contain rounded-xl shadow-sm flex-shrink-0">
+        <div class="overflow-hidden">
+            <p class="font-bold text-gray-900 dark:text-white text-[15px] leading-tight tracking-wide">E_LEARNING</p>
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Portal Wali Kelas</p>
         </div>
-        <p class="text-[11px] font-bold text-center text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1.5">Portal Wali Kelas</p>
         <!-- Mobile close button -->
-        <button onclick="closeSidebar()" class="absolute top-6 right-6 lg:hidden text-slate-400 hover:text-gray-600 dark:hover:text-slate-350 transition-colors">
+        <button onclick="closeSidebar()" class="absolute top-6 right-6 lg:hidden text-gray-400 hover:text-white transition-colors">
             <i class="fas fa-times text-lg"></i>
         </button>
     </div>
@@ -404,9 +300,7 @@ if (!function_exists('isActive')) {
                                 <i class="fas fa-house-user w-5 text-center"></i>
                                 Dashboard Utama
                             </div>
-                            @if(request()->routeIs('homeroom.dashboard'))
-                            <i class="fas fa-chevron-right text-[10px]"></i>
-                            @endif
+                            <i class="fas fa-chevron-right text-[10px] opacity-40"></i>
                         </a>
                     </li>
                 @else
@@ -435,6 +329,16 @@ if (!function_exists('isActive')) {
                 <div class="px-4 pt-4 pb-2 text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
                     Data
                 </div>
+                <li>
+                    <a href="{{ route('academic-years.index') }}"
+                       class="sidebar-link flex items-center justify-between px-4 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ request()->routeIs('academic-years.*') ? 'active' : '' }}">
+                        <div class="flex items-center gap-3.5">
+                            <i class="fas fa-calendar-alt w-5 text-center"></i>
+                            Tahun Ajaran
+                        </div>
+                        <i class="fas fa-chevron-right text-[9px] opacity-40"></i>
+                    </a>
+                </li>
                 <li>
                     <a href="{{ route('students.index') }}"
                        class="sidebar-link flex items-center justify-between px-4 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ request()->routeIs('students.*') ? 'active' : '' }}">
@@ -559,16 +463,17 @@ if (!function_exists('isActive')) {
                         <a href="{{ route('homeroom.students') }}"
                            class="sidebar-link flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ request()->routeIs('homeroom.students') ? 'active' : '' }}">
                             <div class="flex items-center gap-3.5">
-                                <i class="fas fa-address-book w-5 text-center text-slate-400"></i>
+                                <i class="fas fa-address-book w-5 text-center"></i>
                                 Data Peserta Didik
                             </div>
+                            <i class="fas fa-chevron-right text-[10px] opacity-40"></i>
                         </a>
                     </li>
                     <li>
                         <a href="{{ route('homeroom.appeals') }}"
                            class="sidebar-link flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ request()->routeIs('homeroom.appeals') ? 'active' : '' }}">
                             <div class="flex items-center gap-3.5">
-                                <i class="fas fa-square-check w-5 text-center text-slate-400"></i>
+                                <i class="fas fa-square-check w-5 text-center"></i>
                                 Banding Keterlambatan
                             </div>
                             @php
@@ -583,11 +488,14 @@ if (!function_exists('isActive')) {
                                     }
                                 }
                             @endphp
-                            @if($pendingAppealsCount > 0)
-                            <span class="inline-flex items-center justify-center w-5 h-5 text-[10px] font-extrabold text-white bg-red-500 rounded-full shadow-sm">
-                                {{ $pendingAppealsCount }}
-                            </span>
-                            @endif
+                            <div class="flex items-center gap-2">
+                                @if($pendingAppealsCount > 0)
+                                <span class="inline-flex items-center justify-center w-5 h-5 text-[10px] font-extrabold text-white bg-red-500 rounded-full shadow-sm">
+                                    {{ $pendingAppealsCount }}
+                                </span>
+                                @endif
+                                <i class="fas fa-chevron-right text-[10px] opacity-40"></i>
+                            </div>
                         </a>
                     </li>
 
@@ -598,27 +506,30 @@ if (!function_exists('isActive')) {
                         <a href="{{ route('homeroom.academic_chart') }}"
                            class="sidebar-link flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ request()->routeIs('homeroom.academic_chart') ? 'active' : '' }}">
                             <div class="flex items-center gap-3.5">
-                                <i class="fas fa-chart-pie w-5 text-center text-slate-400"></i>
+                                <i class="fas fa-chart-pie w-5 text-center"></i>
                                 Grafik Akademik
                             </div>
+                            <i class="fas fa-chevron-right text-[10px] opacity-40"></i>
                         </a>
                     </li>
                     <li>
                         <a href="{{ route('homeroom.rekap_nilai') }}"
                            class="sidebar-link flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ request()->routeIs('homeroom.rekap_nilai') ? 'active' : '' }}">
                             <div class="flex items-center gap-3.5">
-                                <i class="fas fa-circle-notch w-5 text-center text-slate-400"></i>
+                                <i class="fas fa-circle-notch w-5 text-center"></i>
                                 Leger Kepatuhan Tugas
                             </div>
+                            <i class="fas fa-chevron-right text-[10px] opacity-40"></i>
                         </a>
                     </li>
                     <li>
                         <a href="{{ route('homeroom.leger_nilai') }}"
                            class="sidebar-link flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ request()->routeIs('homeroom.leger_nilai') ? 'active' : '' }}">
                             <div class="flex items-center gap-3.5">
-                                <i class="fas fa-table w-5 text-center text-slate-400"></i>
-                                Leger Nilai Mentah
+                                <i class="fas fa-table w-5 text-center"></i>
+                                Leger Nilai Tugas
                             </div>
+                            <i class="fas fa-chevron-right text-[10px] opacity-40"></i>
                         </a>
                     </li>
 

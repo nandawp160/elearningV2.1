@@ -9,6 +9,7 @@ use App\Models\Kelas;
 use App\Models\JadwalPelajaran;
 use App\Models\Tugas;
 use App\Models\PelacakanMateri;
+use App\Models\Materi;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Carbon\Carbon;
@@ -86,15 +87,14 @@ class PelacakanBelajarTest extends TestCase
 
     public function test_siswa_bisa_menandai_materi_selesai_dan_batal(): void
     {
-        // Buat Materi (tugas dengan deadline jauh di depan)
-        $materi = Tugas::create([
-            'mata_pelajaran_id' => $this->subject->id,
-            'judul' => 'Bab 1 Aljabar',
-            'deskripsi' => 'Pengenalan Aljabar',
-            'deadline' => Carbon::now()->addYears(5), // Materi
-            'lampiran' => 'materi/aljabar.pdf',
-            'guru_id' => $this->teacher->id,
-            'status' => 'aktif'
+        // Buat Materi
+        $materi = Materi::create([
+            'subject_id' => $this->subject->id,
+            'title' => 'Bab 1 Aljabar',
+            'description' => 'Pengenalan Aljabar',
+            'type' => 'pdf',
+            'file_path' => 'materi/aljabar.pdf',
+            'uploaded_by' => $this->teacher->id,
         ]);
 
         // 1. Uji tandai selesai
@@ -104,7 +104,7 @@ class PelacakanBelajarTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseHas('pelacakan_materi', [
             'siswa_id' => $this->student->id,
-            'tugas_id' => $materi->id
+            'materi_id' => $materi->id
         ]);
 
         // 2. Uji batalkan penyelesaian
@@ -114,21 +114,20 @@ class PelacakanBelajarTest extends TestCase
         $response->assertRedirect();
         $this->assertDatabaseMissing('pelacakan_materi', [
             'siswa_id' => $this->student->id,
-            'tugas_id' => $materi->id
+            'materi_id' => $materi->id
         ]);
     }
 
     public function test_restrict_access_tugas_belum_membaca_materi(): void
     {
         // Buat Materi
-        $materi = Tugas::create([
-            'mata_pelajaran_id' => $this->subject->id,
-            'judul' => 'Bab 1 Aljabar',
-            'deskripsi' => 'Pengenalan Aljabar',
-            'deadline' => Carbon::now()->addYears(5),
-            'lampiran' => 'materi/aljabar.pdf',
-            'guru_id' => $this->teacher->id,
-            'status' => 'aktif'
+        $materi = Materi::create([
+            'subject_id' => $this->subject->id,
+            'title' => 'Bab 1 Aljabar',
+            'description' => 'Pengenalan Aljabar',
+            'type' => 'pdf',
+            'file_path' => 'materi/aljabar.pdf',
+            'uploaded_by' => $this->teacher->id,
         ]);
 
         // Buat Tugas dengan Prasyarat Materi
@@ -163,14 +162,13 @@ class PelacakanBelajarTest extends TestCase
     public function test_restrict_access_tugas_lulus_setelah_membaca_materi(): void
     {
         // Buat Materi
-        $materi = Tugas::create([
-            'mata_pelajaran_id' => $this->subject->id,
-            'judul' => 'Bab 1 Aljabar',
-            'deskripsi' => 'Pengenalan Aljabar',
-            'deadline' => Carbon::now()->addYears(5),
-            'lampiran' => 'materi/aljabar.pdf',
-            'guru_id' => $this->teacher->id,
-            'status' => 'aktif'
+        $materi = Materi::create([
+            'subject_id' => $this->subject->id,
+            'title' => 'Bab 1 Aljabar',
+            'description' => 'Pengenalan Aljabar',
+            'type' => 'pdf',
+            'file_path' => 'materi/aljabar.pdf',
+            'uploaded_by' => $this->teacher->id,
         ]);
 
         // Buat Tugas dengan Prasyarat Materi
@@ -188,7 +186,7 @@ class PelacakanBelajarTest extends TestCase
         // Tandai materi sebagai selesai oleh siswa
         PelacakanMateri::create([
             'siswa_id' => $this->student->id,
-            'tugas_id' => $materi->id,
+            'materi_id' => $materi->id,
             'tanggal_selesai' => now()
         ]);
 

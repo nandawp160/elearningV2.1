@@ -68,65 +68,63 @@
 
     <!-- Student Table Card -->
     <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="table-ui w-full" id="studentTable">
-                <thead>
-                    <tr>
-                        <th class="px-6 py-4 text-left">NIS</th>
-                        <th class="px-6 py-4 text-left">Nama Lengkap</th>
-                        <th class="px-6 py-4 text-left">L/P</th>
-                        <th class="px-6 py-4 text-left">Kontak Wali (Ortu)</th>
-                        <th class="px-6 py-4 text-center">Aksi</th>
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 600px;">
+            <table class="w-full border-collapse border border-slate-300 dark:border-slate-700 text-xs" id="studentTable">
+                <thead class="sticky top-0 z-10">
+                    <tr class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-12 shadow-sm">NO</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold shadow-sm">NIS</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold min-w-64 shadow-sm">NAMA LENGKAP</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-16 shadow-sm">L/P</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold min-w-48 shadow-sm">KONTAK WALI (ORTU)</th>
+                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-20 shadow-sm">AKSI</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse($students as $student)
-                    <tr class="student-table-row hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition text-sm text-slate-700 dark:text-slate-350">
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    @forelse($students as $idx => $student)
+                    <tr class="student-table-row hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300">
+                        <!-- Row Number -->
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
+                            {{ $idx + 1 }}
+                        </td>
+
                         <!-- NIS -->
-                        <td class="px-6 py-4 font-mono font-bold text-slate-400 dark:text-slate-600">
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 font-mono font-semibold">
                             {{ $student->nis }}
                         </td>
                         
                         <!-- Name & Email -->
-                        <td class="px-6 py-4">
-                            <span class="font-extrabold text-slate-800 dark:text-white block">{{ $student->name }}</span>
-                            <span class="text-xs text-slate-400 dark:text-slate-500 block mt-0.5">{{ $student->user->email ?? strtolower(str_replace(' ', '', $student->name)) . '@sekolah.id' }}</span>
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5">
+                            <span class="font-bold text-slate-800 dark:text-white">{{ $student->name }}</span>
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500 ml-2 block sm:inline">{{ $student->user->email ?? strtolower(str_replace(' ', '', $student->name)) . '@sekolah.id' }}</span>
                         </td>
                         
                         <!-- Gender (L/P) -->
-                        <td class="px-6 py-4">
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center">
                             @if(in_array($student->jenis_kelamin, ['L', 'Laki-laki']))
-                                <span class="bg-sky-50 text-sky-600 rounded px-2.5 py-1 text-xs font-black font-mono inline-block dark:bg-sky-950/20 dark:text-sky-400">
-                                    L
-                                </span>
+                                <span class="font-bold text-sky-600 dark:text-sky-400">L</span>
                             @else
-                                <span class="bg-rose-50 text-rose-600 rounded px-2.5 py-1 text-xs font-black font-mono inline-block dark:bg-rose-950/20 dark:text-rose-400">
-                                    P
-                                </span>
+                                <span class="font-bold text-rose-600 dark:text-rose-400">P</span>
                             @endif
                         </td>
                         
                         <!-- Guardian Contact -->
-                        <td class="px-6 py-4">
-                            <span class="font-mono font-extrabold text-slate-800 dark:text-slate-300 block">
-                                {{ $student->parent_phone ?: '-' }}
-                            </span>
-                            <span class="text-xs text-slate-400 dark:text-slate-500 block mt-0.5">
-                                {{ $student->parent_name ?: 'Orang Tua' }}
-                            </span>
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5">
+                            <span class="font-mono font-semibold text-slate-800 dark:text-slate-300">{{ $student->parent_phone ?: '-' }}</span>
+                            <span class="text-[10px] text-slate-400 dark:text-slate-500 ml-2">({{ $student->parent_name ?: 'Orang Tua' }})</span>
                         </td>
                         
                         <!-- Actions -->
-                        <td class="px-6 py-4 text-center">
+                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center bg-slate-50/30 dark:bg-slate-900/30">
                             <button onclick="openDetailModal({{ json_encode($student) }})" 
-                                    class="border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition">
-                                Detail
+                                    class="text-slate-500 hover:text-[#D65A20] dark:text-slate-400 dark:hover:text-[#D65A20] p-1 transition" title="Lihat Detail">
+                                <i class="fas fa-search-plus"></i>
                             </button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-12 text-center text-slate-400 font-medium">Belum ada data siswa di kelas ini.</td>
+                        <td colspan="6" class="border border-slate-300 dark:border-slate-700 px-3 py-8 text-center text-slate-400 font-medium">Belum ada data siswa di kelas ini.</td>
                     </tr>
                     @endforelse
                 </tbody>

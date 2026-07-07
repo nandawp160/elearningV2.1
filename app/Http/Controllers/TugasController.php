@@ -29,8 +29,11 @@ class TugasController extends Controller
             return $this->teacherIndex();
         }
 
-        // ── SUPER ADMIN: Original flat list ──
-        $query = Tugas::tugas()->with(['subject.course', 'subject.classRoom', 'creator', 'submissions']);
+        // 🚨 SUPER ADMIN: Original flat list 🚨
+        $query = Tugas::tugas()->with(['subject.course', 'subject.classRoom', 'creator', 'submissions'])
+            ->where(function($q) {
+                $q->whereHas('kelas')->orWhereNull('kelas_id');
+            });
         $assignments = $query->latest()->get();
         $tunggakanList = collect();
         $subjects = JadwalPelajaran::with(['course', 'classRoom'])->get();
@@ -525,8 +528,23 @@ class TugasController extends Controller
             $tingkat = 'X';
         }
 
-        // Get subjects for this tingkat
-        $subjects = JadwalPelajaran::where('tingkat', $tingkat)->where('status', 'aktif')->get();
+        // Get subjects for this student's class
+        $kelasModel = \App\Models\Kelas::where('name', $kelas)->first();
+        $subjectIds = [];
+        if ($kelasModel) {
+            $subjectIds = \App\Models\GuruKelas::where('kelas_id', $kelasModel->id)
+                ->pluck('mata_pelajaran_id')
+                ->filter()
+                ->unique()
+                ->toArray();
+        }
+
+        if (!empty($subjectIds)) {
+            $subjects = JadwalPelajaran::whereIn('id', $subjectIds)->where('status', 'aktif')->get();
+        } else {
+            // Fallback to tingkat
+            $subjects = JadwalPelajaran::where('tingkat', $tingkat)->where('status', 'aktif')->get();
+        }
         
         $iconSets = [
             ['icon' => 'fas fa-calculator',    'bg' => '#fff7ed', 'text' => '#ea580c'],

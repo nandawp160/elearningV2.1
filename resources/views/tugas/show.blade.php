@@ -77,7 +77,10 @@
                     <p class="text-xs text-slate-400 font-bold mb-1">Terkumpul</p>
                     <div class="flex items-baseline">
                         <span class="text-5xl font-black text-slate-800 dark:text-white">
-                            {{ $assignment->submissions->count() }}
+                            @php
+                                $terkumpulCount = $studentMonitoring->filter(function($monitor) { return $monitor->submission !== null; })->count();
+                            @endphp
+                            {{ $terkumpulCount }}
                         </span>
                         <span class="text-lg text-slate-400 font-bold ml-1.5">
                             / {{ $studentMonitoring->count() }}
@@ -114,6 +117,15 @@
                             <option value="perlu_koreksi">Perlu Koreksi</option>
                             <option value="terlambat">Terlambat</option>
                             <option value="belum_kumpul">Belum Kumpul</option>
+                        </select>
+                    </div>
+                    
+                    {{-- Dropdown Urutan --}}
+                    <div class="relative w-full sm:max-w-xs">
+                        <select id="sortFilter" class="px-4 py-2.5 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-705 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition appearance-none pr-10" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 fill=%22%2394a3b8%22 class=%22bi bi-chevron-down%22 viewBox=%220 0 16 16%22><path fill-rule=%22evenodd%22 d=%22M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z%22/></svg>'); background-position: right 14px center; background-repeat: no-repeat;">
+                            <option value="default">Urutan Standar</option>
+                            <option value="terbaru">Paling Akhir Mengumpulkan</option>
+                            <option value="terlama">Paling Awal Mengumpulkan</option>
                         </select>
                     </div>
                 </div>
@@ -178,6 +190,7 @@
                         <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition table-row-item" 
                             data-nama="{{ strtolower($monitor->student->name) }}" 
                             data-nis="{{ $monitor->student->nis }}" 
+                            data-time="{{ $monitor->submission ? $monitor->submission->tanggal_pengumpulan->timestamp : 0 }}"
                             @if($monitor->submission)
                             id="submission-row-{{ $monitor->submission->id }}"
                             :data-status="submissions[{{ $monitor->submission->id }}].status_type"
@@ -1297,13 +1310,39 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('searchSiswa');
         const statusFilter = document.getElementById('statusFilter');
+        const sortFilter = document.getElementById('sortFilter');
         const tableBody = document.getElementById('tabelSiswa') ? document.getElementById('tabelSiswa').querySelector('tbody') : null;
-        const rows = tableBody ? tableBody.querySelectorAll('tr.table-row-item') : [];
+        let rows = tableBody ? Array.from(tableBody.querySelectorAll('tr.table-row-item')) : [];
 
         function filterTable() {
+            if (!tableBody) return;
             const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
             const status = statusFilter ? statusFilter.value : 'all';
+            const sortOrder = sortFilter ? sortFilter.value : 'default';
             
+            // Sort rows based on selected order
+            rows.sort((a, b) => {
+                if (sortOrder === 'terbaru') {
+                    const timeA = parseInt(a.getAttribute('data-time') || 0);
+                    const timeB = parseInt(b.getAttribute('data-time') || 0);
+                    // time=0 means not submitted, put at bottom
+                    if (timeA === 0) return 1;
+                    if (timeB === 0) return -1;
+                    return timeB - timeA;
+                } else if (sortOrder === 'terlama') {
+                    const timeA = parseInt(a.getAttribute('data-time') || 0);
+                    const timeB = parseInt(b.getAttribute('data-time') || 0);
+                    if (timeA === 0) return 1;
+                    if (timeB === 0) return -1;
+                    return timeA - timeB;
+                } else {
+                    // default order (by name)
+                    const nameA = a.getAttribute('data-nama') || '';
+                    const nameB = b.getAttribute('data-nama') || '';
+                    return nameA.localeCompare(nameB);
+                }
+            });
+
             let visibleCount = 0;
             rows.forEach((row) => {
                 const nama = row.getAttribute('data-nama') || '';
@@ -1321,11 +1360,15 @@
                 } else {
                     row.style.display = 'none';
                 }
+                
+                // Re-append row to table to reflect new sort order
+                tableBody.appendChild(row);
             });
         }
 
         if (searchInput) searchInput.addEventListener('input', filterTable);
         if (statusFilter) statusFilter.addEventListener('change', filterTable);
+        if (sortFilter) sortFilter.addEventListener('change', filterTable);
     });
 </script>
 <style>

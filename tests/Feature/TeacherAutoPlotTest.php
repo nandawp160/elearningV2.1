@@ -95,13 +95,7 @@ class TeacherAutoPlotTest extends TestCase
             'max_students' => 36
         ]);
 
-        $kelasIps1 = Kelas::create([
-            'name' => 'X IPS 1',
-            'grade_level' => 'X',
-            'major' => 'IPS',
-            'academic_year' => '2025/2026',
-            'max_students' => 36
-        ]);
+
 
         // 4. Set up an existing mapping that should be cleared
         DB::table('guru_kelas')->insert([
@@ -140,9 +134,5 @@ class TeacherAutoPlotTest extends TestCase
         
         // Assert they got different classes
         $this->assertNotEquals($assigned1[0], $assigned2[0]);
-
-        // Assert neither got mapped to IPS
-        $this->assertNotContains($kelasIps1->id, $assigned1);
-        $this->assertNotContains($kelasIps1->id, $assigned2);
     }
 }

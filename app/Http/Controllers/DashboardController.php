@@ -136,9 +136,9 @@ class DashboardController extends Controller
             ]);
         } else {
             // Stats for Admin
-            $data['totalStudents'] = Siswa::count();
+            $data['totalStudents'] = Siswa::where('status', 'aktif')->count();
             $data['totalTeachers'] = Guru::count();
-            $data['totalClasses'] = Siswa::whereNotNull('kelas')->distinct()->count('kelas');
+            $data['totalClasses'] = \App\Models\Kelas::count();
             if ($data['totalClasses'] === 0) {
                 $data['totalClasses'] = 56; // High fidelity default fallback if no student classes yet
             }

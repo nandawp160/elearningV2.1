@@ -29,6 +29,8 @@ class PengaturanController extends Controller
             'permissions_page_password' => Pengaturan::getValue('permissions_page_password', 'admin123'),
         ];
 
+        $global_tahun_ajaran_aktif = Pengaturan::getGlobalValue('tahun_ajaran_aktif', '2025/2026');
+
         $daftar_tahun_ajaran = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
             ->distinct()
             ->pluck('academic_year')
@@ -60,8 +62,90 @@ class PengaturanController extends Controller
             ->get();
             
         $storage_frozen = Pengaturan::getValue('storage_frozen', '0') === '1';
+        $active_page = request()->routeIs('academic-years.index') ? 'academic-year' : 'settings';
+        $tahun_ajaran_updated_at = \App\Models\Pengaturan::where('key', 'tahun_ajaran_aktif')->value('updated_at');
         
-        return view('pengaturan.index', compact('settings', 'daftar_tahun_ajaran', 'custom_years', 'maintenance_unlocked', 'password', 'semua_kelas', 'storage_frozen'));
+        return view('pengaturan.index', compact('settings', 'daftar_tahun_ajaran', 'custom_years', 'maintenance_unlocked', 'password', 'semua_kelas', 'storage_frozen', 'active_page', 'tahun_ajaran_updated_at', 'global_tahun_ajaran_aktif'));
+    }
+
+    public function archiveDetail($year)
+    {
+        $yearDecoded = str_replace('-', '/', $year);
+        
+        // Cek apakah tahun yang diminta adalah tahun ajaran aktif
+        $activeYear = Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');
+        $isActive = ($yearDecoded === $activeYear);
+
+        // Pastikan tahun tersebut valid ada di database
+        $kelasAda = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->where('academic_year', $yearDecoded)
+            ->exists();
+            
+        if (!$kelasAda) {
+            return redirect()->route('academic-years.index')->with('error', 'Data arsip tahun ajaran tidak ditemukan.');
+        }
+
+        // Dapatkan data tanggal dibuat/diperbarui dengan melihat kelas tertua dan terbaru
+        $oldestKelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->where('academic_year', $yearDecoded)
+            ->orderBy('created_at', 'asc')
+            ->first();
+            
+        $newestKelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->where('academic_year', $yearDecoded)
+            ->orderBy('updated_at', 'desc')
+            ->first();
+            
+        $createdAt = $oldestKelas ? $oldestKelas->created_at : null;
+        $updatedAt = $newestKelas ? $newestKelas->updated_at : null;
+
+        // Hitung Ringkasan
+        $jumlahKelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->where('academic_year', $yearDecoded)
+            ->count();
+            
+        $jumlahWaliKelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->where('academic_year', $yearDecoded)
+            ->whereNotNull('homeroom_teacher_id')
+            ->distinct('homeroom_teacher_id')
+            ->count('homeroom_teacher_id');
+            
+        // Menghitung Guru Pengampu menggunakan DB builder karena guru_kelas pivot
+        $jumlahGuruPengampu = \Illuminate\Support\Facades\DB::table('guru_kelas')
+            ->join('kelas', 'guru_kelas.kelas_id', '=', 'kelas.id')
+            ->where('kelas.academic_year', $yearDecoded)
+            ->distinct('guru_kelas.guru_id')
+            ->count('guru_kelas.guru_id');
+
+        // Mengambil daftar kelas dan wali kelas (Eager load wali_kelas jika ada relasinya)
+        $daftarKelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->with('homeroomTeacher')
+            ->where('academic_year', $yearDecoded)
+            ->orderBy('name', 'asc')
+            ->get();
+
+        // Mengambil daftar pengampuan guru (menggunakan DB builder)
+        $daftarPengampu = \Illuminate\Support\Facades\DB::table('guru_kelas')
+            ->join('kelas', 'guru_kelas.kelas_id', '=', 'kelas.id')
+            ->join('guru', 'guru_kelas.guru_id', '=', 'guru.id')
+            ->leftJoin('mata_pelajaran', 'guru_kelas.mata_pelajaran_id', '=', 'mata_pelajaran.id')
+            ->where('kelas.academic_year', $yearDecoded)
+            ->select('guru.nama as guru_nama', 'kelas.name as kelas_nama', 'mata_pelajaran.nama as mapel_nama')
+            ->orderBy('kelas_nama', 'asc')
+            ->orderBy('guru_nama', 'asc')
+            ->get();
+
+        return view('pengaturan.archive_detail', compact(
+            'yearDecoded',
+            'createdAt',
+            'updatedAt',
+            'jumlahKelas',
+            'jumlahWaliKelas',
+            'jumlahGuruPengampu',
+            'daftarKelas',
+            'daftarPengampu',
+            'isActive'
+        ));
     }
 
     public function update(Request $request)
@@ -103,6 +187,30 @@ class PengaturanController extends Controller
         }
         
         return redirect()->route('settings.index')->with('success', 'Pengaturan berhasil diperbarui!');
+    }
+
+    public function changeAdminViewYear(Request $request)
+    {
+        $validated = $request->validate([
+            'admin_tahun_ajaran' => ['required', 'string', 'regex:/^\d{4}\/\d{4}$/'],
+        ]);
+
+        session(['admin_tahun_ajaran' => $validated['admin_tahun_ajaran']]);
+        return back()->with('success', 'Tampilan Tahun Ajaran berhasil diubah ke ' . $validated['admin_tahun_ajaran'] . '. Ini hanya mempengaruhi tampilan Anda.');
+    }
+
+    public function setGlobalActiveYear(Request $request)
+    {
+        $validated = $request->validate([
+            'global_tahun_ajaran' => ['required', 'string', 'regex:/^\d{4}\/\d{4}$/'],
+        ]);
+
+        Pengaturan::setValue('tahun_ajaran_aktif', $validated['global_tahun_ajaran']);
+        
+        // Also update session so admin sees the new global
+        session(['admin_tahun_ajaran' => $validated['global_tahun_ajaran']]);
+
+        return back()->with('success', 'Tahun Ajaran Global berhasil diaktifkan ke ' . $validated['global_tahun_ajaran'] . '. Seluruh sistem sekarang menggunakan tahun ajaran ini.');
     }
 
     public function permissions()

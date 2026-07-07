@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mata_pelajaran', function (Blueprint $table) {
-            $table->integer('beban_jp')->default(4)->after('tingkat');
-        });
+        if (!Schema::hasColumn('mata_pelajaran', 'beban_jp')) {
+            Schema::table('mata_pelajaran', function (Blueprint $table) {
+                $table->integer('beban_jp')->default(4)->after('tingkat');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('mata_pelajaran', function (Blueprint $table) {
-            $table->dropColumn('beban_jp');
-        });
+        if (Schema::hasColumn('mata_pelajaran', 'beban_jp')) {
+            Schema::table('mata_pelajaran', function (Blueprint $table) {
+                $table->dropColumn('beban_jp');
+            });
+        }
     }
 };

@@ -18,8 +18,11 @@ class TeachingAssignmentController extends Controller
     public function index()
     {
         $teachers = Guru::active()->orderBy('nama')->get();
-        // Hanya ambil kelas yang belum lulus (biasanya berstatus aktif atau berdasar tahun ajaran terakhir)
-        $classes = Kelas::orderByRaw("FIELD(grade_level, 'XII', 'XI', 'X')")->orderBy('name')->get();
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $classes = Kelas::orderByRaw("CASE grade_level WHEN 'XII' THEN 1 WHEN 'XI' THEN 2 WHEN 'X' THEN 3 ELSE 4 END")->orderBy('name')->get();
+        } else {
+            $classes = Kelas::orderByRaw("FIELD(grade_level, 'XII', 'XI', 'X')")->orderBy('name')->get();
+        }
         $subjects = MataPelajaran::where('status', 'aktif')->orderBy('nama')->get();
 
         $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');

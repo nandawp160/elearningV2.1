@@ -22,7 +22,11 @@
                         <p class="text-sm font-bold text-slate-800 dark:text-slate-200 leading-none mb-0.5">{{ auth()->user()->name }}</p>
                         <p class="text-[10px] font-medium text-slate-400 dark:text-slate-500">
                             @if(auth()->user()->isTeacher())
-                                Guru Mata Pelajaran
+                                @if(request()->routeIs('homeroom.*'))
+                                    Wali Kelas
+                                @else
+                                    Guru Mata Pelajaran
+                                @endif
                             @elseif(auth()->user()->isStudent())
                                 Siswa
                             @else
@@ -48,7 +52,7 @@
                      @click.away="open = false" 
                      class="bg-white dark:bg-slate-950 border border-slate-200/70 dark:border-slate-800/70 min-w-56 absolute right-0 mt-3 p-2 rounded-2xl shadow-2xl z-50">
                     
-                    <a href="#" class="flex items-center gap-3 text-sm py-2.5 px-4 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-200 transition">
+                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 text-sm py-2.5 px-4 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-700 dark:text-slate-200 transition">
                         <i class="fas fa-user-circle text-slate-400"></i>
                         Profil Saya
                     </a>

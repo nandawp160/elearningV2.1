@@ -21,6 +21,12 @@ class MateriController extends Controller
 
         if ($user->isTeacher()) {
             $query->where('uploaded_by', $user->teacher_id);
+            if ($request->has('class_name') && $request->class_name) {
+                $kelas = \App\Models\Kelas::where('name', $request->class_name)->first();
+                if ($kelas) {
+                    $query->where('kelas_id', $kelas->id);
+                }
+            }
         } elseif ($user->isStudent()) {
             $student = $user->student;
             $kelasName = $student?->kelas;
@@ -33,10 +39,13 @@ class MateriController extends Controller
                 if ($kelas) {
                     $teacherIds = $kelas->guruPengampu()->pluck('guru.id')->toArray();
                     $query->whereIn('uploaded_by', $teacherIds);
+                    $query->where(function ($q) use ($kelas) {
+                        $q->where('kelas_id', $kelas->id)->orWhereNull('kelas_id');
+                    });
                 }
             }
             $query->whereHas('subject', function ($q) use ($tingkat) {
-                $q->where('tingkat', $tingkat);
+                $q->where('tingkat', $tingkat)->orWhereNull('tingkat');
             });
         }
 
@@ -74,12 +83,26 @@ class MateriController extends Controller
             $subjectsQuery = JadwalPelajaran::with(['classRoom']);
             if ($user->isStudent()) {
                 $student = $user->student;
-                $kelas = $student->kelas;
-                $tingkat = 'X';
+                $kelasName = $student?->kelas;
+                $kelas = \App\Models\Kelas::where('name', $kelasName)->first();
+                $subjectIds = [];
                 if ($kelas) {
-                    $tingkat = explode(' ', $kelas)[0];
+                    $subjectIds = \App\Models\GuruKelas::where('kelas_id', $kelas->id)
+                        ->pluck('mata_pelajaran_id')
+                        ->filter()
+                        ->unique()
+                        ->toArray();
                 }
-                $subjectsQuery->where('tingkat', $tingkat);
+                
+                if (!empty($subjectIds)) {
+                    $subjectsQuery->whereIn('id', $subjectIds);
+                } else {
+                    $tingkat = 'X';
+                    if ($kelasName) {
+                        $tingkat = explode(' ', $kelasName)[0];
+                    }
+                    $subjectsQuery->where('tingkat', $tingkat);
+                }
             }
             $subjects = $subjectsQuery->get();
         }
@@ -168,8 +191,17 @@ class MateriController extends Controller
 
         $request->validate($rules);
 
+        $kelasId = null;
+        if ($request->has('kelas_name') && $request->kelas_name) {
+            $kelas = \App\Models\Kelas::where('name', $request->kelas_name)->first();
+            if ($kelas) {
+                $kelasId = $kelas->id;
+            }
+        }
+
         $data = [
             'subject_id' => $request->subject_id,
+            'kelas_id' => $kelasId,
             'title' => $request->title,
             'description' => $request->description,
             'type' => $type,
@@ -184,11 +216,16 @@ class MateriController extends Controller
             $data['file_path'] = $request->file('file')->store('materi');
         }
 
-        Materi::create($data);
+        $materi = Materi::create($data);
 
         \App\Models\ActivityLog::log('ASSIGNMENT', 'Membuat materi baru: ' . $request->title);
 
-        return redirect()->route('materials.index', ['subject_id' => $request->subject_id])
+        $redirectParams = ['subject_id' => $request->subject_id];
+        if ($request->has('kelas_name') && $request->kelas_name) {
+            $redirectParams['class_name'] = $request->kelas_name;
+        }
+
+        return redirect()->route('materials.index', $redirectParams)
             ->with('success', 'Materi berhasil ditambahkan.');
     }
 
@@ -209,11 +246,13 @@ class MateriController extends Controller
                 $kelas = \App\Models\Kelas::where('name', $kelasName)->first();
                 if ($kelas) {
                     $teacherIds = $kelas->guruPengampu()->pluck('guru.id')->toArray();
-                    $allowed = in_array($material->uploaded_by, $teacherIds);
+                    $allowedKelas = ($material->kelas_id === null || $material->kelas_id === $kelas->id);
+                    $allowedTeacher = in_array($material->uploaded_by, $teacherIds);
+                    $allowed = $allowedKelas && $allowedTeacher;
                     
                     // Juga pastikan materi ini ditujukan untuk tingkat kelas siswa (X/XI/XII)
                     if ($allowed && $material->subject) {
-                        $allowed = ($material->subject->tingkat === $tingkat);
+                        $allowed = ($material->subject->tingkat === null || $material->subject->tingkat === $tingkat);
                     }
                 }
             }
@@ -313,7 +352,8 @@ class MateriController extends Controller
         }
 
         $rules = [
-            'subject_id' => 'required|exists:mata_pelajaran,id',
+            'subject_class_pair' => 'nullable|string',
+            'subject_id' => 'nullable|exists:mata_pelajaran,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'uploaded_by' => $user->isSuperAdmin() ? 'required|exists:guru,id' : 'nullable',
@@ -338,8 +378,18 @@ class MateriController extends Controller
 
         $request->validate($rules);
 
+        $subjectId = $request->subject_id;
+        $kelasId = $material->kelas_id;
+
+        if ($request->has('subject_class_pair') && $request->subject_class_pair) {
+            $parts = explode('-', $request->subject_class_pair);
+            $subjectId = $parts[0];
+            $kelasId = isset($parts[1]) && $parts[1] != '0' ? $parts[1] : null;
+        }
+
         $data = [
-            'subject_id' => $request->subject_id,
+            'subject_id' => $subjectId,
+            'kelas_id' => $kelasId,
             'title' => $request->title,
             'description' => $request->description,
             'type' => $type,
@@ -369,7 +419,12 @@ class MateriController extends Controller
 
         \App\Models\ActivityLog::log('ASSIGNMENT', 'Memperbarui materi: ' . $material->title);
 
-        return redirect()->route('materials.index', ['subject_id' => $material->subject_id])
+        $redirectParams = ['subject_id' => $material->subject_id];
+        if ($material->classRoom) {
+            $redirectParams['class_name'] = $material->classRoom->name;
+        }
+
+        return redirect()->route('materials.index', $redirectParams)
             ->with('success', 'Materi berhasil diperbarui.');
     }
 
@@ -391,13 +446,19 @@ class MateriController extends Controller
         }
 
         $subjectId = $material->subject_id;
+        $className = $material->classRoom ? $material->classRoom->name : null;
         $title = $material->title;
 
         $material->delete();
 
         \App\Models\ActivityLog::log('DELETION', 'Menghapus materi: ' . $title);
 
-        return redirect()->route('materials.index', ['subject_id' => $subjectId])
+        $redirectParams = ['subject_id' => $subjectId];
+        if ($className) {
+            $redirectParams['class_name'] = $className;
+        }
+
+        return redirect()->route('materials.index', $redirectParams)
             ->with('success', 'Materi berhasil dihapus.');
     }
 

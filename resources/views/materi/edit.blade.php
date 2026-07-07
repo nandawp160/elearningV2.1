@@ -28,14 +28,18 @@
             <!-- Mata Pelajaran & Kelas (ReadOnly or Select) -->
             <div>
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Mata Pelajaran & Kelas</label>
-                <select name="subject_id" class="form-select w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition @error('subject_id') border-rose-500 @enderror" required>
+                <select name="subject_class_pair" class="form-select w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] transition @error('subject_class_pair') border-rose-500 @enderror" required>
                     @foreach($subjects as $subject)
-                        <option value="{{ $subject->id }}" {{ old('subject_id', $material->subject_id) == $subject->id ? 'selected' : '' }}>
+                        @php
+                            $pairVal = $subject->id . '-' . ($subject->classRoom->id ?? '0');
+                            $materialPairVal = $material->subject_id . '-' . ($material->kelas_id ?? '0');
+                        @endphp
+                        <option value="{{ $pairVal }}" {{ old('subject_class_pair', $materialPairVal) === $pairVal ? 'selected' : '' }}>
                             {{ $subject->nama }} (Kelas {{ $subject->classRoom->name ?? 'N/A' }})
                         </option>
                     @endforeach
                 </select>
-                @error('subject_id') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                @error('subject_class_pair') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
             <!-- Judul Materi -->
