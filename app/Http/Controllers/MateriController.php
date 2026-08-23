@@ -29,7 +29,7 @@ class MateriController extends Controller
             }
         } elseif ($user->isStudent()) {
             $student = $user->student;
-            $kelasName = $student?->kelas;
+            $kelasName = $student?->resolved_kelas;
             $tingkat = 'X';
             if ($kelasName) {
                 $tingkat = explode(' ', $kelasName)[0];
@@ -59,11 +59,21 @@ class MateriController extends Controller
             $guru = $user->guru;
             $subjects = collect();
             if ($guru) {
-                foreach ($guru->kelasDiampu as $kelas) {
+                $kelasDiampu = $guru->kelasDiampu()->with('homeroomTeacher')->get();
+                $kelasNames = $kelasDiampu->pluck('name')->filter()->unique()->toArray();
+
+                $studentCounts = \App\Models\Siswa::whereIn('kelas', $kelasNames)
+                    ->where('status', 'aktif')
+                    ->selectRaw('kelas, count(*) as total')
+                    ->groupBy('kelas')
+                    ->pluck('total', 'kelas')
+                    ->toArray();
+
+                foreach ($kelasDiampu as $kelas) {
                     $resolvedSubject = $guru->getSubjectForClass($kelas);
                     if ($resolvedSubject) {
                         $cloned = clone $resolvedSubject;
-                        $kelas->student_count = \App\Models\Siswa::where('kelas', $kelas->name)->where('status', 'aktif')->count();
+                        $kelas->student_count = $studentCounts[$kelas->name] ?? 0;
                         $cloned->setRelation('classRoom', $kelas);
                         $subjects->push($cloned);
                     }
@@ -83,7 +93,7 @@ class MateriController extends Controller
             $subjectsQuery = JadwalPelajaran::with(['classRoom']);
             if ($user->isStudent()) {
                 $student = $user->student;
-                $kelasName = $student?->kelas;
+                $kelasName = $student?->resolved_kelas;
                 $kelas = \App\Models\Kelas::where('name', $kelasName)->first();
                 $subjectIds = [];
                 if ($kelas) {
@@ -239,7 +249,7 @@ class MateriController extends Controller
         // Validasi: Siswa hanya boleh akses materi dari guru pengampu kelasnya
         if ($user->isStudent()) {
             $student = $user->student;
-            $kelasName = $student?->kelas;
+            $kelasName = $student?->resolved_kelas;
             $allowed = false;
             if ($kelasName) {
                 $tingkat = explode(' ', $kelasName)[0]; // e.g., 'X' from 'X IPA 1'

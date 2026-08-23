@@ -14,11 +14,87 @@
     @endif
 
     <!-- Header Area -->
-    <div class="tg-page-header">
+    <div class="tg-page-header flex justify-between items-center flex-wrap gap-4" x-data="{ showEmergencyModal: false }">
         <div>
             <h1 class="tg-page-title">Daftar Kelas Pengajuan Banding</h1>
             <p class="tg-page-sub">Pilih kelas untuk meninjau permohonan perpanjangan waktu tugas (SSL) dari siswa.</p>
         </div>
+        @if(auth()->user()->isSuperAdmin())
+        <div>
+            <button type="button" @click="showEmergencyModal = true" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition inline-flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Pelepasan Darurat Massal</span>
+            </button>
+        </div>
+
+        <!-- Mass Emergency Release Modal -->
+        <div x-show="showEmergencyModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            <div @click.away="showEmergencyModal = false" class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-100 dark:border-slate-700">
+                <form action="{{ route('appeals.mass_emergency_release') }}" method="POST">
+                    @csrf
+                    <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-rose-50/50 dark:bg-rose-950/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-lg">
+                                <i class="fas fa-unlock-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-extrabold text-slate-800 dark:text-slate-100 text-base">Pelepasan Darurat Massal (SSL)</h3>
+                                <p class="text-xs text-slate-500 m-0">Buka kunci pengumpulan tugas darurat sementara.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 space-y-4 text-xs text-slate-600 dark:text-slate-300">
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-200 block mb-1">Target Pelepasan Kunci</label>
+                            <select name="target_type" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 font-medium">
+                                <option value="all">Semua Siswa Terkunci (Seluruh Sekolah)</option>
+                                <option value="tingkat">Berdasarkan Tingkat (X / XI / XII)</option>
+                                <option value="kelas">Berdasarkan Kelas Spesifik</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-200 block mb-1">ID Target / Nama Tingkat / Nama Kelas (Opsional)</label>
+                            <input type="text" name="target_id" placeholder="Contoh: X, XI, atau X-1" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800">
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-200 block mb-1">Masa Berlaku Akses Pemulihan (Jam)</label>
+                            <select name="duration" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800 font-medium">
+                                <option value="24">24 Jam (1 Hari)</option>
+                                <option value="48" selected>48 Jam (2 Hari - Standar)</option>
+                                <option value="72">72 Jam (3 Hari)</option>
+                                <option value="168">168 Jam (7 Hari)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="font-bold text-slate-700 dark:text-slate-200 block mb-1">Alasan / Justifikasi Darurat <span class="text-rose-500">*</span></label>
+                            <textarea name="alasan_darurat" rows="3" required placeholder="Contoh: Terjadi kendala teknis server / guru mata pelajaran sakit berkepanjangan..." class="w-full border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-white dark:bg-slate-800"></textarea>
+                        </div>
+
+                        <div class="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-[11px] text-amber-800 dark:text-amber-300">
+                            <i class="fas fa-info-circle mr-1"></i> Tindakan ini akan mengaktifkan sesi pemulihan sementara pada 1 tugas tertua untuk seluruh siswa target dan tercatat lengkap pada audit log darurat.
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-2">
+                        <button type="button" @click="showEmergencyModal = false" class="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 rounded-lg transition">Batal</button>
+                        <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow transition inline-flex items-center gap-1.5">
+                            <i class="fas fa-check"></i> Konfirmasi & Buka Kunci
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        @endif
     </div>
 
     <!-- Table Card -->
@@ -57,7 +133,15 @@
                     @forelse($classData as $i => $class)
                     <tr class="tg-row hover:bg-yellow-50 transition border-b border-slate-200" data-mapel="{{ strtolower($class->subject_name) }}" data-search="{{ strtolower($class->name.' '.$class->subject_name) }}">
                         <td class="px-4 py-2 border border-slate-300 text-slate-600 text-center tg-td--num">{{ $i + 1 }}</td>
-                        <td class="px-4 py-2 border border-slate-300 font-semibold text-slate-800 whitespace-nowrap text-center">Kelas {{ $class->name }} <br><span class="text-xs text-slate-500 font-normal">{{ $class->student_count }} Siswa</span></td>
+                        <td class="px-4 py-2 border border-slate-300 font-semibold text-slate-800 whitespace-nowrap text-center">
+                            Kelas {{ $class->name }} 
+                            @if(!empty($class->is_homeroom))
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 ml-1">
+                                    <i class="fas fa-shield-alt mr-1"></i>Perwalian
+                                </span>
+                            @endif
+                            <br><span class="text-xs text-slate-500 font-normal">{{ $class->student_count }} Siswa</span>
+                        </td>
                         <td class="px-4 py-2 border border-slate-300 font-semibold text-slate-800 whitespace-nowrap">{{ $class->subject_name }}</td>
                         <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
                             @if($class->pending_count > 0)

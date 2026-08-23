@@ -18,8 +18,8 @@ class MataPelajaran extends Model
         // Compatibility fillables
         'code',
         'name',
-        'description',
-        'grade_level'
+        'grade_level',
+        'entry_academic_year'
     ];
 
     // Accessors for backward compatibility

@@ -152,19 +152,37 @@
                             </div>
                         </td>
                         <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
-                            @if($appeal->status == 'pending')
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Menunggu
-                                </span>
-                            @elseif($appeal->status == 'approved')
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Disetujui
-                                </span>
-                            @elseif($appeal->status == 'rejected')
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Ditolak
-                                </span>
-                            @endif
+                            <div class="flex flex-col items-center gap-1">
+                                @if($appeal->status == 'pending')
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Menunggu
+                                    </span>
+                                @elseif($appeal->status == 'approved')
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Disetujui
+                                    </span>
+                                @elseif($appeal->status == 'rejected')
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Ditolak
+                                    </span>
+                                @endif
+
+                                @if($appeal->tingkat_eskalasi === 'wali_kelas')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800" title="Wewenang telah dieskalasikan ke Wali Kelas">
+                                        <i class="fas fa-user-shield mr-1"></i>Eskalasi Wali Kelas
+                                    </span>
+                                @elseif($appeal->tingkat_eskalasi === 'admin')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800" title="Wewenang masuk antrean prioritas Admin/Kurikulum">
+                                        <i class="fas fa-crown mr-1"></i>Prioritas Admin
+                                    </span>
+                                @endif
+
+                                @if($appeal->is_provisional_unlocked)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800" title="Siswa mendapatkan akses pemulihan darurat sementara selama 24 jam">
+                                        <i class="fas fa-unlock-alt mr-1"></i>Akses Sementara (24j)
+                                    </span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-4 py-2 border border-slate-300 text-center whitespace-nowrap">
                             @if($appeal->status == 'pending')
@@ -257,7 +275,105 @@
                                                 <span class="proof-filesize" x-text="modalData.appeal?.bukti_pendukung_size || 'Dokumen Pendukung'"></span>
                                             </div>
                                         </div>
-                                        <a :href="'/storage/' + (modalData.appeal?.bukti_pendukung || modalData.appeal?.attachment)" target="_blank" class="link-view-proof">Lihat Surat</a>
+                                        <a :href="'/preview/appeal/' + modalData.appeal.id" target="_blank" class="link-view-proof">Lihat Surat</a>
+                                    </div>
+                                </div>
+
+                                <!-- Durasi Pemulihan Akses (Masa Tenggang) -->
+                                <div class="modal-field-group" x-show="['pending', 'ditinjau'].includes(modalData.appeal?.status)">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <label class="modal-label !mb-0 flex items-center gap-1.5 text-slate-700 dark:text-slate-200 font-bold text-xs">
+                                            <i class="far fa-clock text-[#D65A20]"></i> Durasi Pemulihan Akses (Masa Tenggang)
+                                        </label>
+                                        <span class="text-[11px] text-slate-400">Batas waktu siswa mengunggah tugas</span>
+                                    </div>
+
+                                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                        <!-- 12 Jam -->
+                                        <label class="cursor-pointer relative group">
+                                            <input type="radio" name="duration_opt" value="12" x-model="selectedDuration" class="sr-only">
+                                            <div class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-center transition-all duration-200"
+                                                 :class="selectedDuration == '12' 
+                                                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm ring-1 ring-emerald-500/30' 
+                                                    : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/80'">
+                                                <span class="text-xs font-bold tracking-tight">12 Jam</span>
+                                                <span class="text-[10px] mt-0.5 opacity-70 font-normal">0.5 Hari</span>
+                                            </div>
+                                        </label>
+
+                                        <!-- 24 Jam -->
+                                        <label class="cursor-pointer relative group">
+                                            <input type="radio" name="duration_opt" value="24" x-model="selectedDuration" class="sr-only">
+                                            <div class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-center transition-all duration-200"
+                                                 :class="selectedDuration == '24' 
+                                                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm ring-1 ring-emerald-500/30' 
+                                                    : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/80'">
+                                                <span class="text-xs font-bold tracking-tight">24 Jam</span>
+                                                <span class="text-[10px] mt-0.5 opacity-70 font-normal">1 Hari</span>
+                                            </div>
+                                        </label>
+
+                                        <!-- 48 Jam (Recommended) -->
+                                        <label class="cursor-pointer relative group">
+                                            <input type="radio" name="duration_opt" value="48" x-model="selectedDuration" class="sr-only">
+                                            <div class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-center transition-all duration-200 relative"
+                                                 :class="selectedDuration == '48' 
+                                                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm ring-1 ring-emerald-500/30' 
+                                                    : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/80'">
+                                                <span class="text-xs font-bold tracking-tight">48 Jam</span>
+                                                <span class="text-[10px] mt-0.5 opacity-80 font-medium text-emerald-600 dark:text-emerald-400">2 Hari (Std)</span>
+                                            </div>
+                                        </label>
+
+                                        <!-- 72 Jam -->
+                                        <label class="cursor-pointer relative group">
+                                            <input type="radio" name="duration_opt" value="72" x-model="selectedDuration" class="sr-only">
+                                            <div class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-center transition-all duration-200"
+                                                 :class="selectedDuration == '72' 
+                                                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm ring-1 ring-emerald-500/30' 
+                                                    : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/80'">
+                                                <span class="text-xs font-bold tracking-tight">72 Jam</span>
+                                                <span class="text-[10px] mt-0.5 opacity-70 font-normal">3 Hari</span>
+                                            </div>
+                                        </label>
+
+                                        <!-- 168 Jam -->
+                                        <label class="cursor-pointer relative group">
+                                            <input type="radio" name="duration_opt" value="168" x-model="selectedDuration" class="sr-only">
+                                            <div class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-center transition-all duration-200"
+                                                 :class="selectedDuration == '168' 
+                                                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm ring-1 ring-emerald-500/30' 
+                                                    : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/80'">
+                                                <span class="text-xs font-bold tracking-tight">7 Hari</span>
+                                                <span class="text-[10px] mt-0.5 opacity-70 font-normal">168 Jam</span>
+                                            </div>
+                                        </label>
+
+                                        <!-- Kustom (Isi Manual) -->
+                                        <label class="cursor-pointer relative group">
+                                            <input type="radio" name="duration_opt" value="custom" x-model="selectedDuration" class="sr-only">
+                                            <div class="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border text-center transition-all duration-200"
+                                                 :class="selectedDuration == 'custom' 
+                                                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm ring-1 ring-emerald-500/30' 
+                                                    : 'border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/80'">
+                                                <span class="text-xs font-bold tracking-tight flex items-center gap-1">
+                                                    <i class="fas fa-edit text-[10px]"></i> Kustom
+                                                </span>
+                                                <span class="text-[10px] mt-0.5 opacity-70 font-normal">Isi Manual</span>
+                                            </div>
+                                        </label>
+                                    </div>
+
+                                    <!-- Input Manual (Tampil hanya saat Kustom dipilih) -->
+                                    <div x-show="selectedDuration === 'custom'" x-transition class="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 flex items-center gap-3">
+                                        <label class="text-xs font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap flex items-center gap-1.5">
+                                            <i class="fas fa-pen text-emerald-600"></i> Durasi Jam (Manual):
+                                        </label>
+                                        <div class="relative flex-1">
+                                            <input type="number" min="1" max="720" x-model="customDuration" placeholder="Masukkan jumlah jam (misal: 36)" class="w-full px-3 py-1.5 pr-12 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">Jam</span>
+                                        </div>
+                                        <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold" x-text="customDuration && customDuration > 0 ? `(± ${(customDuration / 24).toFixed(1)} Hari)` : ''"></span>
                                     </div>
                                 </div>
 
@@ -293,7 +409,7 @@
                                 <form :action="`/teacher/submission-appeals/${modalData.appeal?.id}/approve`" method="POST">
                                     @csrf
                                     <input type="hidden" name="tanggapan_guru" :value="tanggapanGuru">
-                                    <input type="hidden" name="duration" value="48">
+                                    <input type="hidden" name="duration" :value="selectedDuration === 'custom' ? (customDuration || 48) : selectedDuration">
                                     <button type="submit" class="btn-modal-action btn-modal-action--approve">
                                         Setujui Banding
                                     </button>
@@ -730,6 +846,8 @@ function classroomAppealsManager() {
         loading: false,
         modalData: null,
         tanggapanGuru: '',
+        selectedDuration: '48',
+        customDuration: '',
         showPreview: false,
         searchQuery: new URLSearchParams(window.location.search).get('search') || '',
         filterStatus: new URLSearchParams(window.location.search).get('status') || '',
@@ -746,6 +864,8 @@ function classroomAppealsManager() {
             this.showModal = true;
             this.loading = true;
             this.tanggapanGuru = '';
+            this.selectedDuration = '48';
+            this.customDuration = '';
             this.showPreview = false;
             try {
                 const response = await fetch(`/teacher/submission-appeals/${appealId}/overdue`);

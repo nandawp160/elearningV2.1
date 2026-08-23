@@ -13,7 +13,18 @@ class MasterKelasController extends Controller
     {
         Gate::authorize('view_kelas');
         
-        $master_classes = MasterKelas::orderBy('grade_level', 'asc')->orderBy('name', 'asc')->get();
+        $selectedYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');
+        $selectedStartYear = (int) explode('/', $selectedYear)[0];
+
+        $master_classes = MasterKelas::orderBy('grade_level', 'asc')
+            ->orderBy('name', 'asc')
+            ->get()
+            ->filter(function($class) use ($selectedStartYear) {
+                if (!$class->entry_academic_year) return true;
+                $classStartYear = (int) explode('/', $class->entry_academic_year)[0];
+                return $classStartYear <= $selectedStartYear;
+            });
+
         return view('master_kelas.index', compact('master_classes'));
     }
 
@@ -32,6 +43,9 @@ class MasterKelasController extends Controller
             'grade_level' => 'required|string|max:50',
             'major' => 'nullable|string|max:255',
         ]);
+
+        $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');
+        $validated['entry_academic_year'] = $activeYear;
 
         MasterKelas::create($validated);
 

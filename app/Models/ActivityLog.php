@@ -38,4 +38,32 @@ class ActivityLog extends Model
             logger()->error("Failed to write activity log: " . $e->getMessage());
         }
     }
+
+    public static function logEmergency(string $action, string $description, array $metadata = []): void
+    {
+        try {
+            $formattedDesc = $description;
+            if (!empty($metadata)) {
+                $metaStrings = [];
+                foreach ($metadata as $key => $val) {
+                    if ($val !== null && $val !== '') {
+                        $metaStrings[] = ucfirst(str_replace('_', ' ', $key)) . ": " . $val;
+                    }
+                }
+                if (!empty($metaStrings)) {
+                    $formattedDesc .= ' [' . implode(' | ', $metaStrings) . ']';
+                }
+            }
+
+            self::create([
+                'user_id' => Auth::id() ?? ($metadata['user_id'] ?? null),
+                'action' => strtoupper($action),
+                'description' => $formattedDesc,
+                'ip_address' => Request::ip() ?? '127.0.0.1',
+                'user_agent' => Request::userAgent() ?? 'System / Background CLI',
+            ]);
+        } catch (\Exception $e) {
+            logger()->error("Failed to write emergency activity log: " . $e->getMessage());
+        }
+    }
 }

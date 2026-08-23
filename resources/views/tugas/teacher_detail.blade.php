@@ -277,7 +277,11 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
         <a href="{{ route('assignments.index') }}" class="tgd-back">
             <i class="fas fa-arrow-left"></i> Kembali ke Daftar Pengampuan
         </a>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" class="tgd-btn-new" style="background-color: #4f46e5; color: white;" @click="openSslModal()">
+                <i class="fas fa-shield-alt"></i>
+                <span>Aturan SSL: {{ $effectiveSslThreshold }} Tunggakan · {{ $sslThresholdSource === 'TEACHER_OVERRIDE' ? 'Custom Kelas' : 'Default Sekolah' }}</span>
+            </button>
             <a href="{{ route('assignments.teacher.rekap', ['subject' => $subject->id, 'class_name' => $subject->classRoom ? $subject->classRoom->name : null]) }}" class="tgd-btn-new" style="background-color: #f59e0b; color: white;">
                 <i class="fas fa-table"></i> Lihat Rekap Nilai
             </a>
@@ -379,7 +383,18 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                             <div class="text-xs text-slate-500">{{ $a->due_date->format('H:i') }} WIB</div>
                         </td>
                         <td class="px-4 py-2 border border-slate-300 text-slate-800 text-center whitespace-nowrap">
-                            {{ strtoupper($a->type ?? 'ESSAY') }}
+                            @php
+                                $typeConfig = $a->getConfig();
+                                $isAv = $a->isAudiovisual();
+                                $avSub = $a->mode_audiovisual == 'audio_file' ? 'Audio' : ($a->mode_audiovisual == 'video_url' ? 'Video' : 'Audio/Video');
+                            @endphp
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold {{ $typeConfig['badge_class'] ?? 'bg-slate-100 text-slate-700' }}">
+                                <i class="fas {{ $typeConfig['icon'] ?? 'fa-file' }} text-[11px]"></i>
+                                {{ $typeConfig['label'] ?? 'Dokumen' }}
+                                @if($isAv)
+                                    <span class="text-[10px] opacity-80">({{ $avSub }})</span>
+                                @endif
+                            </span>
                         </td>
                         <td class="px-4 py-2 border border-slate-300 text-slate-800 whitespace-nowrap">
                             @if($a->attachment)
@@ -534,7 +549,123 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                         </p>
                         @enderror
 
-                        {{-- Baris 2: Judul Tugas --}}
+                        {{-- Baris 2: Jenis & Format Pengumpulan Tugas --}}
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                Format Tugas yang Dikumpulkan Siswa <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="hidden" name="tipe_pengumpulan" :value="tipePengumpulan" />
+                            <input type="hidden" name="mode_audiovisual" :value="tipePengumpulan === 'audiovisual' ? modeAudiovisual : ''" />
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                {{-- 1. Media Visual --}}
+                                <div @click="tipePengumpulan = 'visual'"
+                                    class="relative p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-start gap-3 select-none"
+                                    :class="tipePengumpulan === 'visual' ? 'border-purple-500 bg-purple-50/40 dark:bg-purple-950/20 shadow-sm ring-1 ring-purple-500/30' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-800/60'">
+                                    <div x-show="tipePengumpulan === 'visual'" x-cloak class="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-check text-[9px]"></i>
+                                    </div>
+                                    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                                        :class="tipePengumpulan === 'visual' ? 'bg-purple-600 text-white' : 'bg-purple-100 dark:bg-purple-950/50 text-purple-600'">
+                                        <i class="fas fa-palette text-sm"></i>
+                                    </div>
+                                    <div class="min-w-0 pr-3">
+                                        <div class="text-xs font-bold text-slate-800 dark:text-white">Media Visual</div>
+                                        <div class="text-[11px] text-slate-500 line-clamp-1">Poster, sketsa, foto karya</div>
+                                        <div class="text-[10px] font-semibold text-purple-600 dark:text-purple-400 mt-1">.jpg, .png, .pdf (20MB)</div>
+                                    </div>
+                                </div>
+
+                                {{-- 2. Berkas Dokumen --}}
+                                <div @click="tipePengumpulan = 'dokumen'"
+                                    class="relative p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-start gap-3 select-none"
+                                    :class="tipePengumpulan === 'dokumen' ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/20 shadow-sm ring-1 ring-blue-500/30' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-800/60'">
+                                    <div x-show="tipePengumpulan === 'dokumen'" x-cloak class="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-check text-[9px]"></i>
+                                    </div>
+                                    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                                        :class="tipePengumpulan === 'dokumen' ? 'bg-blue-600 text-white' : 'bg-blue-100 dark:bg-blue-950/50 text-blue-600'">
+                                        <i class="fas fa-file-lines text-sm"></i>
+                                    </div>
+                                    <div class="min-w-0 pr-3">
+                                        <div class="text-xs font-bold text-slate-800 dark:text-white">Berkas Dokumen</div>
+                                        <div class="text-[11px] text-slate-500 line-clamp-1">Makalah, esai, laporan</div>
+                                        <div class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mt-1">.pdf, .docx (20MB)</div>
+                                    </div>
+                                </div>
+
+                                {{-- 3. Multimedia Audiovisual --}}
+                                <div @click="tipePengumpulan = 'audiovisual'"
+                                    class="relative p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-start gap-3 select-none"
+                                    :class="tipePengumpulan === 'audiovisual' ? 'border-rose-500 bg-rose-50/40 dark:bg-rose-950/20 shadow-sm ring-1 ring-rose-500/30' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-800/60'">
+                                    <div x-show="tipePengumpulan === 'audiovisual'" x-cloak class="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-check text-[9px]"></i>
+                                    </div>
+                                    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                                        :class="tipePengumpulan === 'audiovisual' ? 'bg-rose-600 text-white' : 'bg-rose-100 dark:bg-rose-950/50 text-rose-600'">
+                                        <i class="fas fa-video text-sm"></i>
+                                    </div>
+                                    <div class="min-w-0 pr-3">
+                                        <div class="text-xs font-bold text-slate-800 dark:text-white">Multimedia Audiovisual</div>
+                                        <div class="text-[11px] text-slate-500 line-clamp-1">Audio / Video streaming</div>
+                                        <div class="text-[10px] font-semibold text-rose-600 dark:text-rose-400 mt-1">Audio .mp3 / URL Video</div>
+                                    </div>
+                                </div>
+
+                                {{-- 4. Tautan Karya Eksternal --}}
+                                <div @click="tipePengumpulan = 'tautan'"
+                                    class="relative p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-200 flex items-start gap-3 select-none"
+                                    :class="tipePengumpulan === 'tautan' ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-sm ring-1 ring-emerald-500/30' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 bg-white dark:bg-slate-800/60'">
+                                    <div x-show="tipePengumpulan === 'tautan'" x-cloak class="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm">
+                                        <i class="fas fa-check text-[9px]"></i>
+                                    </div>
+                                    <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                                        :class="tipePengumpulan === 'tautan' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600'">
+                                        <i class="fas fa-link text-sm"></i>
+                                    </div>
+                                    <div class="min-w-0 pr-3">
+                                        <div class="text-xs font-bold text-slate-800 dark:text-white">Tautan Karya Eksternal</div>
+                                        <div class="text-[11px] text-slate-500 line-clamp-1">Canva, Figma, GitHub, Drive</div>
+                                        <div class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">Tautan HTTPS Proyek</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Sub-Opsi Audiovisual --}}
+                            <div x-show="tipePengumpulan === 'audiovisual'" x-cloak class="mt-4 p-4 rounded-xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 transition-all">
+                                <label class="block text-xs font-bold text-rose-900 dark:text-rose-300 mb-2">
+                                    <i class="fas fa-sliders-h mr-1"></i> Jenis Pengumpulan Audiovisual yang Diizinkan:
+                                </label>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                    <label @click="modeAudiovisual = 'audio_file'"
+                                        class="flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors"
+                                        :class="modeAudiovisual === 'audio_file' ? 'bg-white dark:bg-slate-800 border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm font-bold' : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-rose-100/50'">
+                                        <input type="radio" name="_sub_av" value="audio_file" class="hidden" x-model="modeAudiovisual" />
+                                        <i class="fas fa-microphone" :class="modeAudiovisual === 'audio_file' ? 'text-rose-500' : 'text-slate-400'"></i>
+                                        <span>Rekaman Audio Saja (.mp3, .m4a)</span>
+                                    </label>
+                                    <label @click="modeAudiovisual = 'video_url'"
+                                        class="flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors"
+                                        :class="modeAudiovisual === 'video_url' ? 'bg-white dark:bg-slate-800 border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm font-bold' : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-rose-100/50'">
+                                        <input type="radio" name="_sub_av" value="video_url" class="hidden" x-model="modeAudiovisual" />
+                                        <i class="fab fa-youtube" :class="modeAudiovisual === 'video_url' ? 'text-red-500' : 'text-slate-400'"></i>
+                                        <span>Tautan Video Saja (YouTube/Drive)</span>
+                                    </label>
+                                    <label @click="modeAudiovisual = 'either'"
+                                        class="flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium cursor-pointer transition-colors"
+                                        :class="modeAudiovisual === 'either' ? 'bg-white dark:bg-slate-800 border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm font-bold' : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-rose-100/50'">
+                                        <input type="radio" name="_sub_av" value="either" class="hidden" x-model="modeAudiovisual" />
+                                        <i class="fas fa-random" :class="modeAudiovisual === 'either' ? 'text-rose-500' : 'text-slate-400'"></i>
+                                        <span>Audio atau Video Bebas</span>
+                                    </label>
+                                </div>
+                                <p class="text-[11px] text-rose-700/80 dark:text-rose-300/80 mt-2">
+                                    <i class="fas fa-info-circle mr-1"></i> Video berbasis tautan tidak menggunakan ruang penyimpanan media pada server aplikasi.
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Baris 3: Judul Tugas --}}
                         <div>
                             <label for="modal_title" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                 Judul Tugas
@@ -550,7 +681,7 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                             @enderror
                         </div>
 
-                        {{-- Baris 3: Deskripsi Tugas --}}
+                        {{-- Baris 4: Deskripsi Tugas --}}
                         <div>
                             <label for="modal_description" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                                 Deskripsi Tugas <span class="text-slate-400 font-normal">(opsional)</span>
@@ -566,7 +697,7 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                             @enderror
                         </div>
 
-                        {{-- Baris 4: Deadline & File Tugas --}}
+                        {{-- Baris 5: Deadline & Lampiran Instruksi Guru --}}
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <label for="modal_due_date" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -583,61 +714,110 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                                    File Tugas <span class="text-slate-400 font-normal">(opsional)</span>
+                                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                                    <span>
+                                        <span x-text="attachmentMeta.title">Lampiran Instruksi Guru</span>
+                                        <span class="text-slate-400 font-normal">(opsional)</span>
+                                    </span>
                                 </label>
 
-                                <div
-                                    @dragover.prevent="!createFileName && (isDraggingCreate = true)"
-                                    @dragleave.prevent="isDraggingCreate = false"
-                                    @drop.prevent="isDraggingCreate = false; !createFileName && handleCreateFileDrop($event)"
-                                    @click="!createFileName && $refs.createFileInput.click()"
-                                    class="dropzone-premium relative transition-all duration-200"
-                                    :class="{
-                                        'locked border-emerald-500 dark:border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/20': createFileName,
-                                        'border-orange-500 bg-orange-50/30': isDraggingCreate && !createFileName,
-                                        'border-slate-300 dark:border-slate-700': !createFileName && !isDraggingCreate
-                                    }"
-                                    :style="createFileName ? 'border-style: solid !important; cursor: not-allowed !important;' : ''"
-                                >
-                                    <!-- Clear File Button -->
-                                    <template x-if="createFileName">
-                                        <button
-                                            type="button"
-                                            @click.stop="
-                                                $refs.createFileInput.value = '';
-                                                createFileName = '';
-                                            "
-                                            class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-500 dark:text-rose-400 flex items-center justify-center transition-all duration-200 shadow-sm z-10"
-                                            title="Hapus File"
-                                        >
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </template>
-
-                                    <div class="flex flex-col items-center justify-center text-center">
-                                        <div 
-                                            class="w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm transition-all duration-300"
-                                            :class="createFileName ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'"
-                                        >
-                                            <i class="fas text-lg" :class="createFileName ? 'fa-check-circle text-emerald-500' : 'fa-cloud-upload-alt'"></i>
-                                        </div>
-                                        <p 
-                                            class="text-sm font-semibold transition-colors duration-200 max-w-[90%] truncate"
-                                            :class="createFileName ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'"
-                                            x-text="createFileName || 'Klik atau drag file ke sini'"
-                                        ></p>
-                                        <p 
-                                            class="text-[10px] mt-1 transition-colors duration-200"
-                                            :class="createFileName ? 'text-emerald-500 font-semibold' : 'text-slate-400'"
-                                            x-text="createFileName ? 'File siap diupload' : 'PDF, DOCX, PPTX, ZIP (Maks. 20 MB)'"
-                                        ></p>
-                                    </div>
-                                    <input type="file" name="attachment" x-ref="createFileInput" class="hidden"
-                                        accept=".pdf,.doc,.docx,.pptx,.zip"
-                                        @change="createFileName = $el.files[0] ? $el.files[0].name : ''" />
+                                {{-- Toggle Pilihan Khusus Audiovisual Video: Berkas MP4 vs Tautan Video --}}
+                                <div x-show="tipePengumpulan === 'audiovisual' && modeAudiovisual !== 'audio_file'" x-cloak class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl mb-3 border border-slate-200/60 dark:border-slate-700/60">
+                                    <button type="button" @click="teacherAttachmentMode = 'file'"
+                                        class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                                        :class="teacherAttachmentMode === 'file' ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
+                                        <i class="fas fa-file-video"></i>
+                                        <span>Unggah Video (.mp4) / Berkas</span>
+                                    </button>
+                                    <button type="button" @click="teacherAttachmentMode = 'link'"
+                                        class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
+                                        :class="teacherAttachmentMode === 'link' ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
+                                        <i class="fab fa-youtube text-red-500"></i>
+                                        <span>Tautan Video (YouTube/Drive)</span>
+                                    </button>
                                 </div>
+
+                                {{-- Opsi 1: File Dropzone (Default atau saat mode 'file') --}}
+                                <div x-show="tipePengumpulan !== 'audiovisual' || modeAudiovisual === 'audio_file' || teacherAttachmentMode === 'file'">
+                                    <div
+                                        @dragover.prevent="!createFileName && (isDraggingCreate = true)"
+                                        @dragleave.prevent="isDraggingCreate = false"
+                                        @drop.prevent="isDraggingCreate = false; !createFileName && handleCreateFileDrop($event)"
+                                        @click="!createFileName && $refs.createFileInput.click()"
+                                        class="dropzone-premium relative transition-all duration-200"
+                                        :class="{
+                                            'locked border-emerald-500 dark:border-emerald-600 bg-emerald-50/30 dark:bg-emerald-950/20': createFileName,
+                                            'border-orange-500 bg-orange-50/30': isDraggingCreate && !createFileName,
+                                            'border-slate-300 dark:border-slate-700': !createFileName && !isDraggingCreate
+                                        }"
+                                        :style="createFileName ? 'border-style: solid !important; cursor: not-allowed !important;' : ''"
+                                    >
+                                        <!-- Clear File Button -->
+                                        <template x-if="createFileName">
+                                            <button
+                                                type="button"
+                                                @click.stop="
+                                                    $refs.createFileInput.value = '';
+                                                    createFileName = '';
+                                                "
+                                                class="absolute top-3 right-3 w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-500 dark:text-rose-400 flex items-center justify-center transition-all duration-200 shadow-sm z-10"
+                                                title="Hapus File"
+                                            >
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </template>
+
+                                        <div class="flex flex-col items-center justify-center text-center">
+                                            <div 
+                                                class="w-10 h-10 rounded-full flex items-center justify-center mb-2 shadow-sm transition-all duration-300"
+                                                :class="createFileName ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'"
+                                            >
+                                                <i class="fas text-lg" :class="createFileName ? 'fa-check-circle text-emerald-500' : attachmentMeta.icon"></i>
+                                            </div>
+                                            <p 
+                                                class="text-sm font-semibold transition-colors duration-200 max-w-[90%] truncate"
+                                                :class="createFileName ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'"
+                                                x-text="createFileName || attachmentMeta.placeholder"
+                                            ></p>
+                                            <p 
+                                                class="text-[10px] mt-1 transition-colors duration-200"
+                                                :class="createFileName ? 'text-emerald-500 font-semibold' : 'text-slate-400'"
+                                                x-text="createFileName ? 'Berkas siap diunggah' : attachmentMeta.hint"
+                                            ></p>
+                                        </div>
+                                        <input type="file" name="attachment" x-ref="createFileInput" class="hidden"
+                                            :accept="attachmentMeta.accept"
+                                            @change="createFileName = $el.files[0] ? $el.files[0].name : ''" />
+                                    </div>
+                                </div>
+
+                                {{-- Opsi 2: Input Tautan Video Guru (Saat mode 'link') --}}
+                                <div x-show="tipePengumpulan === 'audiovisual' && modeAudiovisual !== 'audio_file' && teacherAttachmentMode === 'link'" x-cloak class="space-y-3">
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-rose-500 pointer-events-none">
+                                            <i class="fab fa-youtube text-sm"></i>
+                                        </span>
+                                        <input type="url" name="attachment_link" x-model="teacherAttachmentLink" @input="updateTeacherVideoPreview()"
+                                            placeholder="https://www.youtube.com/watch?v=... atau https://drive.google.com/..."
+                                            class="input-premium pl-10 text-xs @error('attachment_link') border-rose-500 @enderror" />
+                                    </div>
+                                    <template x-if="teacherVideoEmbed">
+                                        <div class="aspect-video w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black shadow-inner">
+                                            <iframe :src="teacherVideoEmbed" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                        </div>
+                                    </template>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <i class="fas fa-info-circle text-rose-500"></i>
+                                        <span>Video dapat berupa tautan YouTube (Unlisted/Public) atau Google Drive.</span>
+                                    </p>
+                                </div>
+
                                 @error('attachment')
+                                <p class="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                                </p>
+                                @enderror
+                                @error('attachment_link')
                                 <p class="text-rose-500 text-xs mt-1.5 flex items-center gap-1">
                                     <i class="fas fa-exclamation-circle"></i> {{ $message }}
                                 </p>
@@ -694,6 +874,330 @@ textarea.tgd-input { resize: vertical; min-height: 100px; }
             </div>
         </div>
     </div>
+
+    {{-- ================================================================ --}}
+    {{-- MODAL PENGATURAN AMBANG BATAS SSL GURU                           --}}
+    {{-- ================================================================ --}}
+    <div
+        x-show="openSsl"
+        x-cloak
+        class="fixed inset-0 z-50 overflow-y-auto"
+        aria-labelledby="modal-ssl-title"
+        role="dialog"
+        aria-modal="true">
+
+        {{-- Backdrop --}}
+        <div
+            x-show="openSsl"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            @click="closeSslModal()"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div
+                x-show="openSsl"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="relative transform overflow-hidden rounded-3xl bg-white dark:bg-slate-900 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-xl border border-slate-100 dark:border-slate-800">
+
+                {{-- Modal Header --}}
+                <div class="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800 dark:text-white" id="modal-ssl-title">
+                                Aturan Ambang Batas SSL
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5 font-medium">
+                                {{ $subject->course->name ?? $subject->nama }} · Kelas {{ $subject->classRoom->name ?? '' }}
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        @click="closeSslModal()"
+                        type="button"
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        <i class="fas fa-times text-base"></i>
+                    </button>
+                </div>
+
+                {{-- Modal Body Form --}}
+                <form @submit.prevent="submitSslForm()">
+                    <div class="p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+
+                        {{-- 1. Pilihan Mode --}}
+                        <div class="space-y-3">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                                Kebijakan Ambang Batas Penguncian Tugas:
+                            </label>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {{-- Mode Default Sekolah --}}
+                                <label
+                                    @click="sslMode = 'default'"
+                                    :class="sslMode === 'default' ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'"
+                                    class="p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold flex items-center gap-2">
+                                            <i class="fas fa-school text-indigo-500"></i> Default Sekolah
+                                        </span>
+                                        <input type="radio" name="ssl_mode_radio" value="default" :checked="sslMode === 'default'" class="text-indigo-600 focus:ring-indigo-500">
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Mengikuti standar global: <strong>{{ $schoolDefaultSsl }} Tunggakan</strong>
+                                    </p>
+                                </label>
+
+                                {{-- Mode Custom Guru --}}
+                                <label
+                                    @click="sslMode = 'custom'"
+                                    :class="sslMode === 'custom' ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 ring-2 ring-indigo-500/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'"
+                                    class="p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs font-bold flex items-center gap-2">
+                                            <i class="fas fa-sliders-h text-indigo-500"></i> Custom Guru
+                                        </span>
+                                        <input type="radio" name="ssl_mode_radio" value="custom" :checked="sslMode === 'custom'" class="text-indigo-600 focus:ring-indigo-500">
+                                    </div>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Atur batas toleransi khusus (1 – 10 tunggakan)
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- 2. Presets & Angka Custom (Hanya tampil jika mode custom) --}}
+                        <div x-show="sslMode === 'custom'" x-transition class="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                                Pilih Batas Toleransi Tunggakan:
+                            </label>
+
+                            {{-- Preset Cards --}}
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                <button
+                                    type="button"
+                                    @click="sslThreshold = 1"
+                                    :class="sslThreshold == 1 ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-rose-400'"
+                                    class="py-3 px-2 rounded-xl text-center transition">
+                                    <span class="block text-sm font-extrabold">1 Tugas</span>
+                                    <span class="block text-[9px] uppercase tracking-wider mt-0.5 opacity-90">Sangat Ketat</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click="sslThreshold = 2"
+                                    :class="sslThreshold == 2 ? 'bg-amber-500 text-white font-bold shadow-md shadow-amber-500/20' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-amber-400'"
+                                    class="py-3 px-2 rounded-xl text-center transition">
+                                    <span class="block text-sm font-extrabold">2 Tugas</span>
+                                    <span class="block text-[9px] uppercase tracking-wider mt-0.5 opacity-90">Ketat</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click="sslThreshold = 3"
+                                    :class="sslThreshold == 3 ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-500/20' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400'"
+                                    class="py-3 px-2 rounded-xl text-center transition">
+                                    <span class="block text-sm font-extrabold">3 Tugas</span>
+                                    <span class="block text-[9px] uppercase tracking-wider mt-0.5 opacity-90">Standar</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    @click="sslThreshold = 5"
+                                    :class="sslThreshold == 5 ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-500/20' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400'"
+                                    class="py-3 px-2 rounded-xl text-center transition">
+                                    <span class="block text-sm font-extrabold">5 Tugas</span>
+                                    <span class="block text-[9px] uppercase tracking-wider mt-0.5 opacity-90">Fleksibel</span>
+                                </button>
+                            </div>
+
+                            {{-- Input Stepper Manual --}}
+                            <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700/60">
+                                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                    Atau tentukan angka bebas (1 – 10):
+                                </span>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        @click="if(sslThreshold > 1) sslThreshold--"
+                                        class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 transition flex items-center justify-center">
+                                        -
+                                    </button>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="10"
+                                        x-model.number="sslThreshold"
+                                        class="w-14 text-center font-bold text-sm py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500">
+                                    <button
+                                        type="button"
+                                        @click="if(sslThreshold < 10) sslThreshold++"
+                                        class="w-8 h-8 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 transition flex items-center justify-center">
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- 3. Scope Penerapan (Hanya kelas ini vs Semua kelas) --}}
+                        <div class="space-y-3 pt-2">
+                            <div class="flex items-center justify-between">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                                    Cakupan Penerapan Aturan:
+                                </label>
+                                <span class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md">
+                                    Crosscheck Sasaran
+                                </span>
+                            </div>
+
+                            <div class="space-y-2.5">
+                                {{-- Option 1: Hanya Kelas Ini --}}
+                                <div class="p-3.5 rounded-xl border transition"
+                                    :class="!sslApplyAll ? 'border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20 ring-1 ring-indigo-500/20' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60'">
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input type="radio" name="ssl_scope_radio" :value="false" x-model="sslApplyAll" class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                                        <div class="flex-1">
+                                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                                                Hanya terapkan pada kelas {{ $subject->classRoom->name ?? '' }}
+                                            </span>
+                                            <span class="text-[11px] text-slate-500 block mt-0.5">
+                                                Kelas lain yang Anda ampu tidak akan mengalami perubahan aturan.
+                                            </span>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                {{-- Option 2: Semua Kelas Yang Diampu --}}
+                                @if($allTaughtClasses->count() > 1)
+                                <div class="p-3.5 rounded-xl border transition"
+                                    :class="sslApplyAll ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/30 ring-1 ring-indigo-500/30' : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60'">
+                                    <label class="flex items-start gap-3 cursor-pointer">
+                                        <input type="radio" name="ssl_scope_radio" :value="true" x-model="sslApplyAll" class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                                <span class="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                                                    <i class="fas fa-layer-group text-indigo-500"></i>
+                                                    Terapkan ke SEMUA ({{ $allTaughtClasses->count() }}) kelas pada mapel <u>{{ $subject->course->name ?? $subject->nama }}</u>
+                                                </span>
+                                            </div>
+                                            <div class="mt-1.5 flex items-center justify-between gap-2 flex-wrap">
+                                                <span class="text-[11px] text-slate-500 dark:text-slate-400">
+                                                    Daftar kelas: <strong class="text-slate-700 dark:text-slate-200">{{ $allTaughtClasses->pluck('kelas.name')->filter()->implode(', ') }}</strong>
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    @click.stop="showAllClassesDetail = !showAllClassesDetail"
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition shadow-xs">
+                                                    <i class="fas fa-list-check text-[10px]"></i>
+                                                    <span x-text="showAllClassesDetail ? 'Tutup Detail Kelas' : 'Lihat Detail Perubahan Kelas ({{ $allTaughtClasses->count() }})'"></span>
+                                                    <i class="fas text-[9px] transition-transform duration-200" :class="showAllClassesDetail ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </label>
+
+                                    {{-- Dropdown Detail Crosscheck Kelas --}}
+                                    <div
+                                        x-show="showAllClassesDetail"
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0 -translate-y-1"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        x-transition:leave="transition ease-in duration-150"
+                                        x-transition:leave-start="opacity-100 translate-y-0"
+                                        x-transition:leave-end="opacity-0 -translate-y-1"
+                                        x-cloak
+                                        class="mt-3 p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-indigo-100 dark:border-indigo-900/60 shadow-xs space-y-2">
+                                        <div class="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-100 dark:border-slate-800">
+                                            <span>Kelas & Status Saat Ini</span>
+                                            <span class="text-indigo-600 dark:text-indigo-400">Target Perubahan Baru</span>
+                                        </div>
+
+                                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                                            @foreach($allTaughtClasses as $gkItem)
+                                                @php
+                                                    $kName = $gkItem->kelas->name ?? '-';
+                                                    $curThresh = $gkItem->ssl_threshold;
+                                                    $isCurrent = ($subject->classRoom && $gkItem->kelas_id === $subject->classRoom->id);
+                                                @endphp
+                                                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 text-xs">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="font-bold text-slate-800 dark:text-white">{{ $kName }}</span>
+                                                        @if($isCurrent)
+                                                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300">
+                                                                Kelas Ini
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="text-[11px] text-slate-500">
+                                                            @if($curThresh !== null)
+                                                                <span class="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold">Custom ({{ $curThresh }})</span>
+                                                            @else
+                                                                <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold">Default ({{ $schoolDefaultSsl }})</span>
+                                                            @endif
+                                                        </span>
+                                                        <i class="fas fa-arrow-right text-[10px] text-indigo-400"></i>
+                                                        <span class="font-bold text-indigo-600 dark:text-indigo-400" x-text="sslMode === 'default' ? 'Default ({{ $schoolDefaultSsl }})' : sslThreshold + ' Tugas'"></span>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- 4. Info Konsekuensi & Keamanan --}}
+                        <div class="p-4 bg-amber-50/80 dark:bg-amber-950/20 rounded-2xl border border-amber-200/80 dark:border-amber-900/40 flex items-start gap-3">
+                            <i class="fas fa-info-circle text-amber-600 dark:text-amber-400 text-base mt-0.5 flex-shrink-0"></i>
+                            <div class="text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                                <p class="font-bold">Konsekuensi Penguncian Tugas Siswa:</p>
+                                <p class="leading-relaxed">
+                                    Siswa yang memiliki tugas lewat tenggat $\ge$ <span class="font-bold underline" x-text="sslMode === 'default' ? '{{ $schoolDefaultSsl }}' : sslThreshold"></span> tugas akan langsung dikunci otomatis pada mata pelajaran ini hingga siswa menyelesaikan tugas target atau mengajukan banding. Sesi pemulihan aktif tidak akan dibatalkan.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {{-- Modal Footer --}}
+                    <div class="flex items-center justify-end gap-3 px-8 py-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                        <button
+                            @click="closeSslModal()"
+                            type="button"
+                            :disabled="sslSaving"
+                            class="btn-batal">
+                            Batal
+                        </button>
+                        <button
+                            type="submit"
+                            :disabled="sslSaving"
+                            class="btn-simpan"
+                            style="background-color: #4f46e5;">
+                            <span x-show="!sslSaving" class="flex items-center gap-2">
+                                <i class="fas fa-save"></i> Simpan Pengaturan SSL
+                            </span>
+                            <span x-show="sslSaving" class="flex items-center gap-2" x-cloak>
+                                <i class="fas fa-spinner fa-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')
@@ -718,9 +1222,89 @@ function teacherDetailModals() {
         selectedClass: "{!! addslashes(old('class_name', request('class_name') ?? ($subject->classRoom ? $subject->classRoom->name : ''))) !!}",
         selectedSubjectName: '',
         selectedSubjectId: "{{ old('subject_id', $subject->id) }}",
+        tipePengumpulan: "{{ old('tipe_pengumpulan', 'dokumen') }}",
+        modeAudiovisual: "{{ old('mode_audiovisual', 'video_url') }}",
+        teacherAttachmentMode: 'file',
+        teacherAttachmentLink: "{{ old('attachment_link', '') }}",
+        teacherVideoEmbed: '',
         isDraggingCreate: false,
         createFileName: '',
         status: "{{ old('status', 'active') }}",
+
+        get attachmentMeta() {
+            switch(this.tipePengumpulan) {
+                case 'visual':
+                    return {
+                        title: 'Lampiran Contoh Visual / Lembar Kerja',
+                        placeholder: 'Klik atau drag contoh gambar / sketsa acuan',
+                        hint: 'Format: JPG, PNG, JPEG, PDF (Maks. 20 MB)',
+                        accept: '.jpg,.jpeg,.png,.pdf',
+                        icon: 'fa-palette text-purple-500',
+                        color: 'purple',
+                        badge: 'Media Visual'
+                    };
+                case 'audiovisual':
+                    if (this.modeAudiovisual === 'audio_file') {
+                        return {
+                            title: 'Lampiran Audio / Soal Listening Guru',
+                            placeholder: 'Klik atau drag rekaman audio / panduan suara',
+                            hint: 'Format: MP3, M4A, WAV, PDF (Maks. 20 MB)',
+                            accept: '.mp3,.m4a,.wav,.ogg,.pdf',
+                            icon: 'fa-microphone text-rose-500',
+                            color: 'rose',
+                            badge: 'Rekaman Audio'
+                        };
+                    }
+                    return {
+                        title: 'Lampiran Video (.mp4) / Naskah Panduan',
+                        placeholder: 'Klik atau drag berkas video (.mp4) atau dokumen panduan',
+                        hint: 'Format: MP4, PDF, DOCX, ZIP (Maks. 50 MB)',
+                        accept: '.mp4,.m4v,.mov,.pdf,.docx,.doc,.mp3,.zip',
+                        icon: 'fa-video text-rose-500',
+                        color: 'rose',
+                        badge: 'Video MP4 / Link'
+                    };
+                case 'tautan':
+                    return {
+                        title: 'Lampiran Brief Desain / Panduan Proyek',
+                        placeholder: 'Klik atau drag template brief / panduan proyek',
+                        hint: 'Format: PDF, DOCX, PNG, ZIP (Maks. 20 MB)',
+                        accept: '.pdf,.docx,.doc,.png,.jpg,.zip',
+                        icon: 'fa-link text-emerald-500',
+                        color: 'emerald',
+                        badge: 'Tautan Karya'
+                    };
+                case 'dokumen':
+                default:
+                    return {
+                        title: 'Lampiran Lembar Soal / Rubrik Dokumen',
+                        placeholder: 'Klik atau drag lembar soal / dokumen tugas',
+                        hint: 'Format: PDF, DOCX, DOC, PPTX (Maks. 20 MB)',
+                        accept: '.pdf,.doc,.docx,.pptx',
+                        icon: 'fa-file-lines text-blue-500',
+                        color: 'blue',
+                        badge: 'Berkas Dokumen'
+                    };
+            }
+        },
+
+        updateTeacherVideoPreview() {
+            if (!this.teacherAttachmentLink) {
+                this.teacherVideoEmbed = '';
+                return;
+            }
+            const ytMatch = this.teacherAttachmentLink.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+            if (ytMatch) {
+                this.teacherVideoEmbed = 'https://www.youtube-nocookie.com/embed/' + ytMatch[1];
+                return;
+            }
+            const driveMatch = this.teacherAttachmentLink.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+            if (driveMatch) {
+                this.teacherVideoEmbed = 'https://drive.google.com/file/d/' + driveMatch[1] + '/preview';
+                return;
+            }
+            this.teacherVideoEmbed = '';
+        },
 
         getUniqueClasses() {
             const classes = this.subjectsList.map(s => s.class_name).filter(Boolean);
@@ -788,6 +1372,82 @@ function teacherDetailModals() {
                 this.selectedClass = match.class_name;
                 this.selectedSubjectName = match.course_name;
                 this.selectedSubjectId = match.id;
+            }
+        },
+
+        // -- SSL Configuration State & Methods --
+        openSsl: false,
+        sslMode: "{{ $teacherOverrideSsl !== null ? 'custom' : 'default' }}",
+        sslThreshold: {{ $teacherOverrideSsl !== null ? (int)$teacherOverrideSsl : $schoolDefaultSsl }},
+        sslApplyAll: false,
+        sslSaving: false,
+        showAllClassesDetail: false,
+
+        openSslModal() {
+            this.openSsl = true;
+            this.showAllClassesDetail = false;
+            document.body.style.overflow = 'hidden';
+        },
+
+        closeSslModal() {
+            this.openSsl = false;
+            this.sslSaving = false;
+            this.showAllClassesDetail = false;
+            document.body.style.overflow = '';
+        },
+
+        async submitSslForm() {
+            if (this.sslSaving) return;
+            this.sslSaving = true;
+
+            const url = "{{ route('assignments.teacher.ssl-threshold.update', ['subject' => $subject->id, 'kelas' => $subject->classRoom ? $subject->classRoom->id : 0]) }}";
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        mode: this.sslMode,
+                        ssl_threshold: this.sslMode === 'custom' ? parseInt(this.sslThreshold) : null,
+                        apply_all_classes: this.sslApplyAll
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: result.message,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                    window.location.reload();
+                } else {
+                    const err = result.message || (result.errors ? Object.values(result.errors).flat().join('\n') : 'Terjadi kesalahan saat menyimpan pengaturan.');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal Menyimpan',
+                            text: err
+                        });
+                    } else {
+                        alert(err);
+                    }
+                    this.sslSaving = false;
+                }
+            } catch (error) {
+                console.error('SSL update error:', error);
+                alert('Terjadi kesalahan jaringan atau server.');
+                this.sslSaving = false;
             }
         }
     }

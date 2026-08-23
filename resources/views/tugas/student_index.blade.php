@@ -49,24 +49,57 @@
                 </thead>
                 <tbody id="mapelTableBody">
                     @forelse($subjectData as $index => $item)
-                    <tr class="tugas-tr" data-search="{{ strtolower($item['course_name']) }} {{ strtolower($item['teacher_name']) }} {{ strtolower($item['class_name']) }}">
+                    <tr class="tugas-tr {{ $item['is_locked'] ? 'tugas-tr--locked' : '' }}" data-search="{{ strtolower($item['course_name']) }} {{ strtolower($item['teacher_name']) }} {{ strtolower($item['class_name']) }}">
                         <td class="tugas-td tugas-td--num">{{ $index + 1 }}</td>
                         <td class="tugas-td">
                             <div class="tugas-mapel-cell">
                                 <div class="tugas-mapel-icon" style="background-color: {{ $item['color_bg'] }}; color: {{ $item['color_text'] }};">
                                     <i class="{{ $item['icon'] }}"></i>
                                 </div>
-                                <span class="tugas-mapel-name">{{ $item['course_name'] }}</span>
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="tugas-mapel-name">{{ $item['course_name'] }}</span>
+                                        @if(($item['adaptive_status'] ?? '') === 'RECOVERY')
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800 shadow-2xs">
+                                                <i class="fas fa-sync-alt text-[9px] fa-spin-pulse"></i> Mode Pemulihan
+                                            </span>
+                                        @elseif(($item['adaptive_status'] ?? '') === 'LOCKED')
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800 shadow-2xs animate-pulse">
+                                                <i class="fas fa-lock text-[9px]"></i> Terkunci (SSL)
+                                            </span>
+                                            @if(($item['appeal_status'] ?? '') === 'PENDING')
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800 shadow-2xs">
+                                                    <i class="fas fa-clock text-[9px]"></i> Banding Ditinjau
+                                                </span>
+                                            @endif
+                                        @elseif(($item['adaptive_status'] ?? '') === 'WARNING')
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800 shadow-2xs">
+                                                <i class="fas fa-exclamation-triangle text-[9px]"></i> {{ $item['overdue_count'] }} Tunggakan
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800 shadow-2xs">
+                                                <i class="fas fa-check-circle text-[9px]"></i> Lancar
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
                         </td>
                         <td class="tugas-td tugas-td--secondary">{{ $item['teacher_name'] }}</td>
                         <td class="tugas-td tugas-td--secondary">{{ $item['class_name'] }}</td>
-                        <td class="tugas-td tugas-td--center">{{ $item['total_assignments'] }}</td>
+                        <td class="tugas-td tugas-td--center">
+                            <span class="font-bold {{ $item['is_locked'] ? 'text-rose-600 dark:text-rose-400' : 'text-slate-700 dark:text-slate-200' }}">
+                                {{ $item['total_assignments'] }}
+                            </span>
+                        </td>
                         <td class="tugas-td tugas-td--center">
                             <span class="tugas-collected-badge">{{ $item['submitted_count'] }}</span>
                         </td>
                         <td class="tugas-td tugas-td--center">
-                            <a href="{{ route('assignments.student.detail', $item['subject_id']) }}" class="tugas-btn-lihat">
+                            <a href="{{ route('assignments.student.detail', $item['subject_id']) }}" class="tugas-btn-lihat {{ $item['is_locked'] ? 'tugas-btn-lihat--locked' : '' }}">
+                                @if($item['is_locked'])
+                                    <i class="fas fa-lock text-rose-500"></i>
+                                @endif
                                 Lihat Tugas <i class="fas fa-chevron-right"></i>
                             </a>
                         </td>
@@ -469,14 +502,43 @@ document.addEventListener('DOMContentLoaded', function() {
 .tugas-btn-lihat:hover i {
     transform: translateX(2px);
 }
-.dark .tugas-btn-lihat {
-    background: #1e293b;
-    border-color: #334155;
-    color: #94a3b8;
-}
 .dark .tugas-btn-lihat:hover {
     border-color: #475569;
     color: #f97316;
+}
+
+/* Locked Row & Button Styles */
+.tugas-tr--locked {
+    background-color: rgba(254, 242, 242, 0.4);
+}
+.dark .tugas-tr--locked {
+    background-color: rgba(159, 18, 57, 0.08);
+}
+.tugas-tr--locked:hover {
+    background-color: rgba(254, 226, 226, 0.6);
+}
+.dark .tugas-tr--locked:hover {
+    background-color: rgba(159, 18, 57, 0.15);
+}
+.tugas-btn-lihat--locked {
+    border-color: #fecaca;
+    color: #e11d48;
+    background: #fff5f5;
+}
+.tugas-btn-lihat--locked:hover {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #be123c;
+}
+.dark .tugas-btn-lihat--locked {
+    border-color: rgba(244, 63, 94, 0.3);
+    color: #fb7185;
+    background: rgba(225, 29, 72, 0.1);
+}
+.dark .tugas-btn-lihat--locked:hover {
+    background: rgba(225, 29, 72, 0.2);
+    border-color: rgba(244, 63, 94, 0.5);
+    color: #fda4af;
 }
 
 /* Pagination */

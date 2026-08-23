@@ -34,15 +34,37 @@ class KelasController extends Controller
 
         $classrooms = $query->get();
 
+        $realCurrentYear = Kelas::withoutGlobalScopes()->max('academic_year');
+
+        // Inject riwayat_kelas_siswa counts for historical years to prevent 0 counts falling back to physical counts
+        foreach ($classrooms as $kelas) {
+            if ($kelas->academic_year !== $realCurrentYear) {
+                $historyCount = \App\Models\RiwayatKelasSiswa::where('kelas_name', $kelas->name)
+                                        ->where('academic_year', $kelas->academic_year)
+                                        ->count();
+                $kelas->siswa_count = $historyCount;
+            }
+        }
+
         $academicYears = Kelas::withoutGlobalScope('tahun_ajaran_aktif')
                                   ->select('academic_year')
                                   ->distinct()
                                   ->pluck('academic_year')
-                                  ->push($activeYear)
-                                  ->filter(fn($val) => $val !== 'all' && !empty($val))
+                                  ->push($activeYear);
+
+        $customYears = json_decode(\App\Models\Pengaturan::getValue('daftar_tahun_ajaran_custom', '[]'), true);
+        if (is_array($customYears)) {
+            foreach ($customYears as $cy) {
+                $academicYears->push($cy);
+            }
+        }
+
+        $academicYears = $academicYears->filter(fn($val) => $val !== 'all' && !empty($val))
                                   ->unique()
                                   ->sortDesc()
                                   ->values();
+
+        $totalMasterClasses = \App\Models\MasterKelas::count();
 
         // Hitung kelas kosong dan guru yang tersedia secara dinamis berdasarkan tahun ajaran terpilih
         $emptyClasses = Kelas::withoutGlobalScope('tahun_ajaran_aktif')
@@ -70,18 +92,56 @@ class KelasController extends Controller
             if ($tA === $tB) return strnatcmp($a, $b);
             return $tA <=> $tB;
         };
+        
+        $daftarKelasAsal = \App\Models\Siswa::active()->pluck('kelas')->filter()->unique()->sort($kelasSorter)->values();
 
-        return view('kelas.index', compact('classrooms', 'academicYears', 'selectedYear', 'emptyClasses', 'availableTeachers'));
+        return view('kelas.index', compact('classrooms', 'academicYears', 'selectedYear', 'emptyClasses', 'availableTeachers', 'daftarKelasAsal', 'totalMasterClasses'));
     }
 
     public function generateFromMaster(Request $request)
     {
         Gate::authorize('create_kelas');
         
-        $targetYear = $request->input('target_year', \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026'));
-        $masterClasses = \App\Models\MasterKelas::all();
+        $request->validate([
+            'source_master_year' => ['nullable', 'string'],
+            'target_year' => ['required', 'string']
+        ], [
+            'target_year.required' => 'Tahun Ajaran tujuan wajib dipilih.'
+        ]);
         
+        $targetYear = $request->input('target_year');
+        $sourceMasterYear = $request->input('source_master_year', 'all');
+        
+        // Auto-seed if MasterKelas is empty
+        if (\App\Models\MasterKelas::count() === 0) {
+            $seeder = new \Database\Seeders\MasterKelasSeeder();
+            $seeder->run();
+        }
+
+        $query = \App\Models\MasterKelas::orderBy('grade_level', 'asc')->orderBy('name', 'asc');
+        
+        if (!empty($sourceMasterYear) && $sourceMasterYear !== 'all') {
+            $hasSpecific = \App\Models\MasterKelas::where('entry_academic_year', $sourceMasterYear)->exists();
+            if ($hasSpecific) {
+                $query->where('entry_academic_year', $sourceMasterYear);
+            }
+        }
+
+        $masterClasses = $query->get();
+        
+        // Fallback: If filtered master classes is empty, take all available master classes
+        if ($masterClasses->isEmpty()) {
+            $masterClasses = \App\Models\MasterKelas::orderBy('grade_level', 'asc')->orderBy('name', 'asc')->get();
+        }
+        
+        if ($masterClasses->isEmpty()) {
+            return redirect()->route('classrooms.index', ['tahun_ajaran' => $targetYear])
+                             ->with('error', 'Tidak ada data Master Kelas yang tersedia. Silakan tambahkan data di menu Master Kelas terlebih dahulu.');
+        }
+
         $createdCount = 0;
+        $alreadyExistedCount = 0;
+        
         foreach ($masterClasses as $master) {
             $exists = Kelas::withoutGlobalScopes()
                            ->where('academic_year', $targetYear)
@@ -95,12 +155,26 @@ class KelasController extends Controller
                     'major' => $master->major,
                     'academic_year' => $targetYear,
                     'max_students' => 36,
+                    'homeroom_teacher_id' => null, // Wali kelas selalu dikosongkan (null) agar di-plotting ulang di tahun baru
                 ]);
                 $createdCount++;
+            } else {
+                $alreadyExistedCount++;
             }
         }
         
-        return redirect()->back()->with('success', "Berhasil me-generate $createdCount rombel baru untuk Tahun Ajaran $targetYear dari Master Kelas.");
+        $sourceDesc = ($sourceMasterYear && $sourceMasterYear !== 'all') ? "T.A. $sourceMasterYear" : "Master Utama";
+        \App\Models\ActivityLog::log('CLASS', "Me-generate $createdCount rombel (Basis: $sourceDesc) untuk Tahun Ajaran $targetYear");
+
+        if ($createdCount > 0) {
+            $msg = "Berhasil me-generate $createdCount rombel baru untuk Tahun Ajaran $targetYear (Basis: $sourceDesc).";
+            if ($alreadyExistedCount > 0) {
+                $msg .= " ($alreadyExistedCount rombel sudah ada sebelumnya).";
+            }
+            return redirect()->route('classrooms.index', ['tahun_ajaran' => $targetYear])->with('success', $msg);
+        } else {
+            return redirect()->route('classrooms.index', ['tahun_ajaran' => $targetYear])->with('info', "Semua ($alreadyExistedCount) rombel dari Master Kelas sudah ada pada Tahun Ajaran $targetYear.");
+        }
     }
 
     public function create()
@@ -154,8 +228,20 @@ class KelasController extends Controller
     {
         Gate::authorize('view_kelas');
 
-        $classroom->load(['waliKelas', 'daftarSiswa'])->loadCount('siswa');
+        $classroom->load(['waliKelas']);
         
+        $realCurrentYear = \App\Models\Kelas::withoutGlobalScopes()->max('academic_year');
+        
+        // Inject historical students strictly for past academic years
+        if ($classroom->academic_year !== $realCurrentYear) {
+            $studentIds = \App\Models\RiwayatKelasSiswa::where('kelas_name', $classroom->name)
+                                ->where('academic_year', $classroom->academic_year)
+                                ->pluck('siswa_id');
+            $classroom->setRelation('daftarSiswa', Siswa::whereIn('id', $studentIds)->get());
+            $classroom->siswa_count = $studentIds->count();
+        } else {
+            $classroom->load(['daftarSiswa'])->loadCount('siswa');
+        }
         // Get students who are NOT currently in this class
         $availableStudents = Siswa::where('status', 'aktif')
                                     ->where(function($q) {

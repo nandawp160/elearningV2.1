@@ -9,17 +9,40 @@ class MataPelajaranController extends Controller
 {
     public function index()
     {
-        $courses = MataPelajaran::all();
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
+        $selectedYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');
+        $selectedStartYear = (int) explode('/', $selectedYear)[0];
+
+        $courses = MataPelajaran::all()->filter(function($course) use ($selectedStartYear) {
+            if (!$course->entry_academic_year) return true;
+            $courseStartYear = (int) explode('/', $course->entry_academic_year)[0];
+            return $courseStartYear <= $selectedStartYear;
+        });
+
         return view('mata_pelajaran.index', compact('courses'));
     }
 
     public function create()
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         return view('mata_pelajaran.create');
     }
 
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         $request->validate([
             'code' => 'required|unique:mata_pelajaran,kode',
             'name' => 'required|string|max:255',
@@ -35,7 +58,12 @@ class MataPelajaranController extends Controller
             'status.required' => 'Status wajib dipilih.',
         ]);
 
-        MataPelajaran::create($request->all());
+        $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');
+
+        $data = $request->all();
+        $data['entry_academic_year'] = $activeYear;
+
+        MataPelajaran::create($data);
 
         return redirect()->route('courses.index')
             ->with('success', 'Mata pelajaran berhasil ditambahkan.');
@@ -43,17 +71,32 @@ class MataPelajaranController extends Controller
 
     public function show(MataPelajaran $course)
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         $course->loadCount('subjects');
         return view('mata_pelajaran.show', compact('course'));
     }
 
     public function edit(MataPelajaran $course)
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         return view('mata_pelajaran.edit', compact('course'));
     }
 
     public function update(Request $request, MataPelajaran $course)
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         $request->validate([
             'code' => 'required|unique:mata_pelajaran,kode,' . $course->id,
             'name' => 'required|string|max:255',
@@ -77,6 +120,11 @@ class MataPelajaranController extends Controller
 
     public function destroy(MataPelajaran $course)
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         $course->delete();
 
         return redirect()->route('courses.index')

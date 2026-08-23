@@ -50,10 +50,23 @@
                     </p>
                     <div class="flex items-center gap-2 flex-wrap pt-2">
                         @if($assignment->attachment)
-                            <button type="button" @click="initPreview('{{ $assignment->preview_url }}', '{{ addslashes(basename($assignment->attachment)) }}')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition" title="Lihat/Unduh Lampiran">
-                                <i class="fas fa-paperclip text-slate-500"></i>
-                                {{ basename($assignment->attachment) }}
-                            </button>
+                            @if($assignment->is_attachment_url)
+                                <a href="{{ $assignment->attachment }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition border border-rose-200/50" title="Buka Video Instruksi">
+                                    <i class="fab fa-youtube text-red-500"></i>
+                                    Tautan Video Instruksi Guru
+                                    <i class="fas fa-external-link-alt text-[10px] ml-1"></i>
+                                </a>
+                            @elseif($assignment->is_attachment_video)
+                                <button type="button" @click="initPreview('{{ $assignment->preview_url }}', '{{ addslashes(basename($assignment->attachment)) }}', 'video')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-bold rounded-xl transition border border-rose-200/50" title="Putar Video Instruksi">
+                                    <i class="fas fa-play text-rose-500"></i>
+                                    {{ basename($assignment->attachment) }}
+                                </button>
+                            @else
+                                <button type="button" @click="initPreview('{{ $assignment->preview_url }}', '{{ addslashes(basename($assignment->attachment)) }}')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition" title="Lihat/Unduh Lampiran">
+                                    <i class="fas fa-paperclip text-slate-500"></i>
+                                    {{ basename($assignment->attachment) }}
+                                </button>
+                            @endif
                         @else
                             <span class="text-xs text-slate-400 italic">Tidak ada lampiran</span>
                         @endif
@@ -115,6 +128,7 @@
                             <option value="all">Semua Status</option>
                             <option value="sudah_dikoreksi">Sudah Dikoreksi</option>
                             <option value="perlu_koreksi">Perlu Koreksi</option>
+                            <option value="perlu_revisi">Return Jawaban (Perlu Revisi)</option>
                             <option value="terlambat">Terlambat</option>
                             <option value="belum_kumpul">Belum Kumpul</option>
                         </select>
@@ -131,9 +145,9 @@
                 </div>
                 
                 <div>
-                    <button type="button" onclick="alert('Rekap berhasil diunduh (Simulasi)')" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-[#E8EEF5] hover:bg-[#dbe3ed] text-[#4A5568] text-sm font-bold rounded-xl transition">
-                        Unduh Rekap
-                    </button>
+                    <a href="{{ route('assignments.export-rekap', ['assignment' => $assignment->id, 'class_name' => request('class_name')]) }}" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-[#E8EEF5] hover:bg-[#dbe3ed] text-[#4A5568] text-sm font-bold rounded-xl transition">
+                        <i class="fas fa-file-excel mr-2 text-emerald-600"></i> Unduh Rekap
+                    </a>
                 </div>
             </div>
 
@@ -159,13 +173,17 @@
                             $statusType = '';
                             
                             if ($monitor->submission) {
-                                $waktuKumpulText = $monitor->submission->tanggal_pengumpulan->locale('id')->isoFormat('D MMMM Y, HH:mm') . ' WIB';
-                                if ($monitor->submission->tanggal_pengumpulan->gt($assignment->deadline)) {
+                                $waktuKumpulText = $monitor->submission->tanggal_pengumpulan ? $monitor->submission->tanggal_pengumpulan->locale('id')->isoFormat('D MMMM Y, HH:mm') . ' WIB' : '-';
+                                if ($monitor->submission->tanggal_pengumpulan && $monitor->submission->tanggal_pengumpulan->gt($assignment->deadline)) {
                                     $telat = true;
-                                    $waktuKumpulText = $monitor->submission->tanggal_pengumpulan->locale('id')->isoFormat('D MMMM Y, HH:mm') . ' WIB (Telat)';
+                                    $waktuKumpulText .= ' (Telat)';
                                 }
                                 
-                                if ($monitor->submission->grade) {
+                                if ($monitor->submission->is_needs_revision) {
+                                    $statusLabel = 'Perlu Revisi';
+                                    $statusClass = 'badge-needs-revision';
+                                    $statusType = 'perlu_revisi';
+                                } elseif ($monitor->submission->grade) {
                                     $statusLabel = 'Sudah Dikoreksi';
                                     $statusClass = 'badge-dikoreksi';
                                     $statusType = 'sudah_dikoreksi';
@@ -190,7 +208,7 @@
                         <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition table-row-item" 
                             data-nama="{{ strtolower($monitor->student->name) }}" 
                             data-nis="{{ $monitor->student->nis }}" 
-                            data-time="{{ $monitor->submission ? $monitor->submission->tanggal_pengumpulan->timestamp : 0 }}"
+                            data-time="{{ $monitor->submission ? ($monitor->submission->tanggal_pengumpulan ? $monitor->submission->tanggal_pengumpulan->timestamp : 0) : 0 }}"
                             @if($monitor->submission)
                             id="submission-row-{{ $monitor->submission->id }}"
                             :data-status="submissions[{{ $monitor->submission->id }}].status_type"
@@ -241,8 +259,8 @@
                                     <div class="flex items-center justify-center gap-2 actions-container">
                                         {{-- Button Pratinjau --}}
                                         <button type="button" 
-                                            @click="initPreview(submissions[{{ $subId }}].preview_url, submissions[{{ $subId }}].original_name, 'Jawaban dari: ' + submissions[{{ $subId }}].student_name)" 
-                                            class="inline-flex items-center justify-center gap-1 px-4 py-2 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm">
+                                            @click="initPreview(submissions[{{ $subId }}].preview_url, submissions[{{ $subId }}].original_name, 'Jawaban dari: ' + submissions[{{ $subId }}].student_name, {{ $subId }})" 
+                                            class="inline-flex items-center justify-center gap-1 px-3.5 py-2 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-sm">
                                             <i class="fas fa-eye mr-1"></i> Pratinjau
                                         </button>
 
@@ -250,7 +268,7 @@
                                         <template x-if="!submissions[{{ $subId }}].is_graded">
                                             <button type="button" 
                                                 @click="openFeedbackModal = true; feedbackActionUrl = '{{ route('submissions.toggle-koreksi', $monitor->submission) }}'; feedbackCatatan = submissions[{{ $subId }}].feedback || ''; feedbackNilai = submissions[{{ $subId }}].score || ''; feedbackSubmissionId = {{ $subId }};" 
-                                                class="inline-flex items-center justify-center gap-1 px-4 py-2 bg-[#D65A20] hover:bg-[#b84b18] text-xs font-bold text-white rounded-xl transition shadow-sm">
+                                                class="inline-flex items-center justify-center gap-1 px-3.5 py-2 bg-[#D65A20] hover:bg-[#b84b18] text-xs font-bold text-white rounded-xl transition shadow-sm">
                                                 <i class="fas fa-check mr-1"></i> Tandai Selesai
                                             </button>
                                         </template>
@@ -352,6 +370,19 @@
                             {{-- Attachment Content Div --}}
                             <div x-html="previewContent" class="w-full"></div>
 
+                            {{-- Catatan / Pesan Pengumpulan dari Siswa --}}
+                            <template x-if="currentSubmissionCatatan">
+                                <div class="p-5 bg-amber-50/80 dark:bg-amber-950/30 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 shadow-xs space-y-2">
+                                    <h3 class="text-[11px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-widest flex items-center gap-2">
+                                        <i class="fas fa-comment-dots text-amber-600 dark:text-amber-400 text-sm"></i>
+                                        Catatan / Pesan Pengumpulan dari Siswa
+                                    </h3>
+                                    <div class="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-medium bg-white/70 dark:bg-slate-900/60 p-3.5 rounded-xl border border-amber-100 dark:border-amber-900/40 whitespace-pre-line">
+                                        <span x-text="currentSubmissionCatatan"></span>
+                                    </div>
+                                </div>
+                            </template>
+
                             {{-- Assignment Text Description (Instruksi) --}}
                             @if($assignment->description)
                             <div class="bg-slate-50 dark:bg-slate-800/20 rounded-2xl border border-slate-200/50 dark:border-slate-800/80 p-6">
@@ -367,13 +398,36 @@
                     </div>
 
                     {{-- Modal Footer --}}
-                    <div class="flex items-center justify-end gap-3 px-8 py-5 border-t border-slate-100 dark:border-slate-800 shrink-0">
-                        <button
-                            @click="closePreview()"
-                            type="button"
-                            class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition">
-                            Tutup
-                        </button>
+                    <div class="flex items-center justify-between gap-3 px-8 py-5 border-t border-slate-100 dark:border-slate-800 shrink-0">
+                        <div>
+                            <template x-if="currentSubmissionId">
+                                <div class="flex items-center gap-2.5 flex-wrap">
+                                    {{-- Tombol Return Jawaban di Modal Preview --}}
+                                    <button
+                                        type="button"
+                                        @click="openRevisionFromPreview()"
+                                        class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800/80 text-xs font-bold rounded-xl transition shadow-xs">
+                                        <i class="fas fa-undo-alt"></i> Return Jawaban
+                                    </button>
+
+                                    {{-- Tombol Beri Nilai / Koreksi di Modal Preview --}}
+                                    <button
+                                        type="button"
+                                        @click="openFeedbackFromPreview()"
+                                        class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#D65A20] hover:bg-[#b84b18] text-white text-xs font-bold rounded-xl transition shadow-xs">
+                                        <i class="fas fa-check-circle"></i> Beri Nilai / Tandai Selesai
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                @click="closePreview()"
+                                type="button"
+                                class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition">
+                                Tutup
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -475,18 +529,22 @@
                                 Batal
                             </button>
                             
-                            {{-- Selesai Saja --}}
+                            {{-- Selesai Saja (Hanya jika Nilai telah diisi) --}}
                             <button
-                                type="submit"
-                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition">
+                                type="button"
+                                @click="submitFeedbackForm(false)"
+                                :disabled="!isValidNilai()"
+                                :class="isValidNilai() ? 'bg-slate-800 hover:bg-slate-900 text-white dark:bg-slate-700 dark:hover:bg-slate-600 cursor-pointer shadow-sm' : 'bg-slate-100 text-slate-400 dark:bg-slate-800/60 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-800'"
+                                class="px-4 py-2 text-xs font-bold rounded-xl transition">
                                 Selesai Saja
                             </button>
 
-                            {{-- Selesai dengan Catatan --}}
+                            {{-- Selesai dengan Catatan (Wajib Nilai & Catatan terisi) --}}
                             <button
-                                type="submit"
-                                :disabled="!feedbackNote.trim()"
-                                :class="feedbackNote.trim() ? 'bg-[#D65A20] hover:bg-[#b84b18] text-white cursor-pointer' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'"
+                                type="button"
+                                @click="submitFeedbackForm(true)"
+                                :disabled="!isValidNilai() || !hasCatatan()"
+                                :class="(isValidNilai() && hasCatatan()) ? 'bg-[#D65A20] hover:bg-[#b84b18] text-white cursor-pointer shadow-sm' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'"
                                 class="px-4 py-2 text-xs font-bold rounded-xl transition">
                                 Selesai dengan Catatan
                             </button>
@@ -496,6 +554,130 @@
                 </div>
             </div>
         </div>
+
+        {{-- Floating Revision Modal (Kembalikan Jawaban / Minta Revisi) --}}
+        <div
+            x-show="openRevisionModal"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Kembalikan Jawaban Siswa">
+
+            {{-- Backdrop --}}
+            <div
+                class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+                x-show="openRevisionModal"
+                x-transition:enter="transition duration-200 ease-out"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition duration-150 ease-in"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                @click="openRevisionModal = false"
+                aria-hidden="true">
+            </div>
+
+            {{-- Modal Panel --}}
+            <div
+                class="relative w-full max-w-md my-auto"
+                x-show="openRevisionModal"
+                x-transition:enter="transition duration-250 ease-out"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition duration-150 ease-in"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                @click.outside="openRevisionModal = false">
+
+                <div class="bg-white dark:bg-slate-900 rounded-[24px] shadow-2xl border border-rose-200/70 dark:border-rose-900/40 overflow-hidden flex flex-col">
+
+                    {{-- Modal Header --}}
+                    <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center text-lg">
+                                <i class="fas fa-undo-alt"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-800 dark:text-white">Return Jawaban Siswa</h2>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400">Siswa: <strong x-text="revisionStudentName"></strong></p>
+                            </div>
+                        </div>
+                        <button
+                            @click="openRevisionModal = false"
+                            type="button"
+                            class="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-750 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white transition"
+                            title="Tutup">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    {{-- Modal Body --}}
+                    <form @submit.prevent="submitRevisionForm()" class="p-6 flex flex-col space-y-4">
+                        <div class="p-3.5 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-xl text-xs text-rose-800 dark:text-rose-300">
+                            <i class="fas fa-info-circle mr-1"></i> Mengembalikan / return jawaban akan membatalkan status pengumpulan dan mewajibkan siswa mengunggah ulang perbaikan jawaban yang valid.
+                        </div>
+
+                        {{-- Pilihan Dropdown Alasan Cepat / Template --}}
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
+                                Template Alasan (Pilih atau Isi Manual)
+                            </label>
+                            <select
+                                x-model="revisionPreset"
+                                @change="applyRevisionPreset()"
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm p-3 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition dark:text-slate-300">
+                                <option value="">-- Pilih Template / Alasan Cepat --</option>
+                                <option value="Berkas rusak / corrupt / tidak dapat dibuka atau dibaca.">Berkas rusak / corrupt / tidak dapat dibuka</option>
+                                <option value="Berkas kosong atau halaman lembar jawaban tidak lengkap.">Berkas kosong / halaman tidak lengkap</option>
+                                <option value="Jawaban tidak sesuai dengan instruksi / topik tugas yang diberikan.">Jawaban tidak sesuai instruksi / topik tugas</option>
+                                <option value="Format berkas tidak sesuai ketentuan tugas (harap unggah dokumen PDF / Dokumen asli).">Format berkas tidak sesuai ketentuan</option>
+                                <option value="Jawaban terindikasi plagiarisme / menyalin karya siswa lain.">Indikasi plagiarisme / salinan siswa lain</option>
+                                <option value="custom">Tulis Alasan Manual / Kustom...</option>
+                            </select>
+                        </div>
+
+                        {{-- Textarea Alasan (Bisa diedit atau diisi manual) --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                                    Alasan / Catatan Pengembalian (Wajib)
+                                </label>
+                                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-normal">bisa diedit manual</span>
+                            </div>
+                            <textarea
+                                name="alasan"
+                                x-model="revisionAlasan"
+                                x-ref="revisionTextarea"
+                                required
+                                placeholder="Pilih template di atas atau ketik catatan perbaikan secara manual di sini..."
+                                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm p-3 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition dark:text-slate-300"
+                                rows="4"></textarea>
+                        </div>
+
+                        {{-- Modal Footer Actions --}}
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                @click="openRevisionModal = false"
+                                type="button"
+                                class="px-4 py-2 border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                                Batal
+                            </button>
+                            
+                            <button
+                                type="submit"
+                                :disabled="!revisionAlasan || revisionAlasan.trim().length < 3"
+                                :class="(revisionAlasan && revisionAlasan.trim().length >= 3) ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-sm' : 'bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 cursor-not-allowed'"
+                                class="px-4 py-2 text-xs font-bold rounded-xl transition">
+                                <i class="fas fa-undo-alt mr-1"></i> Return Jawaban
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
         <!-- Toast Notification -->
         <div x-show="toastShow" 
              x-transition:enter="transition ease-out duration-300"
@@ -561,7 +743,12 @@
                     </div>
                 </div>
             </div>
-        @elseif($isLocked)
+        {{-- 
+            [HIDDEN FOR DEMO/CENTRALIZED DFD VERIFICATION]
+            Banner Akses Pengumpulan Dikunci & Tombol Banding di halaman detail disembunyikan
+            agar seluruh pengajuan banding terpusat melalui halaman daftar tugas mata pelajaran.
+        --}}
+        @elseif(false && $isLocked)
             {{-- Locked due to Overdue / Tunggakan limit --}}
             <div class="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-2xl p-6 flex gap-4 items-start shadow-sm shadow-amber-500/5">
                 <div class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center text-xl flex-shrink-0">
@@ -649,25 +836,189 @@
             @endif
 
             @if($assignment->attachment)
-                <div class="pt-2 flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-850/30 rounded-2xl border border-slate-100 dark:border-slate-800/50">
-                    <div class="flex items-center gap-3 bg-transparent">
-                        <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/20 text-[#D65A20] flex items-center justify-center text-lg">
-                            <i class="fas fa-paperclip"></i>
+                @if($assignment->is_attachment_image || ($assignment->isVisual() && !$assignment->is_attachment_pdf))
+                    {{-- Visual Media Preview Card (Image / Poster / Artwork) --}}
+                    <div class="pt-3 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs">
+                                    <i class="fas fa-palette"></i>
+                                </span>
+                                <span>Media Visual Acuan Guru</span>
+                            </h4>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="openImageLightbox('{{ $assignment->preview_url }}', '{{ addslashes($assignment->title) }}', '{{ addslashes(basename($assignment->attachment)) }}')" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold text-xs rounded-xl border border-purple-200/60 dark:border-purple-800/60 transition shadow-xs">
+                                    <i class="fas fa-expand-alt"></i> Pratinjau Penuh
+                                </button>
+                                <a href="{{ $assignment->attachment_url }}" target="_blank" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition">
+                                    <i class="fas fa-download"></i> Unduh
+                                </a>
+                            </div>
                         </div>
-                        <div>
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block truncate max-w-xs">{{ basename($assignment->attachment) }}</span>
-                            <span class="text-[10px] text-slate-400 font-semibold block">Berkas Pendukung</span>
+
+                        {{-- Interactive Visual Preview Container --}}
+                        <div class="group relative rounded-2xl overflow-hidden border border-purple-150 dark:border-purple-900/40 bg-slate-900/5 dark:bg-slate-950/50 shadow-inner flex flex-col items-center justify-center transition-all">
+                            {{-- Image Display with Click to Zoom --}}
+                            <div class="relative w-full flex items-center justify-center p-4 cursor-pointer"
+                                 @click="openImageLightbox('{{ $assignment->preview_url }}', '{{ addslashes($assignment->title) }}', '{{ addslashes(basename($assignment->attachment)) }}')">
+                                <img src="{{ $assignment->preview_url }}" 
+                                     alt="Media Visual: {{ $assignment->title }}"
+                                     loading="lazy"
+                                     class="max-h-[480px] w-auto max-w-full rounded-xl object-contain shadow-md transition-transform duration-300 group-hover:scale-[1.01]" />
+                                
+                                {{-- Hover Overlay Badge --}}
+                                <div class="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/30 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100 backdrop-blur-[1px] rounded-2xl">
+                                    <span class="px-4 py-2 bg-black/75 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-all">
+                                        <i class="fas fa-search-plus text-purple-400"></i> Klik untuk Perbesar Layar Penuh
+                                    </span>
+                                </div>
+                            </div>
+                            {{-- Caption Footer --}}
+                            <div class="w-full px-4 py-2.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-t border-purple-100 dark:border-purple-900/30 flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-2 truncate text-slate-600 dark:text-slate-300 font-medium">
+                                    <i class="far fa-image text-purple-500"></i>
+                                    <span class="truncate">{{ basename($assignment->attachment) }}</span>
+                                </div>
+                                <span class="text-[10px] text-purple-600 dark:text-purple-400 font-bold uppercase tracking-wider bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded-md">
+                                    Gambar Acuan
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <a href="{{ $assignment->attachment_url }}" target="_blank" class="px-4 py-2 bg-orange-100 hover:bg-[#D65A20] text-[#D65A20] hover:text-white font-bold text-xs rounded-xl transition shadow-sm">
-                        <i class="fas fa-download mr-1"></i> Unduh
-                    </a>
-                </div>
+                @elseif($assignment->is_attachment_pdf)
+                    {{-- PDF Preview Card --}}
+                    <div class="pt-3 space-y-3">
+                        <div class="flex items-center justify-between p-4 bg-rose-50/50 dark:bg-rose-950/20 rounded-2xl border border-rose-100 dark:border-rose-900/40">
+                            <div class="flex items-center gap-3.5 min-w-0">
+                                <div class="w-11 h-11 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 flex items-center justify-center text-xl flex-shrink-0 shadow-xs">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block truncate">{{ basename($assignment->attachment) }}</span>
+                                    <span class="text-[10px] text-rose-600 dark:text-rose-400 font-semibold block">Dokumen Acuan / Lembar Kerja (PDF)</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button type="button" @click="openPdfModal('{{ $assignment->preview_url }}', '{{ addslashes(basename($assignment->attachment)) }}')" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center gap-1.5">
+                                    <i class="fas fa-eye"></i> Buka Pratinjau
+                                </button>
+                                <a href="{{ $assignment->attachment_url }}" target="_blank" class="px-3.5 py-2 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5">
+                                    <i class="fas fa-download"></i> Unduh
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($assignment->is_attachment_video)
+                    {{-- Native Video Player Card --}}
+                    <div class="pt-3 space-y-2">
+                        <h4 class="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-play-circle"></i> Video Panduan / Instruksi Guru
+                        </h4>
+                        <div class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-black aspect-video">
+                            <video controls class="w-full h-full" preload="metadata">
+                                <source src="{{ $assignment->preview_url }}" type="video/mp4">
+                                Browser Anda tidak mendukung pemutaran video HTML5.
+                            </video>
+                        </div>
+                    </div>
+                @elseif($assignment->is_attachment_url)
+                    {{-- Video URL Embed (YouTube / Drive) --}}
+                    <div class="pt-3 space-y-2">
+                        <h4 class="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fab fa-youtube text-red-500"></i> Video Panduan / Instruksi Guru
+                        </h4>
+                        @if($assignment->attachment_embed_url)
+                            <div class="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-black aspect-video shadow-md">
+                                <iframe src="{{ $assignment->attachment_embed_url }}" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        @else
+                            <div class="p-4 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                <div class="flex items-center gap-2 text-xs font-semibold">
+                                    <i class="fas fa-link text-rose-500"></i>
+                                    <span class="truncate">{{ $assignment->attachment }}</span>
+                                </div>
+                                <a href="{{ $assignment->attachment }}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-rose-600 text-white font-bold text-xs rounded-xl">
+                                    Buka Link
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    {{-- Generic Attachment Download Box --}}
+                    <div class="pt-2 flex items-center justify-between p-4 bg-slate-50/50 dark:bg-slate-850/30 rounded-2xl border border-slate-100 dark:border-slate-800/50">
+                        <div class="flex items-center gap-3 bg-transparent">
+                            <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/20 text-[#D65A20] flex items-center justify-center text-lg">
+                                <i class="fas fa-paperclip"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block truncate max-w-xs">{{ basename($assignment->attachment) }}</span>
+                                <span class="text-[10px] text-slate-400 font-semibold block">Berkas Pendukung</span>
+                            </div>
+                        </div>
+                        <a href="{{ $assignment->attachment_url }}" target="_blank" class="px-4 py-2 bg-orange-100 hover:bg-[#D65A20] text-[#D65A20] hover:text-white font-bold text-xs rounded-xl transition shadow-sm">
+                            <i class="fas fa-download mr-1"></i> Unduh
+                        </a>
+                    </div>
+                @endif
             @endif
         </div>
 
         {{-- Submission Area --}}
-        @if($mySub)
+        @if($mySub && $mySub->is_needs_revision)
+            {{-- Returned / Needs Revision --}}
+            <div class="card bg-rose-50/60 dark:bg-rose-950/20 border-2 border-rose-300 dark:border-rose-900/50 p-6 rounded-2xl shadow-sm space-y-5">
+                <div class="flex items-center justify-between border-b border-rose-200 dark:border-rose-900/40 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/50 text-rose-600 flex items-center justify-center text-lg">
+                            <i class="fas fa-undo-alt"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-rose-800 dark:text-rose-300">Tugas Dikembalikan oleh Guru (Perlu Revisi)</h3>
+                            <p class="text-[11px] text-rose-600 dark:text-rose-400 font-semibold mt-0.5">
+                                Dikembalikan pada: {{ $mySub->dikembalikan_pada ? $mySub->dikembalikan_pada->locale('id')->isoFormat('D MMMM Y, HH:mm') . ' WIB' : '-' }}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="px-3.5 py-1 bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200 rounded-xl text-xs font-bold border border-rose-300 dark:border-rose-800">
+                        Wajib Unggah Ulang
+                    </span>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-rose-200 dark:border-rose-800/80 shadow-xs">
+                        <h4 class="text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <i class="fas fa-comment-dots"></i> Catatan & Alasan Pengembalian dari Guru:
+                        </h4>
+                        <div class="text-sm text-slate-800 dark:text-slate-100 font-medium leading-relaxed bg-rose-50/50 dark:bg-slate-800 p-3 rounded-lg border border-rose-100 dark:border-slate-700">
+                            {{ $mySub->alasan_pengembalian ?: 'Harap periksa kembali berkas jawaban Anda dan unggah ulang berkas yang valid sesuai instruksi tugas.' }}
+                        </div>
+                    </div>
+
+                    <form action="{{ route('submissions.store', $assignment) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        @csrf
+                        <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                                Unggah Berkas Perbaikan / Revisi Baru:
+                            </label>
+                            <input type="file" name="file" required class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#D65A20] file:text-white hover:file:bg-[#b84b18] file:cursor-pointer transition" />
+                        </div>
+                        <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                                Catatan Perbaikan / Pesan untuk Guru (Opsional):
+                            </label>
+                            <textarea name="catatan" rows="2" class="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:border-[#D65A20]" placeholder="Tambahkan penjelasan perbaikan jika ada..."></textarea>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#D65A20] hover:bg-[#b84b18] text-white text-xs font-bold rounded-xl transition shadow-md shadow-orange-500/10">
+                                <i class="fas fa-paper-plane"></i> Kirim Jawaban Revisi
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @elseif($mySub)
             {{-- Submitted --}}
             <div class="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-5">
                 <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-4">
@@ -678,7 +1029,7 @@
                         <div>
                             <h3 class="text-sm font-bold text-slate-800 dark:text-white">Tugas Telah Dikumpulkan</h3>
                             <p class="text-[10px] text-slate-400 font-semibold mt-0.5">
-                                Dikirim pada: {{ $mySub->tanggal_pengumpulan->locale('id')->isoFormat('D MMMM Y, HH:mm') }} WIB
+                                Dikirim pada: {{ $mySub->tanggal_pengumpulan ? $mySub->tanggal_pengumpulan->locale('id')->isoFormat('D MMMM Y, HH:mm') . ' WIB' : '-' }}
                             </p>
                         </div>
                     </div>
@@ -698,7 +1049,7 @@
                     <div class="md:col-span-8 space-y-4">
                         <div class="space-y-2">
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Berkas Pengumpulan Anda</span>
-                            <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-850/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-855/50 rounded-xl border border-slate-100 dark:border-slate-800">
                                 <div class="flex items-center gap-2.5 min-w-0">
                                     <i class="fas fa-file-pdf text-rose-500 text-lg"></i>
                                     <span class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate block">{{ $mySub->original_name ?: basename($mySub->file_tugas) }}</span>
@@ -708,6 +1059,15 @@
                                 </a>
                             </div>
                         </div>
+
+                        @if($mySub->catatan)
+                            <div class="space-y-2">
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Catatan Pengumpulan Anda</span>
+                                <div class="p-4 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/30 rounded-2xl text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium whitespace-pre-line">
+                                    <i class="fas fa-comment-dots text-amber-600 dark:text-amber-400 mr-1.5"></i> {{ $mySub->catatan }}
+                                </div>
+                            </div>
+                        @endif
 
                         @if($mySub->grade && $mySub->grade->notes)
                             <div class="space-y-2">
@@ -737,7 +1097,12 @@
                     </div>
                 </div>
             </div>
-        @elseif(!$isLocked)
+        {{-- 
+            [HIDDEN FOR DEMO/CENTRALIZED DFD VERIFICATION]
+            Form Kirim Lembar Jawaban di halaman detail disembunyikan agar seluruh pengumpulan 
+            berjalan melalui modal verifikasi middleware SSL pada halaman daftar tugas.
+        --}}
+        @elseif(false && !$isLocked)
             {{-- Submit Form --}}
             <div class="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm space-y-4">
                 <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-850 pb-4">
@@ -906,6 +1271,115 @@
                 </form>
             </div>
         </div>
+
+        {{-- Image Lightbox Modal for Visual Media --}}
+        <div x-show="lightboxOpen" x-cloak 
+             class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6" 
+             role="dialog" aria-modal="true"
+             @keydown.escape.window="closeImageLightbox()">
+            
+            {{-- Backdrop with Blur --}}
+            <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-md transition-opacity" 
+                 x-show="lightboxOpen" 
+                 x-transition.opacity 
+                 @click="closeImageLightbox()"></div>
+
+            {{-- Modal Content --}}
+            <div class="relative w-full max-w-5xl max-h-[92vh] bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col transition-all transform"
+                 x-show="lightboxOpen" 
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 @click.stop>
+                
+                {{-- Lightbox Toolbar Header --}}
+                <div class="px-5 py-3.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between gap-4 text-white">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-base flex-shrink-0">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="text-xs sm:text-sm font-bold text-slate-100 truncate" x-text="lightboxTitle"></h3>
+                            <p class="text-[10px] sm:text-[11px] text-slate-400 truncate" x-text="lightboxFileName"></p>
+                        </div>
+                    </div>
+
+                    {{-- Controls --}}
+                    <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                        <button type="button" @click="zoomOut()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition" title="Zoom Out (-)">
+                            <i class="fas fa-search-minus text-xs"></i>
+                        </button>
+                        <span class="text-xs font-mono text-slate-400 min-w-[2.75rem] text-center" x-text="Math.round(lightboxZoom * 100) + '%'"></span>
+                        <button type="button" @click="zoomIn()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition" title="Zoom In (+)">
+                            <i class="fas fa-search-plus text-xs"></i>
+                        </button>
+                        <button type="button" @click="resetZoom()" class="px-2 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Reset Zoom">
+                            100%
+                        </button>
+                        <a :href="lightboxSrc" download target="_blank" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs flex items-center gap-1.5 transition ml-1" title="Unduh Berkas">
+                            <i class="fas fa-download text-xs"></i> <span class="hidden sm:inline">Unduh</span>
+                        </a>
+                        <button type="button" @click="closeImageLightbox()" class="w-8 h-8 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white flex items-center justify-center transition ml-1" title="Tutup (ESC)">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Image View Area with Zoom Support --}}
+                <div class="relative flex-1 overflow-auto p-4 sm:p-6 flex items-center justify-center bg-slate-950/60 select-none min-h-[300px]">
+                    <img :src="lightboxSrc" 
+                         :alt="lightboxTitle" 
+                         class="max-w-none transition-transform duration-150 ease-out rounded-lg shadow-2xl"
+                         :style="'transform: scale(' + lightboxZoom + '); transform-origin: center center; max-height: calc(85vh - 120px);'" />
+                </div>
+            </div>
+        </div>
+
+        {{-- PDF Preview Modal for Student --}}
+        <div x-show="pdfModalOpen" x-cloak 
+             class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6" 
+             role="dialog" aria-modal="true"
+             @keydown.escape.window="closePdfModal()">
+            
+            <div class="fixed inset-0 bg-slate-950/85 backdrop-blur-md transition-opacity" 
+                 x-show="pdfModalOpen" 
+                 x-transition.opacity 
+                 @click="closePdfModal()"></div>
+
+            <div class="relative w-full max-w-5xl h-[90vh] bg-slate-900 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden flex flex-col transition-all"
+                 x-show="pdfModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 @click.stop>
+                
+                <div class="px-5 py-3.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-white">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-base">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3 class="text-xs sm:text-sm font-bold text-slate-100 truncate" x-text="pdfModalTitle"></h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a :href="pdfModalSrc" download target="_blank" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-1.5 transition">
+                            <i class="fas fa-download text-xs"></i> <span class="hidden sm:inline">Unduh</span>
+                        </a>
+                        <button type="button" @click="closePdfModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-500 text-slate-300 hover:text-white flex items-center justify-center transition">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 w-full bg-slate-950">
+                    <iframe :src="pdfModalSrc" class="w-full h-full border-0"></iframe>
+                </div>
+            </div>
+        </div>
     </div>
 @endif
 
@@ -947,6 +1421,18 @@
             isDragging: false,
             uploading: false,
             
+            // Lightbox Modal for Image
+            lightboxOpen: false,
+            lightboxSrc: '',
+            lightboxTitle: '',
+            lightboxFileName: '',
+            lightboxZoom: 1,
+
+            // PDF Modal
+            pdfModalOpen: false,
+            pdfModalSrc: '',
+            pdfModalTitle: '',
+            
             appealFileSelected: false,
             appealFileName: '',
             appealFileSize: '',
@@ -954,6 +1440,37 @@
             appealDragging: false,
             hasCommitted: false,
             penjelasanText: '',
+
+            openImageLightbox(src, title, fileName) {
+                this.lightboxSrc = src;
+                this.lightboxTitle = title;
+                this.lightboxFileName = fileName;
+                this.lightboxZoom = 1;
+                this.lightboxOpen = true;
+            },
+            closeImageLightbox() {
+                this.lightboxOpen = false;
+                this.lightboxSrc = '';
+            },
+            zoomIn() {
+                this.lightboxZoom = Math.min(3, +(this.lightboxZoom + 0.25).toFixed(2));
+            },
+            zoomOut() {
+                this.lightboxZoom = Math.max(0.5, +(this.lightboxZoom - 0.25).toFixed(2));
+            },
+            resetZoom() {
+                this.lightboxZoom = 1;
+            },
+
+            openPdfModal(src, title) {
+                this.pdfModalSrc = src;
+                this.pdfModalTitle = title;
+                this.pdfModalOpen = true;
+            },
+            closePdfModal() {
+                this.pdfModalOpen = false;
+                this.pdfModalSrc = '';
+            },
 
             handleFileChange(e) {
                 const files = e.target.files;
@@ -1052,14 +1569,26 @@
             feedbackCatatan: '',
             feedbackNilai: '',
             feedbackSubmissionId: null,
+            openRevisionModal: false,
+            revisionActionUrl: '',
+            revisionAlasan: '',
+            revisionPreset: '',
+            revisionSubmissionId: null,
+            revisionStudentName: '',
+            currentSubmissionId: null,
+            currentSubmissionCatatan: '',
             toastShow: false,
             toastMessage: '',
             submissions: {
                 @foreach($studentMonitoring as $monitor)
                     @if($monitor->submission)
                         @php
-                            $telat = $monitor->submission->tanggal_pengumpulan->gt($assignment->deadline);
-                            if ($monitor->submission->grade) {
+                            $telat = $monitor->submission->tanggal_pengumpulan && $monitor->submission->tanggal_pengumpulan->gt($assignment->deadline);
+                            if ($monitor->submission->is_needs_revision) {
+                                $sLabel = 'Return Jawaban';
+                                $sClass = 'badge-needs-revision';
+                                $sType = 'perlu_revisi';
+                            } elseif ($monitor->submission->grade) {
                                 $sLabel = 'Sudah Dikoreksi';
                                 $sClass = 'badge-dikoreksi';
                                 $sType = 'sudah_dikoreksi';
@@ -1082,24 +1611,96 @@
                             status_type: '{{ $sType }}',
                             score: '{{ $monitor->submission->grade ? $monitor->submission->grade->score : '' }}',
                             feedback: '{{ $monitor->submission->grade ? addslashes($monitor->submission->grade->feedback) : '' }}',
-                            original_name: '{{ addslashes($monitor->submission->original_name) }}',
+                            alasan_pengembalian: '{{ addslashes($monitor->submission->alasan_pengembalian ?? "") }}',
+                            catatan: '{{ addslashes($monitor->submission->catatan ?? "") }}',
+                            original_name: '{{ addslashes($monitor->submission->original_name ?? $monitor->submission->submission_url ?? "Tautan Pengumpulan") }}',
                             attachment_url: '{{ $monitor->submission->attachment_url }}',
                             preview_url: '{{ $monitor->submission->preview_url }}',
+                            submission_url: '{{ $monitor->submission->submission_url }}',
+                            video_embed_url: '{{ $monitor->submission->video_embed_url }}',
+                            is_video_embeddable: {{ $monitor->submission->is_video_embeddable ? 'true' : 'false' }},
+                            is_url_submission: {{ $monitor->submission->is_url_submission ? 'true' : 'false' }},
+                            platform_data: @json($monitor->submission->platform_data),
                             student_name: '{{ addslashes($monitor->student->name) }}'
                         },
                     @endif
                 @endforeach
             },
             
-            initPreview(url, name, subtitle = 'Pratinjau Soal & Instruksi Tugas') {
+            initPreview(url, name, subtitle = 'Pratinjau Soal & Instruksi Tugas', submissionId = null) {
                 this.previewUrl = url;
                 this.previewName = name;
                 this.previewSubtitle = subtitle;
+                this.currentSubmissionId = submissionId;
+                const sub = submissionId ? this.submissions[submissionId] : null;
+                this.currentSubmissionCatatan = (sub && sub.catatan) ? sub.catatan : '';
                 this.openPreview = true;
                 this.previewLoading = true;
                 this.previewError = false;
                 this.previewContent = '';
                 document.body.style.overflow = 'hidden';
+
+                // 1. Tautan Pengumpulan Video Streaming (YouTube, Google Drive, Loom)
+                if (sub && sub.video_embed_url) {
+                    this.previewContent = `
+                        <div class="space-y-4">
+                            <div class="aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-lg">
+                                <iframe src="${sub.video_embed_url}" class="w-full h-full"
+                                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                                    referrerpolicy="strict-origin-when-cross-origin"
+                                    allowfullscreen loading="lazy"></iframe>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div class="min-w-0 flex-1 pr-3">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-0.5">Tautan Asli Video Siswa:</span>
+                                    <a href="${sub.submission_url}" target="_blank" rel="noopener noreferrer" class="text-xs text-red-600 dark:text-red-400 hover:underline truncate block font-mono">
+                                        ${sub.submission_url}
+                                    </a>
+                                </div>
+                                <a href="${sub.submission_url}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-sm">
+                                    <i class="fas fa-external-link-alt text-[10px]"></i> Buka di Tab Baru
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    this.previewLoading = false;
+                    return;
+                }
+
+                // 2. Tautan Karya Platform Eksternal (Canva, Figma, GitHub, Google Drive/Docs)
+                if (sub && sub.is_url_submission && !sub.is_video_embeddable) {
+                    const pLabel = sub.platform_data ? sub.platform_data.label : 'Tautan Proyek Siswa';
+                    this.previewContent = `
+                        <div class="p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-center space-y-4">
+                            <div class="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-slate-800 dark:text-white">${pLabel}</h4>
+                                <p class="text-xs text-slate-500 mt-1">Siswa mengumpulkan karya melalui tautan platform eksternal.</p>
+                            </div>
+                            <div class="p-3 bg-white dark:bg-slate-950/40 rounded-xl border border-slate-200 dark:border-slate-800 max-w-lg mx-auto">
+                                <a href="${sub.submission_url}" target="_blank" rel="noopener noreferrer" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline break-all font-mono">
+                                    ${sub.submission_url}
+                                </a>
+                            </div>
+                            <div class="pt-2">
+                                <a href="${sub.submission_url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-emerald-600/20">
+                                    <i class="fas fa-external-link-alt"></i> Buka Hasil Karya Siswa (Tab Baru)
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    this.previewLoading = false;
+                    return;
+                }
+
+                // 3. Berkas Fisik (Visual / Dokumen / Audio / Arsip)
+                if (!name || !url) {
+                    this.previewLoading = false;
+                    this.previewError = true;
+                    return;
+                }
                 
                 const ext = name.split('.').pop().toLowerCase();
                 
@@ -1109,12 +1710,88 @@
                 } else if (ext === 'pdf') {
                     this.previewContent = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" class="w-full h-[600px] border-none rounded-2xl"></iframe>`;
                     this.previewLoading = false;
+                } else if (['mp3', 'm4a', 'wav', 'ogg'].includes(ext)) {
+                    this.previewContent = `
+                        <div class="p-8 bg-gradient-to-br from-rose-50 to-orange-50 dark:from-slate-900 dark:to-slate-800 rounded-2xl border border-rose-100 dark:border-slate-700 text-center space-y-4">
+                            <div class="w-16 h-16 rounded-2xl bg-rose-500 text-white flex items-center justify-center mx-auto text-2xl shadow-lg shadow-rose-500/20">
+                                <i class="fas fa-microphone"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-slate-800 dark:text-white">Rekaman Audio Siswa</h4>
+                                <p class="text-xs text-slate-500 mt-1">${name}</p>
+                            </div>
+                            <div class="max-w-md mx-auto">
+                                <audio controls preload="metadata" class="w-full">
+                                    <source src="${url}">
+                                    Browser Anda tidak mendukung pemutar audio.
+                                </audio>
+                            </div>
+                            <div class="pt-2">
+                                <a href="${url}" target="_blank" download class="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition">
+                                    <i class="fas fa-download"></i> Unduh Berkas Audio
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    this.previewLoading = false;
+                } else if (['zip', 'rar', '7z'].includes(ext)) {
+                    this.previewContent = `
+                        <div class="p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 text-center space-y-4">
+                            <div class="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center mx-auto text-2xl shadow-lg shadow-amber-500/20">
+                                <i class="fas fa-file-zipper"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-slate-800 dark:text-white">Berkas Terkompresi (${name})</h4>
+                                <p class="text-xs text-slate-500 mt-1">Unduh berkas arsip untuk mengekstrak dan memeriksa karya proyek siswa.</p>
+                            </div>
+                            <div class="pt-2">
+                                <a href="${url}" target="_blank" download class="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-amber-600/20">
+                                    <i class="fas fa-download"></i> Unduh Berkas Arsip (.zip / .rar)
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                    this.previewLoading = false;
                 } else if (ext === 'docx') {
                     this.loadDocxPreview(url);
                 } else {
                     this.previewLoading = false;
                     this.previewError = true;
                 }
+            },
+
+            applyRevisionPreset() {
+                if (this.revisionPreset === 'custom') {
+                    this.revisionAlasan = '';
+                    this.$nextTick(() => {
+                        this.$refs.revisionTextarea?.focus();
+                    });
+                } else if (this.revisionPreset) {
+                    this.revisionAlasan = this.revisionPreset;
+                }
+            },
+
+            openRevisionFromPreview() {
+                if (!this.currentSubmissionId) return;
+                const subId = this.currentSubmissionId;
+                this.closePreview();
+                this.openRevisionModal = true;
+                this.revisionPreset = '';
+                this.revisionActionUrl = '/submissions/' + subId + '/return-revision';
+                this.revisionAlasan = this.submissions[subId]?.alasan_pengembalian || '';
+                this.revisionSubmissionId = subId;
+                this.revisionStudentName = this.submissions[subId]?.student_name || '';
+            },
+
+            openFeedbackFromPreview() {
+                if (!this.currentSubmissionId) return;
+                const subId = this.currentSubmissionId;
+                this.closePreview();
+                this.openFeedbackModal = true;
+                this.feedbackActionUrl = '/submissions/' + subId + '/toggle-koreksi';
+                this.feedbackCatatan = this.submissions[subId]?.feedback || '';
+                this.feedbackNilai = this.submissions[subId]?.score || '';
+                this.feedbackSubmissionId = subId;
             },
             
             async loadDocxPreview(url) {
@@ -1146,6 +1823,8 @@
                 this.previewUrl = '';
                 this.previewName = 'Instruksi Tugas';
                 this.previewSubtitle = 'Pratinjau Soal & Instruksi Tugas';
+                this.currentSubmissionId = null;
+                this.currentSubmissionCatatan = '';
                 this.openPreview = true;
                 this.previewLoading = false;
                 this.previewError = false;
@@ -1155,6 +1834,9 @@
             
             closePreview() {
                 this.openPreview = false;
+                this.previewContent = '';
+                this.currentSubmissionId = null;
+                this.currentSubmissionCatatan = '';
                 document.body.style.overflow = '';
             },
             
@@ -1168,6 +1850,18 @@
                 });
             },
             
+            isValidNilai() {
+                if (this.feedbackNilai === '' || this.feedbackNilai === null || this.feedbackNilai === undefined) {
+                    return false;
+                }
+                const num = Number(this.feedbackNilai);
+                return !isNaN(num) && num >= 0 && num <= {{ $assignment->max_score }};
+            },
+            
+            hasCatatan() {
+                return !!(this.feedbackCatatan && this.feedbackCatatan.trim().length > 0);
+            },
+            
             showToast(msg) {
                 this.toastMessage = msg;
                 this.toastShow = true;
@@ -1176,8 +1870,20 @@
                 }, 3000);
             },
             
-            async submitFeedbackForm() {
+            async submitFeedbackForm(requireCatatan = false) {
                 if (!this.feedbackActionUrl) return;
+                
+                if (!this.isValidNilai()) {
+                    alert('Harap masukkan nilai valid (0 - {{ $assignment->max_score }}) terlebih dahulu.');
+                    return;
+                }
+                
+                if (requireCatatan && !this.hasCatatan()) {
+                    alert('Harap masukkan catatan koreksi / feedback.');
+                    return;
+                }
+                
+                const catatanToSend = requireCatatan ? this.feedbackCatatan.trim() : (this.feedbackCatatan ? this.feedbackCatatan.trim() : '');
                 
                 try {
                     const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -1194,7 +1900,7 @@
                         method: 'POST',
                         headers: headers,
                         body: JSON.stringify({ 
-                            catatan: this.feedbackCatatan,
+                            catatan: catatanToSend,
                             nilai: this.feedbackNilai 
                         })
                     });
@@ -1219,6 +1925,51 @@
                 } catch (e) {
                     console.error('AJAX Error:', e);
                     alert('Gagal memproses koreksi. Silakan coba lagi.');
+                }
+            },
+
+            async submitRevisionForm() {
+                if (!this.revisionActionUrl) return;
+                if (!this.revisionAlasan || this.revisionAlasan.trim().length < 3) {
+                    alert('Harap masukkan catatan / alasan pengembalian tugas minimal 3 karakter.');
+                    return;
+                }
+
+                try {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch(this.revisionActionUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': token || ''
+                        },
+                        body: JSON.stringify({ alasan: this.revisionAlasan.trim() })
+                    });
+
+                    if (!response.ok) throw new Error('Request failed');
+                    const result = await response.json();
+
+                    if (result.success) {
+                        if (this.revisionSubmissionId) {
+                            const subId = this.revisionSubmissionId;
+                            this.submissions[subId].is_graded = false;
+                            this.submissions[subId].status_label = result.status_label;
+                            this.submissions[subId].status_class = result.status_class;
+                            this.submissions[subId].status_type = result.status_type;
+                            this.submissions[subId].score = '';
+                            this.submissions[subId].alasan_pengembalian = result.alasan_pengembalian;
+                            this.submissions[subId].feedback = result.alasan_pengembalian;
+                        }
+                        this.openRevisionModal = false;
+                        this.showToast(result.message);
+                    } else {
+                        alert(result.message || 'Gagal mengembalikan tugas.');
+                    }
+                } catch (e) {
+                    console.error('Revision error:', e);
+                    alert('Terjadi kesalahan saat memproses pengembalian tugas.');
                 }
             },
             
@@ -1388,6 +2139,16 @@
     .dark .badge-perlu-koreksi {
         background-color: rgba(146, 64, 14, 0.2);
         color: #fbbf24;
+    }
+    .badge-needs-revision {
+        background-color: #FFE4E6;
+        color: #9F1239;
+        border: 1px solid #FECDD3;
+    }
+    .dark .badge-needs-revision {
+        background-color: rgba(159, 18, 57, 0.2);
+        color: #fb7185;
+        border: 1px solid rgba(251, 113, 133, 0.3);
     }
     .badge-terlambat {
         background-color: #FEE2E2;

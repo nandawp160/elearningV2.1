@@ -109,7 +109,23 @@
     <!-- Main Content Card -->
     <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm">
         
-        <!-- Toolbar (Search & Filter & Action buttons) -->
+        <!-- Segmented Tab Control (Role Filter) -->
+        <div class="flex flex-wrap items-center border-b border-slate-200 dark:border-slate-800 mb-6 gap-2">
+            <button type="button" onclick="filterRole('', this)" class="role-tab px-5 py-3 text-xs font-bold border-b-2 border-[#D65A20] text-[#D65A20] dark:text-white transition duration-150 flex items-center gap-2">
+                <i class="fas fa-users"></i> Semua Pengguna
+            </button>
+            <button type="button" onclick="filterRole('Super Admin', this)" class="role-tab px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300 transition duration-150 flex items-center gap-2">
+                <i class="fas fa-user-shield"></i> Super Admin
+            </button>
+            <button type="button" onclick="filterRole('Guru', this)" class="role-tab px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300 transition duration-150 flex items-center gap-2">
+                <i class="fas fa-user-tie"></i> Guru
+            </button>
+            <button type="button" onclick="filterRole('Siswa', this)" class="role-tab px-5 py-3 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300 transition duration-150 flex items-center gap-2">
+                <i class="fas fa-user-graduate"></i> Siswa
+            </button>
+        </div>
+
+        <!-- Toolbar (Search & Action buttons) -->
         <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
             <!-- Left Filters -->
             <div class="flex flex-wrap items-center gap-3 flex-1">
@@ -121,22 +137,21 @@
                     </div>
                 </div>
 
-                <!-- Role Filter -->
-                <div class="relative w-full sm:w-48">
-                    <select id="toolbarRole" class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
-                        <option value="">Semua Peran</option>
-                        <option value="Super Admin">Super Admin</option>
-                        <option value="Guru">Guru</option>
-                        <option value="Siswa">Siswa</option>
-                    </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <i class="fas fa-chevron-down text-[10px]"></i>
-                    </div>
-                </div>
+                <!-- Toggle Show Alumni Button -->
+                <a href="{{ route('admin.accounts', ['show_alumni' => $showAlumni ? 0 : 1]) }}" class="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-[#D65A20] transition flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+                    <i class="fas {{ $showAlumni ? 'fa-eye-slash text-amber-500' : 'fa-graduation-cap text-slate-400' }}"></i>
+                    <span>{{ $showAlumni ? 'Sembunyikan Alumni' : 'Tampilkan Alumni (Arsip)' }}</span>
+                </a>
             </div>
 
             <!-- Right Action Buttons -->
             <div class="flex flex-wrap items-center gap-2.5">
+                <!-- Ekspor Excel -->
+                <a id="btnExportExcel" href="{{ route('admin.accounts.export', ['show_alumni' => $showAlumni ? 1 : 0]) }}" class="btn border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 text-xs shadow-2xs" title="Ekspor daftar akun pengguna ke Excel">
+                    <i class="fas fa-file-excel text-sm text-emerald-600"></i>
+                    <span>Ekspor Excel</span>
+                </a>
+
                 <!-- Generate Akun Siswa -->
                 <button onclick="openGenerateModal()" class="btn btn-green-outline font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2 text-xs">
                     <i class="fas fa-bolt text-xs"></i>
@@ -168,56 +183,63 @@
             @endfor
         </div>
 
-        <!-- Data Table Container -->
-        <div id="usersTableContainer" class="overflow-x-auto">
-            <table id="usersTable" class="table-ui w-full">
-                <thead>
-                    <tr class="bg-slate-50/50 dark:bg-slate-900/30">
-                        <th class="px-6 py-4 text-left font-semibold text-slate-700 dark:text-slate-300 text-xs w-16">No</th>
-                        <th class="px-6 py-4 text-left font-semibold text-slate-700 dark:text-slate-300 text-xs">Nama Pengguna</th>
-                        <th class="px-6 py-4 text-left font-semibold text-slate-700 dark:text-slate-300 text-xs">Username / Email</th>
-                        <th class="px-6 py-4 text-center font-semibold text-slate-700 dark:text-slate-300 text-xs">Peran</th>
-                        <th class="px-6 py-4 text-center font-semibold text-slate-700 dark:text-slate-300 text-xs">Status</th>
-                        <th class="px-6 py-4 text-right font-semibold text-slate-700 dark:text-slate-300 text-xs">Aksi</th>
+        <!-- Data Table Container (Spreadsheet Style) -->
+        <div id="usersTableContainer" class="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xs">
+            <table id="usersTable" class="w-full border-collapse border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs whitespace-nowrap">
+                <thead class="sticky top-0 z-20">
+                    <tr class="shadow-2xs">
+                        <th class="border border-slate-300 dark:border-slate-600 px-4 py-2 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 min-w-[65px] w-16 sticky top-0 z-20">NO</th>
+                        <th class="border border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky top-0 z-20">Nama Pengguna</th>
+                        <th class="border border-slate-300 dark:border-slate-600 px-3 py-2 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky top-0 z-20">Username / Email</th>
+                        <th class="border border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky top-0 z-20">Peran</th>
+                        <th class="border border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky top-0 z-20">Kelas / Unit</th>
+                        <th class="border border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky top-0 z-20">Status</th>
+                        <th class="border border-slate-300 dark:border-slate-600 px-3 py-2 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky top-0 z-20">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($users as $index => $user)
-                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition border-b border-slate-100 dark:border-slate-800">
+                    <tr class="even:bg-slate-50 dark:even:bg-slate-800/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition group">
                         <!-- No -->
-                        <td class="px-6 py-4 text-slate-600 dark:text-slate-400 text-sm">{{ $index + 1 }}</td>
+                        <td class="border border-slate-300 dark:border-slate-600 px-4 py-1.5 text-center font-semibold text-slate-700 dark:text-slate-300 min-w-[65px] w-16">{{ $index + 1 }}</td>
                         
                         <!-- Nama Pengguna -->
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-orange-50 text-[#D65A20] flex items-center justify-center font-bold flex-shrink-0">
-                                    {{ strtoupper(substr($user->nama, 0, 1)) }}
-                                </div>
-                                <div class="min-w-0">
-                                    <span class="font-bold text-slate-800 dark:text-slate-100 block truncate">{{ $user->nama }}</span>
-                                    @if($user->role === 'siswa' && str_ends_with($user->email, '@siswa.smansago.com'))
-                                    <span class="inline-block text-[10px] font-semibold bg-slate-100 text-slate-500 rounded px-1.5 py-0.5 mt-0.5 w-max">Auto-Gen</span>
-                                    @endif
-                                </div>
+                        <td class="border border-slate-300 dark:border-slate-600 px-3 py-1.5 font-bold text-slate-800 dark:text-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span>{{ $user->nama }}</span>
+                                @if($user->role === 'siswa' && str_ends_with($user->email, '@siswa.smansago.com'))
+                                <span class="inline-block text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 rounded px-1 py-0.2">Auto-Gen</span>
+                                @endif
                             </div>
                         </td>
                         
                         <!-- Username / Email -->
-                        <td class="px-6 py-4 text-sm font-semibold text-slate-600 dark:text-slate-300 font-mono">{{ $user->email }}</td>
+                        <td class="border border-slate-300 dark:border-slate-600 px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{{ $user->email }}</td>
                         
                         <!-- Peran -->
-                        <td class="px-6 py-4 text-center">
+                        <td class="border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-center">
                             @if($user->role === 'admin' || $user->role === 'super_admin')
-                            <span class="badge bg-rose-50 text-rose-700 border border-rose-100 text-xs font-semibold px-2.5 py-1 rounded-lg">Super Admin</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400">Super Admin</span>
                             @elseif($user->role === 'guru')
-                            <span class="badge bg-sky-50 text-sky-700 border border-sky-100 text-xs font-semibold px-2.5 py-1 rounded-lg">Guru</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-400">Guru</span>
                             @else
-                            <span class="badge bg-amber-50 text-amber-700 border border-amber-100 text-xs font-semibold px-2.5 py-1 rounded-lg">Siswa</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">Siswa</span>
+                            @endif
+                        </td>
+
+                        <!-- Kelas / Unit -->
+                        <td class="border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-200">
+                            @if($user->role === 'siswa')
+                                {{ $user->student?->resolved_kelas ?? $user->student?->kelas ?? '-' }}
+                            @elseif($user->role === 'guru')
+                                Guru Pengajar
+                            @else
+                                Administrator
                             @endif
                         </td>
 
                         <!-- Status -->
-                        <td class="px-6 py-4 text-center">
+                        <td class="border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-center">
                             @php
                                 $status = 'aktif';
                                 if ($user->role === 'guru' && $user->teacher) {
@@ -227,25 +249,29 @@
                                 }
                             @endphp
                             @if($status === 'aktif' || $status === 'active')
-                            <span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-semibold px-2.5 py-1 rounded-full">Aktif</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">Aktif</span>
+                            @elseif($status === 'mutasi')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">Mutasi</span>
+                            @elseif($status === 'lulus')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400">Lulus</span>
                             @else
-                            <span class="badge bg-rose-50 text-rose-700 border border-rose-100 text-xs font-semibold px-2.5 py-1 rounded-full">Nonaktif</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400">Nonaktif</span>
                             @endif
                         </td>
                         
                         <!-- Aksi -->
-                        <td class="px-6 py-4 text-right">
-                            <div class="inline-flex items-center gap-2">
+                        <td class="border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-center">
+                            <div class="inline-flex items-center gap-1">
                                 <!-- Detail Action (Independent Modal Trigger) -->
-                                <button onclick="openDetailModal({{ $user->id }}, '{{ addslashes($user->nama) }}', '{{ addslashes($user->email) }}', '{{ $user->role }}', '{{ $status }}', '{{ $user->created_at ? $user->created_at->format('d-m-Y H:i') : '-' }}')" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-white border border-slate-200 hover:border-slate-800 bg-white hover:bg-slate-800 rounded-lg transition">Detail</button>
+                                <button onclick="openDetailModal({{ $user->id }}, '{{ addslashes($user->nama) }}', '{{ addslashes($user->email) }}', '{{ $user->role }}', '{{ $status }}', '{{ $user->created_at ? $user->created_at->format('d-m-Y H:i') : '-' }}')" class="px-2 py-1 text-[11px] font-semibold text-slate-600 hover:text-white border border-slate-300 hover:border-slate-800 bg-white hover:bg-slate-800 rounded transition">Detail</button>
 
                                 <!-- Edit Action (Independent Modal Trigger) -->
-                                <button onclick="openEditModal({{ $user->id }}, '{{ addslashes($user->nama) }}', '{{ addslashes($user->email) }}', '{{ $user->role }}', '{{ $status }}')" class="px-3.5 py-1.5 text-xs font-semibold text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 bg-white hover:bg-blue-600 rounded-lg transition">Edit</button>
+                                <button onclick="openEditModal({{ $user->id }}, '{{ addslashes($user->nama) }}', '{{ addslashes($user->email) }}', '{{ $user->role }}', '{{ $status }}')" class="px-2 py-1 text-[11px] font-semibold text-blue-600 hover:text-white border border-blue-300 hover:border-blue-600 bg-white hover:bg-blue-600 rounded transition">Edit</button>
 
                                 <!-- Reset Password Form -->
                                 <form action="{{ route('admin.reset-password', $user) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin me-reset password untuk pengguna ini? Password default akan disetel menjadi: password')">
                                     @csrf
-                                    <button type="submit" class="px-3.5 py-1.5 text-xs font-semibold text-[#D65A20] hover:text-white border border-orange-200 hover:border-[#D65A20] bg-white hover:bg-[#D65A20] rounded-lg transition">
+                                    <button type="submit" class="px-2 py-1 text-[11px] font-semibold text-[#D65A20] hover:text-white border border-orange-300 hover:border-[#D65A20] bg-white hover:bg-[#D65A20] rounded transition">
                                         Reset Sandi
                                     </button>
                                 </form>
@@ -254,7 +280,7 @@
                                 @if($user->role === 'guru' || $user->role === 'siswa')
                                     <form action="{{ route('admin.toggle-status', $user) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin mengubah status aktif/nonaktif akun ini?')">
                                         @csrf
-                                        <button type="submit" class="px-3.5 py-1.5 text-xs font-semibold {{ ($status === 'aktif' || $status === 'active') ? 'text-red-600 border-red-200 hover:border-red-600 hover:bg-red-600' : 'text-emerald-600 border-emerald-200 hover:border-emerald-600 hover:bg-emerald-600' }} hover:text-white border bg-white rounded-lg transition">
+                                        <button type="submit" class="px-2 py-1 text-[11px] font-semibold {{ ($status === 'aktif' || $status === 'active') ? 'text-red-600 border-red-300 hover:border-red-600 hover:bg-red-600' : 'text-emerald-600 border-emerald-300 hover:border-emerald-600 hover:bg-emerald-600' }} hover:text-white border bg-white rounded transition">
                                             {{ ($status === 'aktif' || $status === 'active') ? 'Nonaktifkan' : 'Aktifkan' }}
                                         </button>
                                     </form>
@@ -492,7 +518,7 @@
             </div>
 
             <div class="text-xs text-slate-400 leading-normal">
-                <i class="fas fa-key mr-1"></i> Username akan diatur berupa email format <code>[NIS]@siswa.smansago.com</code> dan password default <code>password</code>.
+                <i class="fas fa-key mr-1"></i> Username akan diatur berupa email format <code>[nama_depan].[NIS]@siswa.smansago.com</code> dan password default <code>password</code>.
             </div>
 
             <!-- Action buttons -->
@@ -576,12 +602,38 @@
         $('body').removeClass('overflow-hidden');
     }
 
+    let usersTable = null;
+
+    window.filterRole = function(role, btn) {
+        // Update active styles
+        $('.role-tab').removeClass('border-[#D65A20] text-[#D65A20] dark:text-white').addClass('border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300');
+        $(btn).addClass('border-[#D65A20] text-[#D65A20] dark:text-white').removeClass('border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300');
+        
+        if (usersTable) {
+            // Search DataTable column 3 ("Peran") with exact regex or clear search
+            if (role) {
+                usersTable.column(3).search('^' + role + '$', true, false).draw();
+            } else {
+                usersTable.column(3).search('').draw();
+            }
+        }
+
+        // Update Export Excel button URL dynamically
+        const exportBaseUrl = "{{ route('admin.accounts.export') }}";
+        const showAlumniVal = {{ $showAlumni ? 1 : 0 }};
+        let exportUrl = exportBaseUrl + '?show_alumni=' + showAlumniVal;
+        if (role) {
+            exportUrl += '&role=' + encodeURIComponent(role);
+        }
+        $('#btnExportExcel').attr('href', exportUrl);
+    };
+
     $(document).ready(function() {
         // Show loading skeleton while table is rendering
         $('#skeletonLoading').removeClass('hidden');
         $('#usersTableContainer').addClass('hidden');
 
-        const table = $('#usersTable').DataTable({
+        usersTable = $('#usersTable').DataTable({
             dom: 'rt<"flex flex-col md:flex-row justify-between items-center py-4 px-6 border-t border-slate-100 dark:border-slate-800 gap-4"ip>',
             language: {
                 info: "Menampilkan _START_ hingga _END_ dari _TOTAL_ entri",
@@ -594,7 +646,21 @@
                 }
             },
             responsive: true,
-            order: [[ 3, "asc" ]] // Order by role default
+            columnDefs: [
+                {
+                    searchable: false,
+                    orderable: false,
+                    targets: [0, 6] // Column 0 (NO) and 6 (Aksi) are non-sortable
+                }
+            ],
+            order: [] // Preserve server-side order (Role -> Kelas -> Nama)
+        });
+
+        // Auto-renumbering baris berdasarkan hasil filter/sortir DataTables secara instan & efisien
+        usersTable.on('order.dt search.dt', function () {
+            usersTable.column(0, { search: 'applied', order: 'applied' }).nodes().each(function (cell, i) {
+                cell.innerHTML = i + 1;
+            });
         });
 
         // Hide skeleton and show table
@@ -603,12 +669,9 @@
 
         // Binds toolbar search input to datatable search API
         $('#toolbarSearch').on('keyup', function() {
-            table.search(this.value).draw();
-        });
-
-        // Binds toolbar role filter dropdown
-        $('#toolbarRole').on('change', function() {
-            table.column(3).search(this.value).draw(); // column index 3 is "Peran"
+            if (usersTable) {
+                usersTable.search(this.value).draw();
+            }
         });
 
         // Add Admin Form submit mapper

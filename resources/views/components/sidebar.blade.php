@@ -812,6 +812,7 @@ function closeLogoutModal() {
 
 function confirmLogout() {
     if (pendingLogoutForm) {
+        sessionStorage.clear();
         pendingLogoutForm.submit();
     }
 }

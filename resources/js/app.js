@@ -10,7 +10,7 @@ window.Alpine = Alpine;
 Alpine.start();
 
 const LoadingOverlay = (() => {
-    let counter = 0;
+    let timer = null;
     let overlay = null;
 
     const ensureOverlay = () => {
@@ -20,36 +20,39 @@ const LoadingOverlay = (() => {
         return overlay;
     };
 
-    const show = () => {
-        const el = ensureOverlay();
-        if (!el) return;
-        el.classList.add('is-active');
-        el.setAttribute('aria-hidden', 'false');
+    const show = (delay = 0) => {
+        clearTimeout(timer);
+        if (delay > 0) {
+            timer = setTimeout(() => {
+                const el = ensureOverlay();
+                if (el) {
+                    el.classList.add('is-active');
+                    el.setAttribute('aria-hidden', 'false');
+                }
+            }, delay);
+        } else {
+            const el = ensureOverlay();
+            if (el) {
+                el.classList.add('is-active');
+                el.setAttribute('aria-hidden', 'false');
+            }
+        }
     };
 
     const hide = () => {
+        clearTimeout(timer);
         const el = ensureOverlay();
         if (!el) return;
         el.classList.remove('is-active');
         el.setAttribute('aria-hidden', 'true');
     };
 
-    const start = () => {
-        counter += 1;
-        show();
-    };
-
-    const stop = () => {
-        counter = Math.max(0, counter - 1);
-        if (counter === 0) hide();
-    };
-
     const reset = () => {
-        counter = 0;
+        clearTimeout(timer);
         hide();
     };
 
-    return { show, hide, start, stop, reset };
+    return { show, hide, start: show, stop: hide, reset };
 })();
 
 window.LoadingOverlay = LoadingOverlay;
@@ -76,68 +79,26 @@ document.addEventListener('click', (event) => {
     }
 });
 
-// Removed click listener that showed loading overlay to prevent swallowed clicks.
-// The loading overlay is now handled reliably by the beforeunload listener.
-
 document.addEventListener('submit', (event) => {
     const form = event.target;
     if (!form || form.tagName !== 'FORM') return;
     if (event.defaultPrevented) return;
-    if (form.dataset.noLoading !== undefined) return;
-
-    LoadingOverlay.show();
-});
-
-window.addEventListener('beforeunload', () => {
-    if (window.isDownloading) {
+    if (form.dataset.noLoading !== undefined) {
+        window.isDownloading = true;
+        setTimeout(() => {
+            window.isDownloading = false;
+        }, 1000);
         return;
     }
-    LoadingOverlay.show();
+
+    // Tampilkan overlay jika form submit memakan waktu > 200ms (misal upload berkas besar)
+    LoadingOverlay.show(200);
 });
 
 window.addEventListener('pageshow', () => {
     LoadingOverlay.reset();
 });
 
-if (window.fetch && !window.__loadingFetchWrapped) {
-    window.__loadingFetchWrapped = true;
-    const originalFetch = window.fetch.bind(window);
-    window.fetch = (...args) => {
-        // Skip loading overlay for Vite HMR, dev-server, and internal requests
-        const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
-        const isDevRequest = url.includes('/@vite') || url.includes('/__vite') ||
-                             url.includes('.hot-update.') || url.includes('/@fs/') ||
-                             url.includes('node_modules/') || url.startsWith('ws:');
-        if (isDevRequest) {
-            return originalFetch(...args);
-        }
-        LoadingOverlay.start();
-        return originalFetch(...args)
-            .finally(() => LoadingOverlay.stop());
-    };
-}
-
-if (window.axios && !window.__loadingAxiosBound) {
-    window.__loadingAxiosBound = true;
-    window.axios.interceptors.request.use(
-        (config) => {
-            LoadingOverlay.start();
-            return config;
-        },
-        (error) => {
-            LoadingOverlay.stop();
-            return Promise.reject(error);
-        }
-    );
-
-    window.axios.interceptors.response.use(
-        (response) => {
-            LoadingOverlay.stop();
-            return response;
-        },
-        (error) => {
-            LoadingOverlay.stop();
-            return Promise.reject(error);
-        }
-    );
-}
+window.addEventListener('pagehide', () => {
+    LoadingOverlay.reset();
+});

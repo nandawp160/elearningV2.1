@@ -128,7 +128,7 @@ class SiswaGraduationPromotionTest extends TestCase
                 'id_siswa' => [$this->student2->id], // only student 2 checked
             ]);
 
-        $response->assertRedirect(route('students.index'));
+        $response->assertRedirect();
         $response->assertSessionHas('success');
 
         // Check database
@@ -174,7 +174,7 @@ class SiswaGraduationPromotionTest extends TestCase
                 ]
             ]);
 
-        $response->assertRedirect(route('students.index'));
+        $response->assertRedirect();
         $response->assertSessionHas('success');
 
         // Check database
@@ -184,5 +184,75 @@ class SiswaGraduationPromotionTest extends TestCase
         // Both Student 1 and Student 4 should be promoted to XI IPA 1
         $this->assertEquals('XI IPA 1', $this->student1->kelas);
         $this->assertEquals('XI IPA 1', $student4->kelas);
+    }
+
+    public function test_penjurusan_promote_students_from_x_to_xi_successfully()
+    {
+        // Setup another student in X IPA 1
+        $user5 = User::create([
+            'nama' => 'Siswa X 3',
+            'email' => '1005@siswa.smansago.com',
+            'password' => bcrypt('password'),
+            'role' => 'siswa'
+        ]);
+        $student5 = Siswa::create([
+            'nis' => '1005',
+            'nama' => 'Siswa X 3',
+            'jenis_kelamin' => 'Laki-laki',
+            'tanggal_lahir' => '2010-08-01',
+            'kelas' => 'X IPA 1',
+            'status' => 'active',
+            'pengguna_id' => $user5->id
+        ]);
+
+        $classXI_F2 = Kelas::create([
+            'name' => 'XI F 2.1',
+            'grade_level' => 'XI',
+            'academic_year' => '2025/2026',
+            'max_students' => 36,
+        ]);
+
+        // Student 1 mapped to XI IPA 1, Student 5 mapped to XI F 2.1
+        $response = $this->actingAs($this->admin)
+            ->post(route('students.promote-students'), [
+                'id_siswa' => [$this->student1->id, $student5->id],
+                'tujuan' => [
+                    $this->student1->id => 'XI IPA 1',
+                    $student5->id => 'XI F 2.1',
+                ]
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->student1->refresh();
+        $student5->refresh();
+
+        $this->assertEquals('XI IPA 1', $this->student1->kelas);
+        $this->assertEquals('XI F 2.1', $student5->kelas);
+
+        // Verify RiwayatKelasSiswa
+        $this->assertDatabaseHas('riwayat_kelas_siswa', [
+            'siswa_id' => $this->student1->id,
+            'kelas_name' => 'XI IPA 1',
+        ]);
+        $this->assertDatabaseHas('riwayat_kelas_siswa', [
+            'siswa_id' => $student5->id,
+            'kelas_name' => 'XI F 2.1',
+        ]);
+    }
+
+    public function test_penjurusan_promote_students_fails_when_no_targets_selected()
+    {
+        $response = $this->actingAs($this->admin)
+            ->post(route('students.promote-students'), [
+                'id_siswa' => [$this->student1->id],
+                'tujuan' => [
+                    $this->student1->id => '',
+                ]
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
     }
 }

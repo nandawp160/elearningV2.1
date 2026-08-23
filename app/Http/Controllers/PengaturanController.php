@@ -4,19 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Pengaturan;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PengaturanController extends Controller
 {
     public function index()
     {
-        // Cek ketidakaktifan modul pemeliharaan selama 15 menit
-        $lastActivity = session('maintenance_last_activity');
-        if ($lastActivity && (time() - $lastActivity > 900)) {
-            session()->forget('maintenance_unlocked');
-            session()->forget('maintenance_last_activity');
-        } elseif (session('maintenance_unlocked')) {
-            session(['maintenance_last_activity' => time()]);
-        }
+        // Proteksi kunci password modul pemeliharaan dinonaktifkan
+        session(['maintenance_unlocked' => true]);
+        $maintenance_unlocked = true;
 
         $settings = [
             'school_name' => Pengaturan::getValue('school_name', 'SMA Negeri 1 Cepogo'),
@@ -27,6 +26,7 @@ class PengaturanController extends Controller
             'wa_notification_status' => Pengaturan::getValue('wa_notification_status', '1'),
             'tahun_ajaran_aktif' => Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026'),
             'permissions_page_password' => Pengaturan::getValue('permissions_page_password', 'admin123'),
+            'ssl_lock_expired_deadline' => Pengaturan::getValue('ssl_lock_expired_deadline', '1'),
         ];
 
         $global_tahun_ajaran_aktif = Pengaturan::getGlobalValue('tahun_ajaran_aktif', '2025/2026');
@@ -52,8 +52,7 @@ class PengaturanController extends Controller
             $daftar_tahun_ajaran[] = $settings['tahun_ajaran_aktif'];
             rsort($daftar_tahun_ajaran);
         }
-        
-        $maintenance_unlocked = session('maintenance_unlocked', false);
+
         $password = Pengaturan::getValue('permissions_page_password', 'admin123');
         
         $semua_kelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
@@ -61,11 +60,30 @@ class PengaturanController extends Controller
             ->orderBy('name', 'asc')
             ->get();
             
+        $semua_mapel = \App\Models\MataPelajaran::orderBy('nama', 'asc')->get();
+
+        $arsip_siswa = \App\Models\RiwayatKelasSiswa::select('academic_year', \DB::raw('count(distinct siswa_id) as total'))
+            ->groupBy('academic_year')
+            ->orderBy('academic_year', 'desc')
+            ->get();
+
+        $arsip_alumni = \App\Models\Siswa::whereNotNull('tahun_lulus')
+            ->select('tahun_lulus', \DB::raw('count(*) as total'))
+            ->groupBy('tahun_lulus')
+            ->orderBy('tahun_lulus', 'desc')
+            ->get();
+
+        $arsip_mutasi = \App\Models\MutasiSiswa::where('jenis_mutasi', 'keluar')
+            ->selectRaw('YEAR(tanggal_mutasi) as tahun, count(*) as total')
+            ->groupBy(\DB::raw('YEAR(tanggal_mutasi)'))
+            ->orderBy('tahun', 'desc')
+            ->get();
+
         $storage_frozen = Pengaturan::getValue('storage_frozen', '0') === '1';
         $active_page = request()->routeIs('academic-years.index') ? 'academic-year' : 'settings';
         $tahun_ajaran_updated_at = \App\Models\Pengaturan::where('key', 'tahun_ajaran_aktif')->value('updated_at');
         
-        return view('pengaturan.index', compact('settings', 'daftar_tahun_ajaran', 'custom_years', 'maintenance_unlocked', 'password', 'semua_kelas', 'storage_frozen', 'active_page', 'tahun_ajaran_updated_at', 'global_tahun_ajaran_aktif'));
+        return view('pengaturan.index', compact('settings', 'daftar_tahun_ajaran', 'custom_years', 'maintenance_unlocked', 'password', 'semua_kelas', 'semua_mapel', 'arsip_siswa', 'arsip_alumni', 'arsip_mutasi', 'storage_frozen', 'active_page', 'tahun_ajaran_updated_at', 'global_tahun_ajaran_aktif'));
     }
 
     public function archiveDetail($year)
@@ -134,6 +152,18 @@ class PengaturanController extends Controller
             ->orderBy('kelas_nama', 'asc')
             ->orderBy('guru_nama', 'asc')
             ->get();
+            
+        // Hitung Siswa Terdaftar dari Riwayat Kelas
+        $jumlahSiswaAktif = \App\Models\RiwayatKelasSiswa::where('academic_year', $yearDecoded)
+            ->distinct('siswa_id')
+            ->count('siswa_id');
+            
+        $jumlahAlumni = \App\Models\Siswa::where('tahun_lulus', $yearDecoded)->count();
+        
+        // Fallback untuk arsip lama yang belum ada di riwayat kelas
+        if ($jumlahSiswaAktif == 0 && $jumlahAlumni > 0) {
+            $jumlahSiswaAktif = $jumlahAlumni;
+        }
 
         return view('pengaturan.archive_detail', compact(
             'yearDecoded',
@@ -142,10 +172,77 @@ class PengaturanController extends Controller
             'jumlahKelas',
             'jumlahWaliKelas',
             'jumlahGuruPengampu',
+            'jumlahSiswaAktif',
+            'jumlahAlumni',
             'daftarKelas',
             'daftarPengampu',
             'isActive'
         ));
+    }
+
+    public function arsipSiswaDetail(\Illuminate\Http\Request $request, $year)
+    {
+        $yearDecoded = str_replace('-', '/', $year);
+        $filterKelas = $request->get('kelas');
+        
+        $arsip_siswa = \App\Models\RiwayatKelasSiswa::with(['siswa' => function($q) {
+            $q->withTrashed();
+        }])
+            ->where('academic_year', $yearDecoded)
+            ->get()
+            ->filter(function ($riwayat) {
+                return $riwayat->siswa !== null;
+            })
+            ->map(function ($riwayat) {
+                $riwayat->siswa->kelas_riwayat = $riwayat->kelas_name;
+                return $riwayat->siswa;
+            });
+
+        // Fallback for old alumni data that doesn't have RiwayatKelasSiswa yet
+        if ($arsip_siswa->isEmpty()) {
+            $arsip_siswa = \App\Models\Siswa::where('tahun_lulus', $yearDecoded)
+                ->orderBy('nama', 'asc')
+                ->get();
+            foreach ($arsip_siswa as $siswa) {
+                $siswa->kelas_riwayat = $siswa->kelas ?? '-';
+            }
+        } else {
+            $arsip_siswa = $arsip_siswa->sortBy('nama')->values();
+        }
+
+        // Get unique classes for dropdown
+        $daftarKelas = $arsip_siswa->pluck('kelas_riwayat')->unique()->filter(function($k) { return $k != '-' && $k != null; })->sort()->values();
+
+        // Apply filter if selected
+        if ($filterKelas) {
+            $arsip_siswa = $arsip_siswa->filter(function($siswa) use ($filterKelas) {
+                return $siswa->kelas_riwayat === $filterKelas;
+            })->values();
+        }
+            
+        return view('pengaturan.arsip_siswa', compact('yearDecoded', 'arsip_siswa', 'daftarKelas', 'filterKelas'));
+    }
+
+    public function alumniDetail($year)
+    {
+        $yearDecoded = str_replace('-', '/', $year);
+        
+        $alumni = \App\Models\Siswa::where('tahun_lulus', $yearDecoded)
+            ->orderBy('nama', 'asc')
+            ->get();
+            
+        return view('pengaturan.alumni', compact('yearDecoded', 'alumni'));
+    }
+
+    public function mutasiDetail($year)
+    {
+        $mutasi = \App\Models\MutasiSiswa::with('siswa')
+            ->where('jenis_mutasi', 'keluar')
+            ->whereYear('tanggal_mutasi', $year)
+            ->orderBy('tanggal_mutasi', 'desc')
+            ->get();
+            
+        return view('pengaturan.mutasi', compact('year', 'mutasi'));
     }
 
     public function update(Request $request)
@@ -160,6 +257,7 @@ class PengaturanController extends Controller
             'tahun_ajaran_aktif' => 'required|string',
             'tahun_ajaran_baru' => ['nullable', 'string', 'regex:/^\d{4}\/\d{4}$/'],
             'permissions_page_password' => 'nullable|string|max:255',
+            'ssl_lock_expired_deadline' => 'nullable|in:0,1',
         ], [
             'tahun_ajaran_baru.regex' => 'Format tahun ajaran baru harus YYYY/YYYY (contoh: 2026/2027)',
         ]);
@@ -189,6 +287,18 @@ class PengaturanController extends Controller
         return redirect()->route('settings.index')->with('success', 'Pengaturan berhasil diperbarui!');
     }
 
+    public function toggleSslDeadlineLock(Request $request)
+    {
+        $current = Pengaturan::getValue('ssl_lock_expired_deadline', '1');
+        $newVal = ($current === '1') ? '0' : '1';
+        Pengaturan::setValue('ssl_lock_expired_deadline', $newVal);
+
+        $statusText = ($newVal === '1') ? 'diaktifkan (Terkunci Ketat)' : 'dinonaktifkan (Fleksibel Edit)';
+        \App\Models\ActivityLog::log('SETTINGS', 'Mengubah status Proteksi Kunci Deadline SSL: ' . $statusText);
+
+        return back()->with('success', 'Proteksi Kunci Deadline SSL berhasil ' . $statusText . '.');
+    }
+
     public function changeAdminViewYear(Request $request)
     {
         $validated = $request->validate([
@@ -215,24 +325,6 @@ class PengaturanController extends Controller
 
     public function permissions()
     {
-        if (!session('permissions_unlocked')) {
-            $password = Pengaturan::getValue('permissions_page_password', 'admin123');
-            return view('pengaturan.permissions_lock', compact('password'));
-        }
-
-        // Check if 15 minutes (900 seconds) have passed since last activity on this page
-        $lastActivity = session('permissions_last_activity');
-        if ($lastActivity && (time() - $lastActivity > 900)) {
-            session()->forget('permissions_unlocked');
-            session()->forget('permissions_last_activity');
-            
-            $password = Pengaturan::getValue('permissions_page_password', 'admin123');
-            return view('pengaturan.permissions_lock', compact('password'))->withErrors(['password' => 'Halaman terkunci otomatis karena tidak ada aktivitas selama 15 menit.']);
-        }
-
-        // Update last activity timestamp
-        session(['permissions_last_activity' => time()]);
-
         $defaultRoles = [
             'admin' => 'Administrator',
             'guru' => 'Guru Pengajar',
@@ -315,7 +407,7 @@ class PengaturanController extends Controller
                     'guru' => [
                         'view_siswa', 'view_kelas',
                         'view_tugas', 'create_tugas', 'edit_tugas', 'delete_tugas', 'grade_tugas',
-                        'view_dispensasi'
+                        'view_dispensasi', 'approve_dispensasi'
                     ],
                     'wali_kelas' => [
                         'view_siswa', 'view_kelas',
@@ -438,8 +530,226 @@ class PengaturanController extends Controller
 
     public function userAccounts(Request $request)
     {
-        $users = \App\Models\User::with(['teacher', 'student'])->orderBy('role')->orderBy('nama')->get();
-        return view('pengaturan.user_accounts', compact('users'));
+        $showAlumni = $request->get('show_alumni', false);
+
+        $query = \App\Models\User::with(['teacher', 'student.riwayatKelas']);
+
+        if (!$showAlumni) {
+            $query->whereDoesntHave('student', function ($q) {
+                $q->whereIn('status', ['lulus', 'mutasi']);
+            });
+        }
+
+        $users = $query->get()->sort(function ($a, $b) {
+            $roleOrder = ['super_admin' => 1, 'admin' => 1, 'guru' => 2, 'siswa' => 3];
+            $roleA = $roleOrder[$a->role] ?? 4;
+            $roleB = $roleOrder[$b->role] ?? 4;
+
+            if ($roleA !== $roleB) {
+                return $roleA <=> $roleB;
+            }
+
+            if ($a->role === 'siswa' && $b->role === 'siswa') {
+                $kelasA = $a->student?->resolved_kelas ?? $a->student?->kelas ?? '';
+                $kelasB = $b->student?->resolved_kelas ?? $b->student?->kelas ?? '';
+
+                if ($kelasA !== $kelasB) {
+                    return strnatcasecmp($kelasA, $kelasB);
+                }
+            }
+
+            return strnatcasecmp($a->nama, $b->nama);
+        })->values();
+
+        return view('pengaturan.user_accounts', compact('users', 'showAlumni'));
+    }
+
+    public function exportUserAccounts(Request $request)
+    {
+        $showAlumni = $request->get('show_alumni', false);
+        $roleFilter = $request->get('role', null);
+
+        $query = \App\Models\User::with(['teacher', 'student.riwayatKelas']);
+
+        if (!$showAlumni) {
+            $query->whereDoesntHave('student', function ($q) {
+                $q->whereIn('status', ['lulus', 'mutasi']);
+            });
+        }
+
+        if ($roleFilter) {
+            $roleLower = strtolower($roleFilter);
+            if ($roleLower === 'super admin' || $roleLower === 'admin' || $roleLower === 'super_admin') {
+                $query->whereIn('role', ['admin', 'super_admin']);
+            } elseif ($roleLower === 'guru') {
+                $query->where('role', 'guru');
+            } elseif ($roleLower === 'siswa') {
+                $query->where('role', 'siswa');
+            }
+        }
+
+        $users = $query->get()->sort(function ($a, $b) {
+            $roleOrder = ['super_admin' => 1, 'admin' => 1, 'guru' => 2, 'siswa' => 3];
+            $roleA = $roleOrder[$a->role] ?? 4;
+            $roleB = $roleOrder[$b->role] ?? 4;
+
+            if ($roleA !== $roleB) {
+                return $roleA <=> $roleB;
+            }
+
+            if ($a->role === 'siswa' && $b->role === 'siswa') {
+                $kelasA = $a->student?->resolved_kelas ?? $a->student?->kelas ?? '';
+                $kelasB = $b->student?->resolved_kelas ?? $b->student?->kelas ?? '';
+
+                if ($kelasA !== $kelasB) {
+                    return strnatcasecmp($kelasA, $kelasB);
+                }
+            }
+
+            return strnatcasecmp($a->nama, $b->nama);
+        })->values();
+        $schoolName = Pengaturan::getValue('school_name', 'SMA Negeri 1 Cepogo');
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Title Kop
+        $sheet->setCellValue('A1', 'DATA DISTRIBUSI AKUN PENGGUNA E-LEARNING');
+        $sheet->mergeCells('A1:H1');
+        $sheet->getStyle('A1')->getFont()->setName('Arial')->setSize(14)->setBold(true);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $sheet->setCellValue('A2', $schoolName);
+        $sheet->mergeCells('A2:H2');
+        $sheet->getStyle('A2')->getFont()->setName('Arial')->setSize(11)->setItalic(true);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        $filterText = $roleFilter ? ' (Filter: ' . $roleFilter . ')' : '';
+        $sheet->setCellValue('A3', 'Diekspor oleh: ' . (auth()->user()?->nama ?? 'Admin') . ' pada ' . date('d/m/Y H:i') . ' WIB | Total: ' . count($users) . ' Akun' . $filterText);
+        $sheet->mergeCells('A3:H3');
+        $sheet->getStyle('A3')->getFont()->setName('Arial')->setSize(10);
+        $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+        // Header Table
+        $headers = ['No', 'Nama Pengguna', 'Username / Email', 'Password Default', 'Peran (Role)', 'NIS / NIP', 'Kelas / Unit', 'Status Akun'];
+        $sheet->fromArray($headers, null, 'A5');
+
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'name' => 'Arial',
+                'size' => 10
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'D65A20']
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                ],
+            ],
+        ];
+        $sheet->getStyle('A5:H5')->applyFromArray($headerStyle);
+        $sheet->getRowDimension(5)->setRowHeight(24);
+
+        // Data Rows
+        $data = [];
+        $no = 1;
+        foreach ($users as $user) {
+            $roleLabel = 'Siswa';
+            if ($user->role === 'admin' || $user->role === 'super_admin') {
+                $roleLabel = 'Super Admin';
+            } elseif ($user->role === 'guru') {
+                $roleLabel = 'Guru';
+            }
+
+            $identityNo = '-';
+            $kelasUnit = '-';
+            $status = 'Aktif';
+
+            if ($user->role === 'guru' && $user->teacher) {
+                $identityNo = $user->teacher->nip ?? '-';
+                $kelasUnit = 'Guru Pengajar';
+                $status = ($user->teacher->status === 'aktif' || $user->teacher->status === 'active') ? 'Aktif' : 'Nonaktif';
+            } elseif ($user->role === 'siswa' && $user->student) {
+                $identityNo = $user->student->nis ?? '-';
+                $kelasUnit = $user->student->resolved_kelas ?? $user->student->kelas ?? '-';
+                $statusVal = $user->student->status;
+                if ($statusVal === 'aktif' || $statusVal === 'active') {
+                    $status = 'Aktif';
+                } elseif ($statusVal === 'mutasi') {
+                    $status = 'Mutasi';
+                } elseif ($statusVal === 'lulus') {
+                    $status = 'Lulus (Alumni)';
+                } else {
+                    $status = 'Nonaktif';
+                }
+            } elseif ($user->isSuperAdmin()) {
+                $kelasUnit = 'Administrator';
+            }
+
+            $passwordNote = 'password';
+
+            $data[] = [
+                $no++,
+                $user->nama,
+                $user->email,
+                $passwordNote,
+                $roleLabel,
+                $identityNo,
+                $kelasUnit,
+                $status
+            ];
+        }
+
+        if (count($data) > 0) {
+            $sheet->fromArray($data, null, 'A6');
+            $lastRow = 5 + count($data);
+            $dataRange = 'A6:H' . $lastRow;
+
+            $dataStyle = [
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => 'CBD5E1']
+                    ],
+                ],
+                'alignment' => [
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                ]
+            ];
+            $sheet->getStyle($dataRange)->applyFromArray($dataStyle);
+            $sheet->getStyle('A6:A' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('D6:H' . $lastRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        }
+
+        // Set Column Widths
+        $sheet->getColumnDimension('A')->setWidth(6);
+        $sheet->getColumnDimension('B')->setWidth(28);
+        $sheet->getColumnDimension('C')->setWidth(32);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(16);
+        $sheet->getColumnDimension('F')->setWidth(18);
+        $sheet->getColumnDimension('G')->setWidth(20);
+        $sheet->getColumnDimension('H')->setWidth(16);
+
+        \App\Models\ActivityLog::log('SETTINGS', 'Mengekspor data distribusi akun pengguna ke Excel');
+
+        $filename = 'Distribusi_Akun_Pengguna_' . date('Ymd_His') . '.xlsx';
+
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
     }
 
     public function resetPassword(\App\Models\User $user)
@@ -1003,19 +1313,86 @@ class PengaturanController extends Controller
                 // Masukkan file sql ke zip
                 $zip->addFile($pathSqlSementara, 'database_elearning.sql');
 
-                // 2. Masukkan berkas unggahan di storage public
-                $pathPublic = storage_path('app/public');
-                if (file_exists($pathPublic)) {
-                    $berkasFolder = new \RecursiveIteratorIterator(
-                        new \RecursiveDirectoryIterator($pathPublic),
-                        \RecursiveIteratorIterator::LEAVES_ONLY
-                    );
+                // 2. Ekspor File Terstruktur berdasarkan Database Aktif (Materi, Tugas, Pengumpulan, Banding)
+                $fileCount = 0;
+                
+                // --- A. Materi Pembelajaran ---
+                $materis = \App\Models\Materi::with('subject.course')->get();
+                foreach ($materis as $materi) {
+                    if ($materi->file_path) {
+                        $mapel = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $materi->subject->course->nama ?? 'Umum'));
+                        $judul = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $materi->title));
+                        
+                        $filePath = storage_path('app/' . $materi->file_path);
+                        if (!file_exists($filePath)) {
+                            $filePath = storage_path('app/public/' . $materi->file_path);
+                        }
+                        
+                        if (file_exists($filePath)) {
+                            $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+                            $zip->addFile($filePath, "Materi/{$mapel}/{$judul}.{$ext}");
+                            $fileCount++;
+                        }
+                    }
+                }
 
-                    foreach ($berkasFolder as $nama => $file) {
-                        if (!$file->isDir()) {
-                            $pathBerkas = $file->getRealPath();
-                            $pathRelatifInZip = 'unggahan/' . substr($pathBerkas, strlen($pathPublic) + 1);
-                            $zip->addFile($pathBerkas, $pathRelatifInZip);
+                // --- B. Soal Tugas Guru ---
+                $tugases = \App\Models\Tugas::with('subject.course')->get();
+                foreach ($tugases as $tugas) {
+                    if ($tugas->lampiran) {
+                        $mapel = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tugas->subject->course->nama ?? 'Umum'));
+                        $judul = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $tugas->judul));
+                        
+                        $filePath = storage_path('app/' . $tugas->lampiran);
+                        if (!file_exists($filePath)) {
+                            $filePath = storage_path('app/public/' . $tugas->lampiran);
+                        }
+                        
+                        if (file_exists($filePath)) {
+                            $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+                            $zip->addFile($filePath, "Tugas/{$mapel}/{$judul}/[Soal_Guru]_{$judul}.{$ext}");
+                            $fileCount++;
+                        }
+                    }
+                }
+
+                // --- C. Jawaban Pengumpulan Siswa ---
+                $pengumpulans = \App\Models\Pengumpulan::with(['student', 'assignment.subject.course'])->get();
+                foreach ($pengumpulans as $sub) {
+                    if ($sub->file_tugas) {
+                        $mapel = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->assignment->subject->course->nama ?? 'Umum'));
+                        $judul = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->assignment->judul ?? 'Tanpa_Judul'));
+                        $siswa = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->student->nama ?? 'Anonim'));
+                        
+                        $filePath = storage_path('app/' . $sub->file_tugas);
+                        if (!file_exists($filePath)) {
+                            $filePath = storage_path('app/public/' . $sub->file_tugas);
+                        }
+                        
+                        if (file_exists($filePath)) {
+                            $ext = pathinfo($sub->original_name ?? $filePath, PATHINFO_EXTENSION);
+                            $zip->addFile($filePath, "Tugas/{$mapel}/{$judul}/[Jawaban]_{$siswa}.{$ext}");
+                            $fileCount++;
+                        }
+                    }
+                }
+                
+                // --- D. Bukti Banding Nilai ---
+                $bandings = \App\Models\Banding::with(['student', 'subject.course'])->get();
+                foreach ($bandings as $banding) {
+                    if ($banding->bukti_pendukung) {
+                        $mapel = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $banding->subject->course->nama ?? 'Umum'));
+                        $siswa = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $banding->student->nama ?? 'Anonim'));
+                        
+                        $filePath = storage_path('app/' . $banding->bukti_pendukung);
+                        if (!file_exists($filePath)) {
+                            $filePath = storage_path('app/public/' . $banding->bukti_pendukung);
+                        }
+                        
+                        if (file_exists($filePath)) {
+                            $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+                            $zip->addFile($filePath, "Banding_Nilai/{$mapel}/[Bukti]_{$siswa}_{$banding->id}.{$ext}");
+                            $fileCount++;
                         }
                     }
                 }
@@ -1111,7 +1488,8 @@ class PengaturanController extends Controller
         }
 
         $request->validate([
-            'kelas_id' => 'required|exists:kelas,id'
+            'kelas_id' => 'required|exists:kelas,id',
+            'mata_pelajaran_id' => 'nullable|exists:mata_pelajaran,id'
         ]);
 
         try {
@@ -1120,32 +1498,57 @@ class PengaturanController extends Controller
             $tahunAjaran = str_replace('/', '-', $kelas->academic_year);
             $namaKelas = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $kelas->name));
             
+            $mataPelajaranStr = $request->filled('mata_pelajaran_id') ? '_Mapel_' . $request->mata_pelajaran_id : '';
             $zip = new \ZipArchive();
-            $namaZip = 'Arsip_Kelas_' . $namaKelas . '_TA_' . $tahunAjaran . '.zip';
+            $namaZip = 'Arsip_Kelas_' . $namaKelas . '_TA_' . $tahunAjaran . $mataPelajaranStr . '.zip';
             $pathZip = storage_path('app/' . $namaZip);
 
             if ($zip->open($pathZip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== TRUE) {
                 throw new \Exception('Gagal membuat berkas ZIP.');
             }
 
-            // Ambil semua tugas untuk kelas ini
-            $assignments = \App\Models\Tugas::where('kelas_id', $kelas->id)->with('subject.course')->get();
-            $assignmentIds = $assignments->pluck('id');
-
-            // Ambil semua pengumpulan (submission) untuk tugas-tugas tersebut
-            $submissions = \App\Models\Pengumpulan::whereIn('tugas_id', $assignmentIds)
-                ->with(['student', 'tugas.subject.course'])
-                ->get();
-
             $fileCount = 0;
 
-            // 1. Masukkan file Soal (Tugas) Guru
+            // 1. Ambil Materi untuk kelas ini
+            $materiQuery = \App\Models\Materi::where('kelas_id', $kelas->id)->with('subject.course');
+            if ($request->filled('mata_pelajaran_id')) {
+                $materiQuery->where('subject_id', $request->mata_pelajaran_id);
+            }
+            $materis = $materiQuery->get();
+
+            foreach ($materis as $materi) {
+                if ($materi->file_path) {
+                    $mapel = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $materi->subject->course->nama ?? 'Umum'));
+                    $judul = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $materi->title));
+                    
+                    $filePath = storage_path('app/' . $materi->file_path);
+                    if (!file_exists($filePath)) {
+                        $filePath = storage_path('app/public/' . $materi->file_path);
+                    }
+
+                    if (file_exists($filePath)) {
+                        $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+                        $zipPath = $mapel . '/Materi/' . $judul . '.' . $ext;
+                        $zip->addFile($filePath, $zipPath);
+                        $fileCount++;
+                    }
+                }
+            }
+
+            // 2. Ambil Tugas untuk kelas ini
+            $assignmentsQuery = \App\Models\Tugas::where('kelas_id', $kelas->id)->with('subject.course');
+            if ($request->filled('mata_pelajaran_id')) {
+                $assignmentsQuery->where('mata_pelajaran_id', $request->mata_pelajaran_id);
+            }
+            $assignments = $assignmentsQuery->get();
+            $assignmentIds = $assignments->pluck('id');
+
+            // 3. Masukkan file Soal (Tugas) Guru
             foreach ($assignments as $assignment) {
                 if ($assignment->lampiran) {
-                    $mataPelajaran = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $assignment->subject->course->nama));
+                    $mataPelajaran = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $assignment->subject->course->nama ?? 'Umum'));
                     $namaTugas = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $assignment->judul));
                     
-                    // Path fisik di disk local/public
                     $filePath = storage_path('app/' . $assignment->lampiran);
                     if (!file_exists($filePath)) {
                         $filePath = storage_path('app/public/' . $assignment->lampiran);
@@ -1153,20 +1556,23 @@ class PengaturanController extends Controller
 
                     if (file_exists($filePath)) {
                         $ext = pathinfo($filePath, PATHINFO_EXTENSION);
-                        // Folder ZIP Structure: Mata_Pelajaran / Tugas / [Soal_Guru]...
-                        $zipPath = $mataPelajaran . '/' . $namaTugas . '/[Soal_Guru]_' . $namaTugas . '.' . $ext;
+                        $zipPath = $mataPelajaran . '/Tugas/' . $namaTugas . '/[Soal_Guru]_' . $namaTugas . '.' . $ext;
                         $zip->addFile($filePath, $zipPath);
                         $fileCount++;
                     }
                 }
             }
 
-            // 2. Masukkan file Pengumpulan Siswa
+            // 4. Masukkan file Pengumpulan Siswa
+            $submissions = \App\Models\Pengumpulan::whereIn('tugas_id', $assignmentIds)
+                ->with(['student', 'assignment.subject.course'])
+                ->get();
+
             foreach ($submissions as $sub) {
                 if ($sub->file_tugas) {
-                    $mataPelajaran = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->tugas->subject->course->nama));
-                    $namaTugas = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->tugas->judul));
-                    $namaSiswa = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->student->nama));
+                    $mataPelajaran = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->assignment->subject->course->nama ?? 'Umum'));
+                    $namaTugas = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->assignment->judul ?? 'Tanpa_Judul'));
+                    $namaSiswa = str_replace(' ', '_', preg_replace('/[^A-Za-z0-9 ]/', '', $sub->student->nama ?? 'Anonim'));
                     
                     $filePath = storage_path('app/' . $sub->file_tugas);
                     if (!file_exists($filePath)) {
@@ -1175,7 +1581,7 @@ class PengaturanController extends Controller
 
                     if (file_exists($filePath)) {
                         $ext = pathinfo($sub->original_name ?? $filePath, PATHINFO_EXTENSION);
-                        $zipPath = $mataPelajaran . '/' . $namaTugas . '/[Jawaban]_' . $namaSiswa . '.' . $ext;
+                        $zipPath = $mataPelajaran . '/Tugas/' . $namaTugas . '/[Jawaban]_' . $namaSiswa . '.' . $ext;
                         $zip->addFile($filePath, $zipPath);
                         $fileCount++;
                     }
@@ -1203,5 +1609,396 @@ class PengaturanController extends Controller
             return redirect()->route('settings.index', ['tab' => 'pemeliharaan'])
                 ->with('error', 'Gagal mengekspor arsip kelas: ' . $e->getMessage());
         }
+    }
+    public function archiveAlumniSubmissions(Request $request)
+    {
+        try {
+            // Dapatkan seluruh file pengumpulan tugas dari siswa yang statusnya 'lulus'
+            $submissions = \App\Models\Pengumpulan::whereHas('student', function ($query) {
+                $query->where('status', 'lulus');
+            })->whereNotNull('file_tugas')->get();
+
+            if ($submissions->isEmpty()) {
+                return redirect()->route('settings.index', ['tab' => 'pemeliharaan'])
+                    ->with('error', 'Tidak ada file pengumpulan tugas dari siswa alumni yang dapat diarsipkan.');
+            }
+
+            // Siapkan ZipArchive
+            $zip = new \ZipArchive();
+            $filename = 'arsip_alumni_' . date('Ymd_His') . '.zip';
+            $storagePath = storage_path('app/archives');
+            
+            if (!file_exists($storagePath)) {
+                mkdir($storagePath, 0755, true);
+            }
+            
+            $zipPath = $storagePath . '/' . $filename;
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE) === TRUE) {
+                $fileCount = 0;
+                
+                // Tambahkan file ke ZIP
+                foreach ($submissions as $submission) {
+                    // Cek di disk 'local' (storage/app)
+                    $filePath = storage_path('app/' . $submission->file_tugas);
+                    
+                    if (file_exists($filePath)) {
+                        $zip->addFile($filePath, $submission->file_tugas);
+                        $fileCount++;
+                    }
+                }
+                
+                $zip->close();
+
+                if ($fileCount === 0) {
+                    // Zip kosong, hapus zip dan kembali
+                    unlink($zipPath);
+                    return redirect()->route('settings.index', ['tab' => 'pemeliharaan'])
+                        ->with('error', 'Semua record ditemukan namun file fisik sudah tidak ada di server.');
+                }
+
+                // Hapus file aslinya dari server
+                foreach ($submissions as $submission) {
+                    if (\Illuminate\Support\Facades\Storage::exists($submission->file_tugas)) {
+                        \Illuminate\Support\Facades\Storage::delete($submission->file_tugas);
+                    }
+                    // Biarkan histori angkanya tetap ada, kita tidak men-null-kan kolom file agar 
+                    // ketika diakses nanti tahu bahwa ini nama file aslinya (meski sudah terhapus fisik).
+                }
+
+                \App\Models\ActivityLog::create([
+                    'pengguna_id' => auth()->id(),
+                    'action' => 'ARCHIVE_ALUMNI',
+                    'description' => "Mengarsipkan $fileCount file tugas siswa alumni dan menghapusnya dari server",
+                ]);
+
+                // Simpan url download sementara di session untuk dirender oleh UI via SweetAlert/Flash
+                return redirect()->route('settings.index', ['tab' => 'pemeliharaan'])
+                    ->with('success', "$fileCount file tugas alumni berhasil diarsipkan ke dalam ZIP dan dibersihkan dari server. Silakan klik tombol di bawah untuk mengunduh salinan aslinya.")
+                    ->with('download_archive_url', route('settings.download-alumni-archive', ['filename' => $filename]));
+            } else {
+                throw new \Exception('Gagal membuat berkas ZIP.');
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('settings.index', ['tab' => 'pemeliharaan'])
+                ->with('error', 'Gagal memproses arsip file alumni: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadAlumniArchive($filename)
+    {
+        $path = storage_path('app/archives/' . $filename);
+        if (file_exists($path)) {
+            return response()->download($path); // Tidak dihapus otomatis jika ingin disimpan di server sbg backup
+        }
+        
+        return abort(404, 'File arsip tidak ditemukan.');
+    }
+
+    // --- Helper function for Excel Multi-Sheet with Kop Surat ---
+    private function streamMultiSheetExcel($filename, $sheetsData)
+    {
+        $spreadsheet = new Spreadsheet();
+        
+        $schoolName = Pengaturan::getValue('school_name', 'SMA Negeri 1 Cepogo');
+        $schoolEmail = Pengaturan::getValue('school_email', 'info@smansago.sch.id');
+        $downloader = auth()->user() ? auth()->user()->name : 'Administrator';
+        $downloadTime = \Carbon\Carbon::now()->timezone('Asia/Jakarta')->format('d M Y H:i:s');
+        
+        foreach ($sheetsData as $index => $sheetInfo) {
+            if ($index === 0) {
+                $sheet = $spreadsheet->getActiveSheet();
+            } else {
+                $sheet = $spreadsheet->createSheet();
+            }
+            $sheet->setTitle(substr($sheetInfo['sheet_name'], 0, 31));
+            
+            $headers = $sheetInfo['headers'];
+            $data = $sheetInfo['data'];
+            $documentTitle = $sheetInfo['title'];
+            
+            $colCount = count($headers);
+            $lastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colCount);
+            
+            // Batasi merge Kop Surat maksimal 12 kolom agar tidak terlalu ke kanan/hilang saat dibuka
+            $kopColCount = min($colCount, 12);
+            $kopLastCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($kopColCount);
+            
+            // Kop Surat
+            $sheet->mergeCells("A1:{$kopLastCol}1");
+            $sheet->setCellValue('A1', mb_strtoupper($schoolName));
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+            $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            
+            $sheet->mergeCells("A2:{$kopLastCol}2");
+            $sheet->setCellValue('A2', $schoolEmail);
+            $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            
+            $sheet->mergeCells("A3:{$kopLastCol}3");
+            $sheet->setCellValue('A3', mb_strtoupper($documentTitle));
+            $sheet->getStyle('A3')->getFont()->setBold(true)->setSize(12);
+            $sheet->getStyle('A3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            
+            $sheet->mergeCells("A4:{$kopLastCol}4");
+            $sheet->setCellValue('A4', 'Diunduh pada: ' . $downloadTime . ' | Oleh: ' . $downloader);
+            $sheet->getStyle('A4')->getFont()->setItalic(true)->setSize(10);
+            $sheet->getStyle('A4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            
+            // Header Tabel
+            $startRow = 6;
+            for ($i = 0; $i < $colCount; $i++) {
+                $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1);
+                $sheet->setCellValue($colLetter . $startRow, $headers[$i]);
+                $sheet->getStyle($colLetter . $startRow)->getFont()->setBold(true);
+                $sheet->getColumnDimension($colLetter)->setAutoSize(true);
+            }
+            
+            // Data
+            $row = $startRow + 1;
+            foreach ($data as $item) {
+                for ($i = 0; $i < $colCount; $i++) {
+                    $colLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1);
+                    $sheet->setCellValue($colLetter . $row, $item[$i] ?? '-');
+                }
+                $row++;
+            }
+        }
+        
+        $spreadsheet->setActiveSheetIndex(0);
+        
+        $writer = new Xlsx($spreadsheet);
+        
+        return new StreamedResponse(
+            function () use ($writer) {
+                $writer->save('php://output');
+            },
+            200,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '.xlsx"',
+                'Cache-Control' => 'max-age=0',
+            ]
+        );
+    }
+
+    // --- Helper function for single sheet (backward compatibility) ---
+    private function streamExcelWithKop($filename, $documentTitle, $headers, $data, $tahunAjaranStr)
+    {
+        return $this->streamMultiSheetExcel($filename, [
+            [
+                'sheet_name' => 'Data',
+                'title' => $documentTitle,
+                'headers' => $headers,
+                'data' => $data
+            ]
+        ]);
+    }
+
+    // 1. Download Archive Detail
+    public function downloadArchiveDetail($year)
+    {
+        $yearDecoded = str_replace('-', '/', $year);
+        
+        // --- Daftar Kelas & Wali Kelas ---
+        $daftarKelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->with('homeroomTeacher')
+            ->where('academic_year', $yearDecoded)
+            ->orderBy('name', 'asc')
+            ->get();
+            
+        $headersKelas = ['No', 'Nama Kelas', 'Wali Kelas', 'Tahun Ajaran'];
+        $dataKelas = [];
+        $no = 1;
+        foreach ($daftarKelas as $kelas) {
+            $dataKelas[] = [
+                $no++,
+                $kelas->name,
+                $kelas->homeroomTeacher ? $kelas->homeroomTeacher->nama : 'Belum Ditentukan',
+                $kelas->academic_year
+            ];
+        }
+        
+        // --- Daftar Pengampuan Guru (Matrix) ---
+        $semuaKelas = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->where('academic_year', $yearDecoded)
+            ->orderBy('name', 'asc')
+            ->pluck('name')
+            ->toArray();
+            
+        $daftarPengampu = \Illuminate\Support\Facades\DB::table('guru_kelas')
+            ->join('kelas', 'guru_kelas.kelas_id', '=', 'kelas.id')
+            ->join('guru', 'guru_kelas.guru_id', '=', 'guru.id')
+            ->leftJoin('mata_pelajaran', 'guru_kelas.mata_pelajaran_id', '=', 'mata_pelajaran.id')
+            ->where('kelas.academic_year', $yearDecoded)
+            ->select('guru.nama as guru_nama', 'kelas.name as kelas_nama', 'mata_pelajaran.nama as mapel_nama')
+            ->orderBy('guru_nama', 'asc')
+            ->orderBy('kelas_nama', 'asc')
+            ->get();
+            
+        $matrixData = [];
+        foreach ($daftarPengampu as $pengampu) {
+            $guru = $pengampu->guru_nama;
+            $kelas = $pengampu->kelas_nama;
+            $mapel = $pengampu->mapel_nama ?? 'Umum';
+            
+            if (!isset($matrixData[$guru])) {
+                $matrixData[$guru] = [];
+            }
+            if (!isset($matrixData[$guru][$kelas])) {
+                $matrixData[$guru][$kelas] = [];
+            }
+            $matrixData[$guru][$kelas][] = $mapel;
+        }
+
+        $headersPengampu = array_merge(['No', 'Nama Guru Pengampu'], $semuaKelas);
+        $dataPengampu = [];
+        $noPengampu = 1;
+        
+        foreach ($matrixData as $guru => $kelasMap) {
+            $row = [
+                $noPengampu++,
+                $guru
+            ];
+            
+            foreach ($semuaKelas as $kelasName) {
+                if (isset($kelasMap[$kelasName])) {
+                    $row[] = implode(', ', $kelasMap[$kelasName]);
+                } else {
+                    $row[] = '-';
+                }
+            }
+            
+            $dataPengampu[] = $row;
+        }
+        
+        return $this->streamMultiSheetExcel("arsip_periode_akademik_{$year}", [
+            [
+                'sheet_name' => 'Wali Kelas',
+                'title' => "ARSIP KELAS TAHUN AJARAN {$yearDecoded}",
+                'headers' => $headersKelas,
+                'data' => $dataKelas
+            ],
+            [
+                'sheet_name' => 'Pengampuan Guru',
+                'title' => "PLOTTING PENGAMPUAN GURU TAHUN {$yearDecoded}",
+                'headers' => $headersPengampu,
+                'data' => $dataPengampu
+            ]
+        ]);
+    }
+
+    // 2. Download Alumni
+    public function downloadAlumni($year)
+    {
+        $yearDecoded = str_replace('-', '/', $year);
+        $alumni = \App\Models\Siswa::where('tahun_lulus', $yearDecoded)
+            ->orderBy('name', 'asc')
+            ->get();
+            
+        $headers = ['No', 'NIS', 'Nama Lengkap', 'L/P', 'Email', 'Tahun Lulus'];
+        $data = [];
+        $no = 1;
+        foreach ($alumni as $siswa) {
+            $data[] = [
+                $no++,
+                $siswa->nis,
+                $siswa->name,
+                $siswa->gender === 'male' ? 'L' : 'P',
+                $siswa->email,
+                $siswa->tahun_lulus
+            ];
+        }
+        
+        return $this->streamExcelWithKop(
+            "arsip_alumni_{$year}", 
+            "DATA ALUMNI LULUSAN {$yearDecoded}", 
+            $headers, 
+            $data, 
+            $yearDecoded
+        );
+    }
+
+    // 3. Download Arsip Siswa (Riwayat Kelas)
+    public function downloadArsipSiswa($year)
+    {
+        $yearDecoded = str_replace('-', '/', $year);
+        $riwayat = \App\Models\RiwayatKelasSiswa::with(['siswa'])
+            ->where('academic_year', $yearDecoded)
+            ->get()
+            ->sortBy(function($item) {
+                return ($item->kelas_name ?? '') . ($item->siswa ? $item->siswa->name : '');
+            });
+            
+        $headers = ['No', 'NIS', 'Nama Siswa', 'Kelas', 'Tahun Ajaran'];
+        $data = [];
+        $no = 1;
+        foreach ($riwayat as $item) {
+            if (!$item->siswa) continue;
+            $data[] = [
+                $no++,
+                $item->siswa->nis,
+                $item->siswa->name,
+                $item->kelas_name ?? 'N/A',
+                $item->academic_year
+            ];
+        }
+        
+        return $this->streamExcelWithKop(
+            "riwayat_kelas_siswa_{$year}", 
+            "RIWAYAT KELAS SISWA TAHUN AJARAN {$yearDecoded}", 
+            $headers, 
+            $data, 
+            $yearDecoded
+        );
+    }
+
+    // 4. Download Mutasi
+    public function downloadMutasi($year)
+    {
+        $yearDecoded = str_replace('-', '/', $year);
+        $mutasi = \App\Models\MutasiSiswa::with('siswa')
+            ->where('jenis_mutasi', 'keluar')
+            ->whereYear('tanggal_mutasi', $yearDecoded)
+            ->orderBy('tanggal_mutasi', 'desc')
+            ->get();
+            
+        $headers = ['No', 'NIS', 'Nama Siswa', 'Jenis', 'Tanggal Mutasi', 'Keterangan'];
+        $data = [];
+        $no = 1;
+        $jenisMap = [
+            'keluar' => 'Pindah Sekolah',
+            'dikeluarkan' => 'Dikeluarkan',
+            'mengundurkan diri' => 'Mengundurkan Diri'
+        ];
+
+        foreach ($mutasi as $item) {
+            $jenis = $jenisMap[$item->jenis_mutasi] ?? strtoupper($item->jenis_mutasi);
+            
+            $ketParts = [];
+            if (!empty($item->keterangan_sekolah)) {
+                $ketParts[] = "Tujuan: " . $item->keterangan_sekolah;
+            }
+            if (!empty($item->alasan)) {
+                $ketParts[] = "Alasan: " . $item->alasan;
+            }
+            $keterangan = !empty($ketParts) ? implode(" | ", $ketParts) : '-';
+
+            $data[] = [
+                $no++,
+                $item->siswa ? $item->siswa->nis : 'Terhapus',
+                $item->siswa ? $item->siswa->nama : 'Terhapus',
+                $jenis,
+                \Carbon\Carbon::parse($item->tanggal_mutasi)->format('d-m-Y'),
+                $keterangan
+            ];
+        }
+        
+        return $this->streamExcelWithKop(
+            "arsip_mutasi_{$year}", 
+            "ARSIP MUTASI SISWA TAHUN {$yearDecoded}", 
+            $headers, 
+            $data, 
+            $yearDecoded
+        );
     }
 }

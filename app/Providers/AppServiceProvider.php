@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
                         'guru' => [
                             'view_siswa', 'view_kelas',
                             'view_tugas', 'create_tugas', 'edit_tugas', 'delete_tugas', 'grade_tugas',
-                            'view_dispensasi'
+                            'view_dispensasi', 'approve_dispensasi'
                         ],
                         'wali_kelas' => [
                             'view_siswa', 'view_kelas',

@@ -107,6 +107,18 @@
 </div>
 @endif
 
+@if(session('info'))
+<div class="mb-6 glass p-4 border border-sky-100 bg-sky-50/70 text-sky-700 flex items-center justify-between rounded-xl shadow-sm animate-fade-in">
+    <div class="flex items-center gap-3">
+        <i class="fas fa-info-circle text-lg text-sky-500"></i>
+        <span class="font-semibold text-sm">{{ session('info') }}</span>
+    </div>
+    <button onclick="this.parentElement.remove()" class="text-sky-700/70 hover:text-sky-700 transition">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+@endif
+
 @if(session('error'))
 <div class="mb-6 glass p-4 border border-rose-100 bg-rose-50/70 text-rose-700 flex items-center justify-between rounded-xl shadow-sm animate-fade-in">
     <div class="flex items-center gap-3">
@@ -123,6 +135,9 @@
 <div class="flex border-b border-slate-200 dark:border-slate-800 gap-2 mb-6">
     <a href="{{ route('academic-years.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition">
         ⚙️ Pengaturan Tahun Ajaran
+    </a>
+    <a href="{{ route('academic-years.index') }}?tab=arsip" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition">
+        🗃️ Arsip T.A
     </a>
     <a href="{{ route('classrooms.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition">
         🏫 Rombel Aktif
@@ -161,7 +176,7 @@
                 <div>
                     <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Siswa Terkelas</p>
                     <p class="text-2xl font-bold text-[#00B074] mt-1">
-                        {{ \App\Models\Siswa::whereNotNull('kelas')->where('status', 'aktif')->count() }}
+                        {{ $classrooms->sum('siswa_count') }}
                     </p>
                 </div>
                 <div class="w-12 h-12 rounded-xl bg-emerald-50 text-[#00B074] dark:bg-emerald-950/20 dark:text-emerald-400 flex items-center justify-center text-lg flex-shrink-0">
@@ -235,15 +250,28 @@
                         <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
                     </button>
                     <!-- Dropdown List -->
-                    <div x-show="open" x-transition class="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
+                    <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
                         <button type="button" onclick="openPlottingModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
                             <span class="text-sm">🎲</span>
                             <span class="font-medium">Plotting Wali Kelas</span>
                         </button>
+                        {{-- 
+                        [HIDDEN FOR DEMO]
                         <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
                         <button type="button" onclick="openCloneModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
                             <i class="fas fa-copy text-orange-500 w-4 text-center"></i>
                             <span class="font-medium">Salin Data Kelas</span>
+                        </button>
+                        --}}
+                        <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
+                        <button type="button" onclick="openPlottingSiswaModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
+                            <i class="fas fa-random text-indigo-500 w-4 text-center"></i>
+                            <span class="font-medium">Plotting Siswa Otomatis</span>
+                        </button>
+                        <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
+                        <button type="button" onclick="openKelulusanKenaikanModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
+                            <i class="fas fa-graduation-cap text-orange-500 w-4 text-center"></i>
+                            <span class="font-medium">Kenaikan & Kelulusan</span>
                         </button>
                     </div>
                 </div>
@@ -273,14 +301,15 @@
 
                 @if(auth()->user()->isSuperAdmin() || auth()->user()->hasRole('admin'))
                 <!-- Generate Rombel -->
-                <form action="{{ route('classrooms.generate') }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin men-generate Rombel dari Master Kelas untuk Tahun Ajaran yang sedang tampil?')">
-                    @csrf
-                    <input type="hidden" name="target_year" value="{{ $selectedYear }}">
-                    <button type="submit" class="btn btn-orange-solid font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/15 transition flex items-center gap-2 text-xs">
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="showGenerateInfo()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-orange-100 hover:text-orange-500 transition flex items-center justify-center" title="Cara Penggunaan (SOP)">
+                        <i class="fas fa-info-circle text-lg"></i>
+                    </button>
+                    <button type="button" onclick="openGenerateMasterModal()" class="btn btn-orange-solid font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/15 transition flex items-center gap-2 text-xs">
                         <i class="fas fa-magic"></i>
                         <span>Generate dari Master</span>
                     </button>
-                </form>
+                </div>
                 @endif
             </div>
         </div>
@@ -422,7 +451,7 @@
             <!-- Baris 1: namaKelas -->
             <div>
                 <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Kelas *</label>
-                <input type="text" id="inputNamaKelas" name="namaKelas" required placeholder="Contoh: X IPA 1" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
+                <input type="text" id="inputNamaKelas" name="namaKelas" required placeholder="Contoh: X 1 (Fase E) atau XI F 1" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
             </div>
 
             <!-- Baris 2: tingkat & jurusan -->
@@ -684,8 +713,150 @@
     </div>
 </div>
 
+<!-- Modal Generate Rombel dari Master Kelas -->
+<div id="modalGenerateMaster" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0" id="backdropGenerateMaster" onclick="closeGenerateMasterModal()"></div>
+    
+    <!-- Modal Content -->
+    <div class="absolute inset-0 flex items-center justify-center p-4 sm:p-6 pointer-events-none">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl scale-95 opacity-0 transition-all duration-300 transform pointer-events-auto border border-slate-100 dark:border-slate-800" id="panelGenerateMaster">
+            <!-- Header -->
+            <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-500/20 flex items-center justify-center text-sm">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    Generate dari Master
+                </h3>
+                <button onclick="closeGenerateMasterModal()" class="text-slate-400 hover:text-rose-500 transition-colors p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-500/10">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-6">
+                <form id="formGenerateMaster" action="{{ route('classrooms.generate') }}" method="POST">
+                    @csrf
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+                        Fitur ini akan men-generate rombel baru berdasarkan struktur <strong>Master Kelas</strong> ke Tahun Ajaran yang Anda pilih.
+                    </p>
+
+                    <!-- Info Box Master Kelas -->
+                    <div class="mb-5 p-3.5 rounded-xl bg-orange-50/70 dark:bg-orange-500/10 border border-orange-200/60 dark:border-orange-500/20 flex items-start gap-3">
+                        <i class="fas fa-sitemap text-orange-500 mt-0.5 text-sm shrink-0"></i>
+                        <div class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                            <span class="font-bold text-orange-600 dark:text-orange-400">{{ $totalMasterClasses ?? \App\Models\MasterKelas::count() }} Master Kelas</span> siap di-generate. Jika rombel sudah ada pada tahun ajaran target, sistem tidak akan menduplikasinya.
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <!-- Tahun Ajaran Sumber / Basis Master -->
+                        <div>
+                            <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                                Basis Master / Tahun Ajaran Asal (Dari) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <select name="source_master_year" class="input bg-white dark:bg-slate-800 w-full text-xs font-semibold appearance-none pr-8">
+                                    <option value="all">-- Semua Master Kelas (22 Kelas Template Utama) --</option>
+                                    @foreach($academicYears as $year)
+                                        @if($year !== 'all')
+                                        <option value="{{ $year }}">
+                                            Tahun Ajaran {{ $year }}
+                                        </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <i class="fas fa-chevron-down text-[10px]"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tahun Ajaran Tujuan -->
+                        <div>
+                            <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                                Tahun Ajaran Tujuan (Ke) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <select name="target_year" required class="input bg-white dark:bg-slate-800 w-full text-xs font-semibold appearance-none pr-8">
+                                    <option value="">Pilih Tahun Ajaran Tujuan...</option>
+                                    @foreach($academicYears as $year)
+                                        @if($year !== 'all')
+                                        <option value="{{ $year }}" {{ ($selectedYear !== 'all' ? $selectedYear : '') == $year ? 'selected' : '' }}>
+                                            Tahun Ajaran {{ $year }}
+                                        </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                                <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                    <i class="fas fa-chevron-down text-[10px]"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end items-center gap-3 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-b-2xl">
+                <button type="button" onclick="closeGenerateMasterModal()" class="btn border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-semibold px-5 py-2.5 rounded-xl text-xs transition">Batal</button>
+                <button type="button" onclick="submitGenerateMaster()" id="btnSubmitGenerateMaster" class="btn btn-orange-solid font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/10 text-xs transition flex items-center gap-2">
+                    <i class="fas fa-magic"></i>
+                    <span>Ya, Generate Rombel</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ==========================================
 
+
+@include('kelas.partials.aksi_sistem_modals')
+@include('kelas.partials.aksi_sistem_js')
+
+<!-- SOP Modal -->
+<div id="sopModal" class="fixed inset-0 z-[100] hidden items-center justify-center">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeSopModal()"></div>
+    <div class="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-[90%] max-w-lg p-6 animate-in zoom-in-95 duration-200">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-info-circle text-orange-500"></i> SOP Pergantian Tahun Ajaran
+            </h3>
+            <button type="button" onclick="closeSopModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="text-slate-600 dark:text-slate-300 space-y-4 text-sm leading-relaxed">
+            <div class="flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold shrink-0 mt-0.5">1</div>
+                <p><strong>Luluskan Siswa Kelas XII</strong> di menu Data Siswa.</p>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold shrink-0 mt-0.5">2</div>
+                <p><strong>Ganti Tahun Ajaran Baru</strong> di menu Pengaturan.</p>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold shrink-0 mt-0.5">3</div>
+                <p>Klik tombol <strong>'Generate dari Master'</strong> ini untuk menduplikasi seluruh kerangka kelas ke tahun ajaran yang baru.</p>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold shrink-0 mt-0.5">4</div>
+                <p><strong>Promosikan (Naikkan Kelas)</strong> siswa kelas X dan XI lama ke dalam ruang-ruang kelas baru tersebut.</p>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold shrink-0 mt-0.5">5</div>
+                <p><strong>Input data</strong> Siswa Baru (Kelas X).</p>
+            </div>
+        </div>
+        <div class="mt-8 flex justify-end">
+            <button type="button" onclick="closeSopModal()" class="btn btn-orange-solid px-6 py-2 rounded-xl text-sm font-bold shadow-md shadow-orange-500/20">
+                Tutup Panduan
+            </button>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
 <script>
@@ -728,6 +899,46 @@
             modal.classList.add('hidden');
             document.getElementById('formCloneKelas').reset();
         }, 300);
+    }
+
+    // Modal Generate Master Kelas Functions
+    function openGenerateMasterModal() {
+        const modal = document.getElementById('modalGenerateMaster');
+        const backdrop = document.getElementById('backdropGenerateMaster');
+        const panel = document.getElementById('panelGenerateMaster');
+        
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            backdrop.classList.remove('opacity-0');
+            panel.classList.remove('opacity-0', 'scale-95');
+        }, 10);
+    }
+
+    function closeGenerateMasterModal() {
+        const modal = document.getElementById('modalGenerateMaster');
+        const backdrop = document.getElementById('backdropGenerateMaster');
+        const panel = document.getElementById('panelGenerateMaster');
+        
+        backdrop.classList.add('opacity-0');
+        panel.classList.add('opacity-0', 'scale-95');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+    function submitGenerateMaster() {
+        const form = document.getElementById('formGenerateMaster');
+        const select = form.querySelector('select[name="target_year"]');
+        if (!select.value) {
+            alert('Silakan pilih Tahun Ajaran Tujuan terlebih dahulu.');
+            select.focus();
+            return;
+        }
+        const btn = document.getElementById('btnSubmitGenerateMaster');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+        form.submit();
     }
 
     function generateAndSavePlotting() {
@@ -875,6 +1086,16 @@
             }
         });
     });
+
+    function showGenerateInfo() {
+        document.getElementById('sopModal').classList.remove('hidden');
+        document.getElementById('sopModal').classList.add('flex');
+    }
+
+    function closeSopModal() {
+        document.getElementById('sopModal').classList.add('hidden');
+        document.getElementById('sopModal').classList.remove('flex');
+    }
 </script>
 @endpush
 @endsection

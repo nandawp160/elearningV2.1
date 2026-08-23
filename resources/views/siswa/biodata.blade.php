@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
-@section('title', $isUpdate ? 'Kenaikan Kelas' : 'Lengkapi Biodata')
+@section('title', $isUpdate ? 'Perbarui Biodata' : 'Lengkapi Biodata')
 
 @section('content')
 <div class="space-y-6 max-w-5xl mx-auto">
     <div class="card">
         <div class="card-header">
             <div>
-                <h1 class="page-title">{{ $isUpdate ? 'Kenaikan Kelas' : 'Lengkapi Biodata' }}</h1>
+                <h1 class="page-title">{{ $isUpdate ? 'Perbarui Biodata' : 'Lengkapi Biodata' }}</h1>
                 <p class="page-subtitle">
-                    {{ $isUpdate ? 'Perbarui data Anda untuk tahun ajaran baru dan pilih kelas tujuan.' : 'Lengkapi informasi akademik dan data diri agar dapat mengakses materi.' }}
+                    {{ $isUpdate ? 'Perbarui dan pastikan data diri Anda sudah sesuai.' : 'Lengkapi informasi akademik dan data diri agar dapat mengakses materi.' }}
                 </p>
             </div>
             <span class="badge badge-info">Profil Siswa</span>
@@ -59,31 +59,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label for="nis" class="field-label mb-2 block">NIS (Nomor Induk Siswa)</label>
-                    <input id="nis" type="text" name="nis" value="{{ old('nis', $student->nis ?? '') }}" required class="input" placeholder="Masukkan NIS Anda" />
+                    <input id="nis" type="text" name="nis" value="{{ old('nis', $student->nis ?? '') }}" required readonly class="input bg-slate-100 cursor-not-allowed" placeholder="NIS Anda" />
                     <x-input-error :messages="$errors->get('nis')" class="text-xs text-rose-600 mt-1" />
                 </div>
 
                 <div>
-                    <label for="class_room_id" class="field-label mb-2 block">Pilih Kelas</label>
-                    <select id="class_room_id" name="class_room_id" required class="select">
-                        <option value="" disabled {{ (old('class_room_id') || ($student && $student->current_class_room)) ? '' : 'selected' }}>Pilih Kelas Anda</option>
-                        @foreach($classrooms as $grade => $majors)
-                            @foreach($majors as $major => $list)
-                                <optgroup label="KELAS {{ $grade }} - {{ $major }}">
-                                    @foreach($list as $classroom)
-                                        @php
-                                            $isSelected = old('class_room_id') == $classroom->id || 
-                                                        ($student && $student->current_class_room && $student->current_class_room->id == $classroom->id);
-                                        @endphp
-                                        <option value="{{ $classroom->id }}" {{ $isSelected ? 'selected' : '' }}>
-                                            {{ $classroom->name }} ({{ $classroom->academic_year }})
-                                        </option>
-                                    @endforeach
-                                </optgroup>
-                            @endforeach
-                        @endforeach
-                    </select>
-                    <x-input-error :messages="$errors->get('class_room_id')" class="text-xs text-rose-600 mt-1" />
+                    <label class="field-label mb-2 block">Kelas</label>
+                    <input type="text" value="{{ $student && $student->resolved_kelas ? $student->resolved_kelas : 'Belum Ditetapkan' }}" readonly class="input bg-slate-100 cursor-not-allowed" />
+                </div>
+
+                <div>
+                    <label class="field-label mb-2 block">Email Login</label>
+                    <input type="text" value="{{ Auth::user()->email }}" readonly class="input bg-slate-100 cursor-not-allowed" />
                 </div>
 
                 <div>
@@ -108,23 +95,6 @@
                     <x-input-error :messages="$errors->get('entry_year')" class="text-xs text-rose-600 mt-1" />
                 </div>
 
-                <div>
-                    <label for="parent_name" class="field-label mb-2 block">Nama Orang Tua / Wali</label>
-                    <input id="parent_name" type="text" name="parent_name" value="{{ old('parent_name', $student->parent_name ?? '') }}" required class="input" placeholder="Nama lengkap orang tua" />
-                    <x-input-error :messages="$errors->get('parent_name')" class="text-xs text-rose-600 mt-1" />
-                </div>
-
-                <div>
-                    <label for="parent_phone" class="field-label mb-2 block">No. Telepon Orang Tua</label>
-                    <input id="parent_phone" type="text" name="parent_phone" value="{{ old('parent_phone', $student->parent_phone ?? '') }}" required class="input" placeholder="Contoh: 081234567890" />
-                    <x-input-error :messages="$errors->get('parent_phone')" class="text-xs text-rose-600 mt-1" />
-                </div>
-
-                <div>
-                    <label for="parent_email" class="field-label mb-2 block">Email Orang Tua (Opsional)</label>
-                    <input id="parent_email" type="email" name="parent_email" value="{{ old('parent_email', $student->parent_email ?? '') }}" class="input" placeholder="email@contoh.com" />
-                    <x-input-error :messages="$errors->get('parent_email')" class="text-xs text-rose-600 mt-1" />
-                </div>
             </div>
 
             <div>
@@ -143,5 +113,52 @@
     </div>
 
     <p class="text-xs text-slate-500 text-center">Pastikan data yang Anda masukkan sudah valid dan sesuai dokumen resmi sekolah.</p>
+
+    <!-- Form Ubah Password -->
+    <div class="card mt-8">
+        <div class="card-header">
+            <div>
+                <h2 class="page-title text-xl">Ubah Kata Sandi</h2>
+                <p class="page-subtitle">Siswa hanya diperbolehkan mengganti kata sandi maksimal 2 kali dalam 30 hari.</p>
+            </div>
+            
+            @if($passwordChangesLeft > 0)
+                <span class="badge badge-success">Sisa Kuota: {{ $passwordChangesLeft }} kali</span>
+            @else
+                <span class="badge badge-danger text-rose-600 bg-rose-100">Batas Tercapai</span>
+            @endif
+        </div>
+
+        <form method="POST" action="{{ route('student.password.update') }}" class="space-y-6 mt-4">
+            @csrf
+
+            <div class="space-y-4 max-w-md">
+                <div>
+                    <label for="current_password" class="field-label mb-2 block">Kata Sandi Saat Ini</label>
+                    <input id="current_password" type="password" name="current_password" required class="input" placeholder="Masukkan kata sandi lama" {{ $passwordChangesLeft == 0 ? 'disabled' : '' }} />
+                    <x-input-error :messages="$errors->get('current_password')" class="text-xs text-rose-600 mt-1" />
+                </div>
+
+                <div>
+                    <label for="new_password" class="field-label mb-2 block">Kata Sandi Baru</label>
+                    <input id="new_password" type="password" name="new_password" required class="input" placeholder="Minimal 8 karakter" {{ $passwordChangesLeft == 0 ? 'disabled' : '' }} />
+                    <x-input-error :messages="$errors->get('new_password')" class="text-xs text-rose-600 mt-1" />
+                </div>
+
+                <div>
+                    <label for="new_password_confirmation" class="field-label mb-2 block">Konfirmasi Kata Sandi Baru</label>
+                    <input id="new_password_confirmation" type="password" name="new_password_confirmation" required class="input" placeholder="Ulangi kata sandi baru" {{ $passwordChangesLeft == 0 ? 'disabled' : '' }} />
+                    <x-input-error :messages="$errors->get('new_password_confirmation')" class="text-xs text-rose-600 mt-1" />
+                </div>
+            </div>
+
+            <div class="flex">
+                <button type="submit" class="btn btn-primary" {{ $passwordChangesLeft == 0 ? 'disabled' : '' }}>
+                    <i class="fas fa-key"></i>
+                    Perbarui Kata Sandi
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 @endsection

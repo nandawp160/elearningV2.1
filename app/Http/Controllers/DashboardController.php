@@ -72,7 +72,19 @@ class DashboardController extends Controller
                 return view('dashboard', $data);
             }
 
-            $kelas = $student->kelas; // e.g. "X IPA 1"
+            // 2. Prevent alumni (graduated students) from accessing dashboard
+            if ($student->status === 'lulus') {
+                auth()->logout();
+                request()->session()->invalidate();
+                request()->session()->regenerateToken();
+                
+                $msg = 'Akun Anda berstatus Alumni (Lulus). Akses ke portal E-Learning telah ditutup.';
+                return redirect()->route('login')
+                    ->with('error_alumni', $msg)
+                    ->withErrors(['email' => $msg]);
+            }
+
+            $kelas = $student->resolved_kelas; // e.g. "X IPA 1"
             $tingkat = 'X';
             $teacherIds = [];
             if ($kelas) {

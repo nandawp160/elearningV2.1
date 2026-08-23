@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('grade_level')->nullable();
             $table->string('major')->nullable();
+            $table->string('entry_academic_year')->nullable();
             $table->timestamps();
         });
     }

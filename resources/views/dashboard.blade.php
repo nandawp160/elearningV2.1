@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Dashboard')
+@section('hide_global_alert', true)
 
 @section('content')
 <div class="space-y-8">
@@ -89,7 +90,7 @@
                 <div class="text-left md:text-right">
                     <h4 class="text-base font-bold text-slate-800 dark:text-white leading-none mb-1">{{ auth()->user()->name }}</h4>
                     <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                        Kelas {{ auth()->user()->student->kelas ?? 'Belum Terdaftar' }} • NIS {{ auth()->user()->student->nis ?? '-' }}
+                        Kelas {{ auth()->user()->student->resolved_kelas ?? 'Belum Terdaftar' }} • NIS {{ auth()->user()->student->nis ?? '-' }}
                     </p>
                 </div>
                 <div class="w-11 h-11 rounded-full bg-[#fdf2ec] text-[#D65A20] flex items-center justify-center overflow-hidden border border-orange-100 flex-shrink-0">
@@ -97,6 +98,8 @@
                 </div>
             </div>
         </div>
+
+        @include('components.profile-alert')
 
         <!-- Layout Grid: 2 columns left, 1 column right on desktop -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

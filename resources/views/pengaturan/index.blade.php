@@ -13,6 +13,30 @@
     .btn-orange-outline:hover {
         background-color: rgba(214, 90, 32, 0.05) !important;
     }
+    .btn-orange-solid {
+        background-color: #D65A20 !important;
+        color: #ffffff !important;
+        transition: all 0.15s ease;
+    }
+    .btn-orange-solid:hover {
+        background-color: #be4e1a !important;
+    }
+    .btn-indigo-solid {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+        transition: all 0.15s ease;
+    }
+    .btn-indigo-solid:hover {
+        background-color: #3730a3 !important;
+    }
+    .btn-rose-solid {
+        background-color: #e11d48 !important;
+        color: #ffffff !important;
+        transition: all 0.15s ease;
+    }
+    .btn-rose-solid:hover {
+        background-color: #be123c !important;
+    }
 </style>
 
 <!-- Toast Notification -->
@@ -22,9 +46,16 @@
         <i class="fas fa-check-circle text-lg"></i>
         <span class="font-semibold text-sm">{{ session('success') }}</span>
     </div>
-    <button onclick="this.parentElement.remove()" class="text-emerald-700/70 hover:text-emerald-700 transition">
-        <i class="fas fa-times"></i>
-    </button>
+    <div class="flex items-center gap-3">
+        @if(session('download_archive_url'))
+            <a href="{{ session('download_archive_url') }}" data-no-loading class="btn bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-1.5 rounded-lg shadow-sm text-xs transition duration-150 inline-flex items-center gap-2">
+                <i class="fas fa-download"></i> Unduh Arsip ZIP
+            </a>
+        @endif
+        <button onclick="this.parentElement.parentElement.remove()" class="text-emerald-700/70 hover:text-emerald-700 transition">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 </div>
 @endif
 
@@ -72,15 +103,19 @@
     @if(isset($active_page) && $active_page === 'academic-year')
     <!-- Tab Navigation for Tahun Ajaran & Rombel -->
     <div class="flex border-b border-slate-200 dark:border-slate-800 gap-2 mb-6">
-        <a href="{{ route('academic-years.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition">
+        <button type="button" onclick="switchAcademicTab('pengaturan')" id="tab-ac-pengaturan" class="px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition">
             ⚙️ Pengaturan Tahun Ajaran
-        </a>
+        </button>
+        <button type="button" onclick="switchAcademicTab('arsip')" id="tab-ac-arsip" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition">
+            📂 Arsip T.A
+        </button>
         <a href="{{ route('classrooms.index') }}" class="px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition">
             🏫 Rombel Aktif
         </a>
     </div>
 
-    <div class="space-y-6">
+    <!-- Konten Pengaturan Tahun Ajaran -->
+    <div id="ac-konten-pengaturan" class="space-y-6">
         <!-- Section 1: Periode Aktif & Form -->
         <!-- Section 1A: Periode Aktif Global -->
         <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm">
@@ -115,7 +150,7 @@
                                     @endforeach
                                     <option value="ADD_NEW" class="text-orange-500 font-semibold">+ Tambah Baru...</option>
                                 </select>
-                                <button type="submit" class="btn bg-rose-500 hover:bg-rose-600 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-rose-500/15 transition duration-150 flex items-center gap-2 whitespace-nowrap" onclick="return confirm('Peringatan: Mengubah Tahun Ajaran Global akan berdampak pada SELURUH PENGGUNA (Guru & Siswa). Yakin ingin melanjutkan?')">
+                                <button type="submit" class="btn btn-rose-solid font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-rose-500/15 transition duration-150 flex items-center gap-2 whitespace-nowrap" onclick="return confirm('Peringatan: Mengubah Tahun Ajaran Global akan berdampak pada SELURUH PENGGUNA (Guru & Siswa). Yakin ingin melanjutkan?')">
                                     <i class="fas fa-power-off"></i> Aktifkan Global
                                 </button>
                             </div>
@@ -167,7 +202,7 @@
                                     @endforeach
                                     <option value="ADD_NEW" class="text-orange-500 font-semibold">+ Tambah Baru...</option>
                                 </select>
-                                <button type="submit" class="btn bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-500/15 transition duration-150 flex items-center gap-2 whitespace-nowrap">
+                                <button type="submit" class="btn btn-indigo-solid font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-indigo-500/15 transition duration-150 flex items-center gap-2 whitespace-nowrap">
                                     <i class="fas fa-sync"></i> Ubah Tampilan
                                 </button>
                             </div>
@@ -183,8 +218,12 @@
             </form>
         </div>
 
+    </div>
+
+    <!-- Konten Arsip T.A -->
+    <div id="ac-konten-arsip" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Section 2: Riwayat Periode Akademik -->
-        <div class="card p-0 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+        <div class="card p-0 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
             <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex items-center justify-between">
                 <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"><i class="fas fa-history text-slate-400 mr-2"></i> Riwayat Periode Akademik</h3>
             </div>
@@ -198,6 +237,9 @@
                     @if($settings['tahun_ajaran_aktif'] === $tahun)
                         <div class="flex items-center gap-2">
                             <span class="px-3 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 text-xs font-extrabold uppercase rounded-lg">Aktif</span>
+                            <a href="{{ route('academic-years.download-archive-detail', str_replace('/', '-', $tahun)) }}" class="px-3 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200" title="Unduh Excel">
+                                <i class="fas fa-file-excel"></i>
+                            </a>
                             <a href="{{ route('academic-years.archive-detail', str_replace('/', '-', $tahun)) }}" class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200">
                                 <i class="fas fa-eye mr-1"></i> Detail
                             </a>
@@ -205,6 +247,9 @@
                     @else
                         <div class="flex items-center gap-2">
                             <span class="px-3 py-1 bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 text-xs font-bold uppercase rounded-lg">Arsip</span>
+                            <a href="{{ route('academic-years.download-archive-detail', str_replace('/', '-', $tahun)) }}" class="px-3 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200" title="Unduh Excel">
+                                <i class="fas fa-file-excel"></i>
+                            </a>
                             <a href="{{ route('academic-years.archive-detail', str_replace('/', '-', $tahun)) }}" class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200">
                                 <i class="fas fa-eye mr-1"></i> Detail
                             </a>
@@ -212,6 +257,105 @@
                     @endif
                 </div>
                 @endforeach
+            </div>
+        </div>
+
+        <!-- Section 3: Arsip Data Siswa (Alumni) -->
+        <div class="card p-0 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"><i class="fas fa-user-graduate text-slate-400 mr-2"></i> Arsip Data Siswa (Alumni)</h3>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                @forelse($arsip_alumni as $arsip)
+                <div class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-graduation-cap text-slate-300 dark:text-slate-600"></i>
+                        <span class="font-bold text-slate-700 dark:text-slate-200 font-mono text-base">Lulusan {{ $arsip->tahun_lulus }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 text-[11px] font-extrabold uppercase rounded-lg">{{ $arsip->total }} Siswa</span>
+                        <a href="{{ route('academic-years.download-alumni', str_replace('/', '-', $arsip->tahun_lulus)) }}" class="px-3 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200" title="Unduh Excel">
+                            <i class="fas fa-file-excel"></i>
+                        </a>
+                        <a href="{{ route('academic-years.alumni', str_replace('/', '-', $arsip->tahun_lulus)) }}" class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200">
+                            <i class="fas fa-users mr-1"></i> Data
+                        </a>
+                    </div>
+                </div>
+                @empty
+                <div class="px-6 py-8 text-center flex-1 flex flex-col justify-center items-center">
+                    <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-3">
+                        <i class="fas fa-box-open text-2xl text-slate-300 dark:text-slate-600"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Belum ada data alumni tersimpan.</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- Section 4: Riwayat Kelas Siswa -->
+        <div class="card p-0 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"><i class="fas fa-users text-slate-400 mr-2"></i> Riwayat Kelas Siswa</h3>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                @forelse($arsip_siswa as $arsip)
+                <div class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-archive text-slate-300 dark:text-slate-600"></i>
+                        <span class="font-bold text-slate-700 dark:text-slate-200 font-mono text-base">Arsip {{ $arsip->academic_year }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 text-[11px] font-extrabold uppercase rounded-lg">{{ $arsip->total }} Siswa</span>
+                        <a href="{{ route('academic-years.download-arsip-siswa', str_replace('/', '-', $arsip->academic_year)) }}" class="px-3 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200" title="Unduh Excel">
+                            <i class="fas fa-file-excel"></i>
+                        </a>
+                        <a href="{{ route('academic-years.arsip-siswa', str_replace('/', '-', $arsip->academic_year)) }}" class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200">
+                            <i class="fas fa-users mr-1"></i> Data
+                        </a>
+                    </div>
+                </div>
+                @empty
+                <div class="px-6 py-8 text-center flex-1 flex flex-col justify-center items-center">
+                    <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-3">
+                        <i class="fas fa-box-open text-2xl text-slate-300 dark:text-slate-600"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Belum ada riwayat siswa tersimpan.</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- Section 5: Arsip Mutasi Siswa -->
+        <div class="card p-0 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"><i class="fas fa-random text-slate-400 mr-2"></i> Arsip Mutasi Siswa</h3>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800/50">
+                @forelse($arsip_mutasi as $arsip)
+                <div class="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-calendar-alt text-slate-300 dark:text-slate-600"></i>
+                        <span class="font-bold text-slate-700 dark:text-slate-200 font-mono text-base">Tahun {{ $arsip->tahun }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400 text-[11px] font-extrabold uppercase rounded-lg">{{ $arsip->total }} Siswa</span>
+                        <a href="{{ route('academic-years.download-mutasi', str_replace('/', '-', $arsip->tahun)) }}" class="px-3 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200" title="Unduh Excel">
+                            <i class="fas fa-file-excel"></i>
+                        </a>
+                        <a href="{{ route('academic-years.mutasi', $arsip->tahun) }}" class="px-3 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:hover:bg-indigo-500/20 text-[11px] font-bold uppercase rounded-lg transition duration-200">
+                            <i class="fas fa-users mr-1"></i> Data
+                        </a>
+                    </div>
+                </div>
+                @empty
+                <div class="px-6 py-8 text-center flex-1 flex flex-col justify-center items-center">
+                    <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-3">
+                        <i class="fas fa-box-open text-2xl text-slate-300 dark:text-slate-600"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Belum ada data mutasi tersimpan.</p>
+                </div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -254,25 +398,34 @@
                     <!-- Section 2: Selective Submission Locking -->
                     <div class="space-y-4 pt-4">
                         <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                            <i class="fas fa-lock-open text-orange-500 text-sm"></i>
-                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Sistem Penguncian Tugas Otomatis</h3>
+                            <i class="fas fa-shield-alt text-orange-500 text-sm"></i>
+                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Sistem Penguncian Tugas Otomatis (SSL)</h3>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durasi Kunci Otomatis (Jam)</label>
                                 <input name="lock_duration_hours" type="number" min="1" max="168" required class="input" value="{{ $settings['lock_duration_hours'] }}" />
-                                <p class="text-[11px] text-slate-400 mt-1">Lama waktu tugas dapat dikirim terlambat setelah deadline sebelum dikunci total.</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Lama waktu tugas dapat dikirim terlambat sebelum dikunci total.</p>
                                 @error('lock_duration_hours') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Metode Dispensasi Siswa</label>
                                 <select name="allow_dispensations" required class="input">
-                                    <option value="1" {{ $settings['allow_dispensations'] == '1' ? 'selected' : '' }}>Aktif (Siswa Dapat Mengajukan Banding)</option>
-                                    <option value="0" {{ $settings['allow_dispensations'] == '0' ? 'selected' : '' }}>Nonaktif (Kunci Mutlak Terbuka Hanya Oleh Admin)</option>
+                                    <option value="1" {{ $settings['allow_dispensations'] == '1' ? 'selected' : '' }}>Aktif (Bisa Mengajukan Banding)</option>
+                                    <option value="0" {{ $settings['allow_dispensations'] == '0' ? 'selected' : '' }}>Nonaktif (Hanya Admin)</option>
                                 </select>
-                                <p class="text-[11px] text-slate-400 mt-1">Mengatur apakah siswa dapat mengirimkan banding dispensasi tugas terlambat.</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Mengatur apakah siswa dapat mengirimkan banding dispensasi tugas.</p>
                                 @error('allow_dispensations') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proteksi Kunci Deadline Tugas</label>
+                                <select name="ssl_lock_expired_deadline" required class="input">
+                                    <option value="1" {{ ($settings['ssl_lock_expired_deadline'] ?? '1') == '1' ? 'selected' : '' }}>Aktif (Terkunci Ketat)</option>
+                                    <option value="0" {{ ($settings['ssl_lock_expired_deadline'] ?? '1') == '0' ? 'selected' : '' }}>Nonaktif (Fleksibel Edit)</option>
+                                </select>
+                                <p class="text-[11px] text-slate-400 mt-1">Mengunci form edit deadline tugas yang sudah lewat batas waktu.</p>
+                                @error('ssl_lock_expired_deadline') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
@@ -387,120 +540,144 @@
         <!-- Konten Pemeliharaan Terbuka (Unlocked) -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Header Status Unlocked & Tombol Lock -->
-            <div class="flex items-center justify-between p-4 bg-emerald-50/70 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/50 rounded-2xl">
-                <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-400">
-                    <i class="fas fa-lock-open text-xs"></i>
-                    <span class="text-xs font-bold">Modul Pemeliharaan Terbuka (Sesi Aktif)</span>
+            <div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 rounded-xl">
+                <div class="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <i class="fas fa-lock-open text-emerald-600"></i>
+                    <span class="text-sm font-medium">Sesi Pemeliharaan Aktif</span>
                 </div>
                 <form action="{{ route('settings.lock-maintenance') }}" method="POST">
                     @csrf
-                    <button type="submit" class="btn-orange-outline px-3.5 py-1.5 rounded-xl text-[10px] font-extrabold flex items-center gap-1.5 shadow-sm">
-                        <i class="fas fa-lock"></i> Kunci Modul
+                    <button type="submit" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3.5 py-1.5 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 shadow-sm transition">
+                        <i class="fas fa-lock"></i> Kunci Sesi
                     </button>
                 </form>
             </div>
 
-            <!-- 1. Pembersihan Cache -->
-            <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm space-y-4">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <i class="fas fa-broom text-orange-500 text-sm"></i>
-                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Pembersihan Cache Sistem</h3>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    Bersihkan konfigurasi, view, rute, dan cache aplikasi. Tindakan ini berguna untuk memastikan perubahan kode program atau konfigurasi langsung diterapkan tanpa hambatan cache server.
-                </p>
-                <form action="{{ route('settings.bersihkan-cache') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 flex items-center gap-2 text-xs">
-                        <i class="fas fa-broom"></i> Bersihkan Cache Aplikasi
-                    </button>
-                </form>
-            </div>
-
-            <!-- 2. Pencadangan & Pemulihan Database -->
-            <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm space-y-5">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <i class="fas fa-database text-orange-500 text-sm"></i>
-                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Pencadangan & Pemulihan Database</h3>
-                </div>
+            <!-- Unified Maintenance Settings Panel -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800/50">
                 
-                <!-- Sub-panel Backup -->
-                <div class="space-y-2.5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Ekspor Database (.sql)</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">
-                        Unduh salinan struktur tabel dan seluruh data saat ini ke komputer lokal Anda dalam format dokumen SQL.
-                    </p>
-                    <a href="{{ route('settings.cadangkan-db') }}" data-no-loading class="btn bg-[#D65A20] hover:bg-[#be4e1a] text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 inline-flex items-center gap-2 text-xs">
-                        <i class="fas fa-download"></i> Unduh Cadangan Database
-                    </a>
+                <!-- 1. Pembersihan Cache -->
+                <div class="p-6 md:flex md:items-start md:justify-between gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                    <div class="md:w-5/12 mb-4 md:mb-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <i class="fas fa-broom text-slate-400"></i>
+                            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Pembersihan Cache</h3>
+                        </div>
+                        <p class="text-[13px] text-slate-500 leading-relaxed">
+                            Bersihkan konfigurasi, view, rute, dan cache aplikasi. Gunakan ini setelah ada pembaruan kode.
+                        </p>
+                    </div>
+                    <div class="md:w-7/12 md:flex md:justify-end">
+                        <form action="{{ route('settings.bersihkan-cache') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium px-4 py-2 rounded-lg shadow-sm transition duration-150 flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                                <i class="fas fa-rotate text-slate-400"></i> Bersihkan Cache
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
-                <!-- Sub-panel Restore -->
-                <div class="space-y-3 pt-2">
-                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Impor Database (.sql)</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">
-                        Pulihkan kondisi sistem dari berkas cadangan SQL. Tindakan ini akan menimpa seluruh data saat ini secara permanen.
-                    </p>
-                    <form action="{{ route('settings.pulihkan-db') }}" method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="return konfirmasiAksiDestruktif(this, 'Apakah Anda yakin ingin memulihkan database? Seluruh data saat ini akan terhapus dan digantikan oleh berkas cadangan.')">
-                        @csrf
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Berkas SQL</label>
-                                <input name="berkas_sql" type="file" accept=".sql" required class="input py-2 text-xs" />
-                            </div>
-                            <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Konfirmasi Password Admin</label>
-                                <input name="password" type="password" required placeholder="Masukkan password Anda..." class="input text-xs" />
-                            </div>
-                        </div>
-                        <button type="submit" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 flex items-center gap-2 text-xs">
-                            <i class="fas fa-upload"></i> Pulihkan Database
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 2.5. Manajemen Arsip & Akses Berkas -->
-            <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm space-y-5">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <i class="fas fa-folder-tree text-orange-500 text-sm"></i>
-                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Manajemen Akses Berkas & Arsip</h3>
-                </div>
-                
-                <!-- Kunci Direktori (Freeze) -->
-                <div class="space-y-3 pb-4 border-b border-slate-100 dark:border-slate-800">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Kunci Direktori Penyimpanan (Freeze Storage)</h4>
-                            <p class="text-xs text-slate-500 leading-relaxed mt-1">
-                                Kunci seluruh aktivitas unggah berkas (tugas dan jawaban) ke server fisik. Fitur ini biasa digunakan saat tahun ajaran ditutup agar struktur direktori tidak lagi berubah secara sengaja maupun tidak sengaja (Read-Only).
-                            </p>
-                        </div>
-                        <div class="flex-shrink-0">
-                            @if(isset($storage_frozen) && $storage_frozen)
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 font-bold text-xs border border-rose-200">
-                                    <i class="fas fa-lock"></i> Terkunci
-                                </span>
-                            @else
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
-                                    <i class="fas fa-lock-open"></i> Terbuka
-                                </span>
-                            @endif
-                        </div>
+                <!-- 2. Database -->
+                <div class="p-6 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fas fa-database text-slate-400"></i>
+                        <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Pencadangan & Pemulihan Database</h3>
                     </div>
                     
-                    <div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50/50 dark:bg-slate-900/50 rounded-lg p-5 border border-slate-100 dark:border-slate-800/50">
+                        <!-- Backup -->
+                        <div>
+                            <h4 class="text-[13px] font-semibold text-slate-800 dark:text-slate-300 mb-1">Ekspor Database (.sql)</h4>
+                            <p class="text-[13px] text-slate-500 leading-relaxed mb-4">
+                                Unduh salinan struktur tabel dan seluruh data saat ini ke komputer lokal Anda.
+                            </p>
+                            <a href="{{ route('settings.cadangkan-db') }}" data-no-loading class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition duration-150 inline-flex items-center gap-2 text-[13px]">
+                                <i class="fas fa-download"></i> Unduh SQL
+                            </a>
+                        </div>
+
+                        <!-- Restore -->
+                        <div>
+                            <h4 class="text-[13px] font-semibold text-slate-800 dark:text-slate-300 mb-1">Impor Database (.sql)</h4>
+                            <p class="text-[13px] text-slate-500 leading-relaxed mb-4">
+                                Pulihkan sistem dari berkas cadangan. Data saat ini akan ditimpa!
+                            </p>
+                            <form action="{{ route('settings.pulihkan-db') }}" method="POST" enctype="multipart/form-data" class="space-y-3" onsubmit="return konfirmasiAksiDestruktif(this, 'Apakah Anda yakin ingin memulihkan database?')">
+                                @csrf
+                                <div>
+                                    <input name="berkas_sql" type="file" accept=".sql" required class="w-full text-[13px] border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-800 p-1.5" />
+                                </div>
+                                <div class="flex gap-2">
+                                    <input name="password" type="password" required placeholder="Password admin..." class="w-full text-[13px] border border-slate-200 dark:border-slate-700 rounded-md p-1.5 focus:border-slate-400 focus:ring-0" />
+                                    <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-medium px-3 rounded-md shadow-sm transition text-[13px] whitespace-nowrap">
+                                        <i class="fas fa-upload"></i> Pulihkan
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2.5 Proteksi Deadline SSL (Quick Toggle Demo) -->
+                <div class="p-6 md:flex md:items-start md:justify-between gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                    <div class="md:w-7/12 mb-4 md:mb-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <i class="fas fa-shield-alt text-slate-400"></i>
+                            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Proteksi Kunci Deadline Tugas (SSL Strict Mode)</h3>
+                            @if(($settings['ssl_lock_expired_deadline'] ?? '1') == '1')
+                                <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase">Terkunci Ketat</span>
+                            @else
+                                <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 uppercase">Fleksibel Edit</span>
+                            @endif
+                        </div>
+                        <p class="text-[13px] text-slate-500 leading-relaxed">
+                            Kunci input deadline di form edit tugas ketika telah lewat batas waktu. Nonaktifkan opsi ini jika ingin demo memajukan/memundurkan deadline secara bebas.
+                        </p>
+                    </div>
+                    <div class="md:w-5/12 md:flex md:justify-end">
+                        <form action="{{ route('settings.toggle-ssl-deadline-lock') }}" method="POST">
+                            @csrf
+                            @if(($settings['ssl_lock_expired_deadline'] ?? '1') == '1')
+                                <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition duration-150 flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                                    <i class="fas fa-lock-open text-xs"></i> Nonaktifkan Proteksi
+                                </button>
+                            @else
+                                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition duration-150 flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                                    <i class="fas fa-lock text-xs"></i> Aktifkan Proteksi
+                                </button>
+                            @endif
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 3. Freeze & Unfreeze Storage -->
+                <div class="p-6 md:flex md:items-start md:justify-between gap-6 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                    <div class="md:w-7/12 mb-4 md:mb-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <i class="fas fa-lock text-slate-400"></i>
+                            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Kunci Direktori Penyimpanan</h3>
+                            @if(isset($storage_frozen) && $storage_frozen)
+                                <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 uppercase">Terkunci</span>
+                            @else
+                                <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase">Terbuka</span>
+                            @endif
+                        </div>
+                        <p class="text-[13px] text-slate-500 leading-relaxed">
+                            Hentikan seluruh aktivitas unggah berkas ke server fisik. Gunakan saat pergantian tahun ajaran.
+                        </p>
+                    </div>
+                    <div class="md:w-5/12 md:flex md:justify-end">
                         @if(isset($storage_frozen) && $storage_frozen)
                             <form action="{{ route('settings.storage.unfreeze') }}" method="POST" onsubmit="return confirm('Buka kembali akses direktori penyimpanan ke mode Writable?')">
                                 @csrf
-                                <button type="submit" class="btn bg-slate-600 hover:bg-slate-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 flex items-center gap-2 text-xs">
-                                    <i class="fas fa-unlock"></i> Buka Kunci Direktori (Unfreeze)
+                                <button type="submit" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium px-4 py-2 rounded-lg shadow-sm transition duration-150 flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                                    <i class="fas fa-unlock"></i> Buka Kunci (Unfreeze)
                                 </button>
                             </form>
                         @else
-                            <form action="{{ route('settings.storage.freeze') }}" method="POST" onsubmit="return confirm('Kunci akses direktori penyimpanan ke mode Read-Only? Siswa dan Guru tidak akan bisa mengunggah tugas baru ke server sebelum kunci dibuka kembali.')">
+                            <form action="{{ route('settings.storage.freeze') }}" method="POST" onsubmit="return confirm('Kunci akses direktori penyimpanan ke mode Read-Only?')">
                                 @csrf
-                                <button type="submit" class="btn bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 flex items-center gap-2 text-xs">
+                                <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition duration-150 flex items-center gap-2 text-sm w-full md:w-auto justify-center">
                                     <i class="fas fa-lock"></i> Kunci Direktori (Freeze)
                                 </button>
                             </form>
@@ -508,170 +685,251 @@
                     </div>
                 </div>
 
-                <!-- Ekspor Arsip Kelas -->
-                <div class="space-y-3 pt-1">
-                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Ekspor Arsip Kelas (Per Kelas)</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">
-                        Unduh salinan fisik seluruh soal tugas dari guru beserta file jawaban dari siswa spesifik untuk satu kelas, dibungkus secara rapi dalam format arsip ZIP.
-                    </p>
+                <!-- 4. Arsip ZIP (Per Kelas & Lengkap) -->
+                <div class="p-6 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fas fa-file-zipper text-slate-400"></i>
+                        <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Pengunduhan Arsip Berkas (.zip)</h3>
+                    </div>
                     
-                    <form action="{{ route('settings.storage.export-class') }}" method="POST" class="space-y-4">
-                        @csrf
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tahun Ajaran</label>
-                                <select id="filterTahunAjaranArsip" class="input py-2 text-xs font-mono" onchange="filterKelasArsip()">
-                                    <option value="">-- Semua Tahun Ajaran --</option>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Arsip Kelas -->
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                            <h4 class="text-[13px] font-semibold text-slate-800 dark:text-slate-300 mb-1">Ekspor Kelas Tertentu</h4>
+                            <p class="text-[12px] text-slate-500 mb-3">Unduh materi & jawaban spesifik untuk satu kelas.</p>
+                            <form action="{{ route('settings.storage.export-class') }}" method="POST" class="space-y-2" data-no-loading>
+                                @csrf
+                                <select id="filterTahunAjaranArsip" class="w-full text-[13px] border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-slate-50" onchange="filterKelasArsip()">
+                                    <option value="">-- Filter Tahun Ajaran --</option>
                                     @foreach($daftar_tahun_ajaran as $ta)
-                                        <option value="{{ $ta }}">TA {{ $ta }}</option>
+                                        <option value="{{ $ta }}">{{ $ta }}</option>
                                     @endforeach
                                 </select>
-                            </div>
-                            <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Kelas</label>
-                                <select name="kelas_id" id="selectKelasArsip" required class="input py-2 text-xs font-mono">
+                                <select name="kelas_id" id="selectKelasArsip" required class="w-full text-[13px] border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-slate-50">
                                     <option value="">-- Pilih Kelas --</option>
                                     @foreach($semua_kelas as $kelas)
                                         <option value="{{ $kelas->id }}" data-ta="{{ $kelas->academic_year }}">TA {{ $kelas->academic_year }} | Kelas {{ $kelas->name }}</option>
                                     @endforeach
                                 </select>
-                            </div>
+                                <select name="mata_pelajaran_id" id="selectMapelArsip" class="w-full text-[13px] border border-slate-200 dark:border-slate-700 rounded-md p-1.5 bg-slate-50">
+                                    <option value="">-- Semua Mata Pelajaran --</option>
+                                    @foreach($semua_mapel as $mapel)
+                                        <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium px-3 py-1.5 rounded-md text-[13px] transition mt-2">
+                                    Unduh ZIP Kelas
+                                </button>
+                            </form>
                         </div>
-                        <script>
-                            function filterKelasArsip() {
-                                const filterTa = document.getElementById('filterTahunAjaranArsip').value;
-                                const selectKelas = document.getElementById('selectKelasArsip');
-                                const options = selectKelas.querySelectorAll('option:not([value=""])');
-                                
-                                selectKelas.value = ""; // reset selection
-                                
-                                options.forEach(opt => {
-                                    if (filterTa === "" || opt.getAttribute('data-ta') === filterTa) {
-                                        opt.style.display = "";
-                                    } else {
-                                        opt.style.display = "none";
-                                    }
-                                });
-                            }
-                        </script>
-                        <button type="submit" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 flex items-center gap-2 text-xs">
-                            <i class="fas fa-box-archive"></i> Ekspor Arsip Kelas (.zip)
-                        </button>
+                        
+                        <!-- Arsip Lengkap -->
+                        <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-4 flex flex-col justify-between">
+                            <div>
+                                <h4 class="text-[13px] font-semibold text-slate-800 dark:text-slate-300 mb-1">Ekspor Seluruh Sistem</h4>
+                                <p class="text-[12px] text-slate-500 mb-3">Unduh semua materi guru, jawaban siswa, dan salinan SQL database terkompresi sekaligus.</p>
+                            </div>
+                            <a href="{{ route('settings.ekspor-arsip') }}" data-no-loading class="text-center w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium px-3 py-1.5 rounded-md text-[13px] transition">
+                                Unduh Arsip Lengkap
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Auto-Archive Alumni -->
+                <div class="p-6 md:flex md:items-start md:justify-between gap-6 hover:bg-rose-50/30 dark:hover:bg-rose-900/10 transition-colors">
+                    <div class="md:w-7/12 mb-4 md:mb-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <i class="fas fa-trash-can-arrow-up text-rose-500"></i>
+                            <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Auto-Archive Berkas Alumni</h3>
+                        </div>
+                        <p class="text-[13px] text-slate-500 leading-relaxed">
+                            Bungkus file tugas dari siswa lulus menjadi ZIP lalu hapus file fisiknya dari server untuk menghemat storage. Riwayat nilai di database tetap dipertahankan.
+                        </p>
+                    </div>
+                    <div class="md:w-5/12 md:flex md:justify-end">
+                        <form action="{{ route('settings.archive-alumni') }}" method="POST" onsubmit="return confirm('Peringatan: Sistem akan menghapus seluruh file tugas milik siswa alumni dari server setelah membungkusnya menjadi arsip ZIP. Proses ini mungkin memakan waktu. Lanjutkan?')">
+                            @csrf
+                            <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition duration-150 flex items-center gap-2 text-sm w-full md:w-auto justify-center">
+                                <i class="fas fa-trash-can-arrow-up"></i> Bersihkan File Alumni
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 6. Danger Zone (Reset Data) -->
+                <div class="p-6 bg-red-50/30 dark:bg-red-900/10 border border-rose-100 dark:border-rose-900/50 rounded-xl shadow-sm">
+                    <div class="flex items-center gap-2 mb-4 border-b border-rose-100 dark:border-rose-900/30 pb-3">
+                        <i class="fas fa-triangle-exclamation text-rose-600"></i>
+                        <h3 class="text-sm font-bold text-rose-700 dark:text-rose-400">Pembersihan Data Operasional (Reset Semester Baru)</h3>
+                    </div>
+                    
+                    <form action="{{ route('settings.reset-data') }}" method="POST" class="space-y-4" onsubmit="return konfirmasiAksiDestruktif(this, 'Peringatan keras! Data transaksional terpilih akan dihapus permanen. Lanjutkan?')">
+                        @csrf
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
+                                <input type="checkbox" name="opsi[]" value="tugas_nilai" class="mt-0.5 rounded text-rose-500 border-slate-300" />
+                                <div>
+                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Tugas & Nilai</span>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
+                                <input type="checkbox" name="opsi[]" value="materi" class="mt-0.5 rounded text-rose-500 border-slate-300" />
+                                <div>
+                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Materi</span>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
+                                <input type="checkbox" name="opsi[]" value="kehadiran" class="mt-0.5 rounded text-rose-500 border-slate-300" />
+                                <div>
+                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Absensi</span>
+                                </div>
+                            </label>
+                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
+                                <input type="checkbox" name="opsi[]" value="plot_kelas" class="mt-0.5 rounded text-rose-500 border-slate-300" />
+                                <div>
+                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Plot Kelas</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3 items-end pt-2">
+                            <div class="w-full sm:w-auto flex-1">
+                                <label class="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">Konfirmasi Password Admin</label>
+                                <input name="password" type="password" required placeholder="Ketik password admin..." class="w-full text-sm border border-slate-300 rounded-md p-2 bg-white shadow-sm" />
+                            </div>
+                            <button type="submit" class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-medium px-4 py-2 rounded-md shadow-sm transition text-sm">
+                                Hapus Data Terpilih
+                            </button>
+                        </div>
                     </form>
                 </div>
-            </div>
-            <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm space-y-4">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <i class="fas fa-file-archive text-orange-500 text-sm"></i>
-                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Ekspor Arsip Lengkap (.zip)</h3>
-                </div>
-                <p class="text-xs text-slate-500 leading-relaxed">
-                    Ekspor seluruh berkas lampiran materi dari guru, berkas jawaban pengumpulan tugas dari siswa, dan salinan database SQL terkompresi ke dalam satu file arsip ZIP untuk pencadangan total.
-                </p>
-                <a href="{{ route('settings.ekspor-arsip') }}" data-no-loading class="btn bg-[#D65A20] hover:bg-[#be4e1a] text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 inline-flex items-center gap-2 text-xs">
-                    <i class="fas fa-file-zipper"></i> Unduh Arsip Lengkap (.zip)
-                </a>
-            </div>
 
-            <!-- 4. Danger Zone (Reset Data) -->
-            <div class="card p-6 bg-rose-50/55 dark:bg-rose-950/10 border border-rose-100 dark:border-rose-900/50 rounded-2xl shadow-sm space-y-4">
-                <div class="flex items-center gap-2 pb-2 border-b border-rose-100 dark:border-rose-900/40">
-                    <i class="fas fa-exclamation-triangle text-rose-500 text-sm"></i>
-                    <h3 class="text-sm font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider font-extrabold font-mono">Zona Bahaya: Reset Data Tahun Ajaran Baru</h3>
-                </div>
-                <p class="text-xs text-rose-600/90 leading-relaxed font-semibold">
-                    Lakukan pembersihan data operasional lama secara selektif untuk menyambut semester atau tahun ajaran baru. Tindakan ini bersifat permanen dan tidak dapat dibatalkan.
-                </p>
-                <form action="{{ route('settings.reset-data') }}" method="POST" class="space-y-4" onsubmit="return konfirmasiAksiDestruktif(this, 'Apakah Anda sangat yakin ingin membersihkan data terpilih? Semua data transaksional tersebut akan dihapus secara permanen dari server.')">
-                    @csrf
-                    
-                    <div class="space-y-3">
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Pilih Data yang Akan Dihapus:</label>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <label class="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:border-rose-400 transition">
-                                <input type="checkbox" name="opsi[]" value="tugas_nilai" class="mt-0.5 rounded text-rose-500 focus:ring-rose-400" />
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-250">Tugas, Nilai & Banding</span>
-                                    <span class="block text-[10px] text-slate-400 leading-normal mt-0.5">Menghapus data penugasan guru, nilai, file pengumpulan siswa, beserta riwayat banding keterlambatan.</span>
-                                </div>
-                            </label>
-
-                            <label class="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:border-rose-400 transition">
-                                <input type="checkbox" name="opsi[]" value="materi" class="mt-0.5 rounded text-rose-500 focus:ring-rose-400" />
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-250">Materi Pembelajaran</span>
-                                    <span class="block text-[10px] text-slate-400 leading-normal mt-0.5">Menghapus seluruh file dan berkas link materi pembelajaran yang diunggah oleh guru mata pelajaran.</span>
-                                </div>
-                            </label>
-
-                            <label class="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:border-rose-400 transition">
-                                <input type="checkbox" name="opsi[]" value="kehadiran" class="mt-0.5 rounded text-rose-500 focus:ring-rose-400" />
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-250">Absensi / Kehadiran</span>
-                                    <span class="block text-[10px] text-slate-400 leading-normal mt-0.5">Menghapus seluruh log riwayat presensi harian siswa dan sesi pertemuan kelas.</span>
-                                </div>
-                            </label>
-
-                            <label class="flex items-start gap-3 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl cursor-pointer hover:border-rose-400 transition">
-                                <input type="checkbox" name="opsi[]" value="plot_kelas" class="mt-0.5 rounded text-rose-500 focus:ring-rose-400" />
-                                <div>
-                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-250">Plotting Kelas & Pengampuan</span>
-                                    <span class="block text-[10px] text-slate-400 leading-normal mt-0.5">Mengosongkan penugasan kelas siswa (unenroll) serta melepaskan plotting pengampuan guru.</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="max-w-md pt-2">
-                        <label class="field-label mb-1.5 block text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider">Konfirmasi Password Admin</label>
-                        <input name="password" type="password" required placeholder="Masukkan password admin untuk validasi..." class="input border-rose-200 focus:border-rose-500 text-xs" />
-                    </div>
-
-                    <button type="submit" class="btn bg-rose-600 hover:bg-rose-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition duration-150 flex items-center gap-2 text-xs">
-                        <i class="fas fa-exclamation-triangle"></i> Bersihkan Data Terpilih Permanen
-                    </button>
-                </form>
             </div>
         </div>
 
         <!-- Kanan: Status Server/Infrastruktur (Sama dengan tab Umum) -->
         <div class="space-y-6">
             <!-- Server Card -->
-            <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm space-y-4">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <i class="fas fa-circle-info text-orange-500 text-sm"></i>
-                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Status Infrastruktur</h4>
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6 space-y-4">
+                <div class="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <i class="fas fa-server text-slate-400"></i>
+                    <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Status Infrastruktur</h4>
                 </div>
-                <div class="space-y-2.5 text-xs">
-                    <div class="flex justify-between">
-                        <span class="text-slate-400">Versi PHP:</span>
-                        <span class="font-bold text-slate-700 dark:text-slate-300 font-mono">{{ PHP_VERSION }}</span>
+                <div class="space-y-3 text-[13px]">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/50">
+                        <span class="text-slate-500">Versi PHP</span>
+                        <span class="font-medium text-slate-800 dark:text-slate-300 font-mono">{{ PHP_VERSION }}</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-400">Versi Laravel:</span>
-                        <span class="font-bold text-slate-700 dark:text-slate-300 font-mono">{{ app()->version() }}</span>
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/50">
+                        <span class="text-slate-500">Versi Laravel</span>
+                        <span class="font-medium text-slate-800 dark:text-slate-300 font-mono">{{ app()->version() }}</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-400">Waktu Server:</span>
-                        <span class="font-bold text-slate-700 dark:text-slate-300 font-mono">{{ date('d-m-Y H:i') }}</span>
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800/50">
+                        <span class="text-slate-500">Waktu Server</span>
+                        <span class="font-medium text-slate-800 dark:text-slate-300 font-mono">{{ date('d-m-Y H:i') }}</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-400">Database:</span>
-                        <span class="font-bold text-slate-700 dark:text-slate-300 font-mono">MySQL 8.0</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">Database</span>
+                        <span class="font-medium text-slate-800 dark:text-slate-300 font-mono">MySQL 8.0</span>
                     </div>
                 </div>
             </div>
             
             <!-- Keamanan Card -->
-            <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm space-y-3">
-                <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <i class="fas fa-shield-halved text-orange-500 text-sm"></i>
-                    <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Saran Keamanan</h4>
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6 space-y-3">
+                <div class="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <i class="fas fa-shield-halved text-emerald-500"></i>
+                    <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Catatan Keamanan</h4>
                 </div>
-                <p class="text-[11px] text-slate-400 leading-normal">
-                    Selalu lakukan unduhan cadangan database secara berkala sebelum melakukan restorasi database baru atau pembersihan data tahun ajaran. Simpan file SQL cadangan di luar server lokal untuk keamanan tambahan.
+                <p class="text-[12px] text-slate-500 leading-relaxed">
+                    Selalu lakukan unduhan cadangan database secara berkala sebelum melakukan restorasi database baru atau pembersihan data. Simpan file SQL cadangan di luar server lokal untuk keamanan tambahan.
                 </p>
+            </div>
+            
+            <!-- SOP Pembersihan Data -->
+            <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/50 rounded-xl p-6 shadow-sm mt-6">
+                <div class="flex items-center gap-2 mb-3 border-b border-amber-200/60 dark:border-amber-800/60 pb-3">
+                    <i class="fas fa-list-ol text-amber-600 dark:text-amber-500"></i>
+                    <h4 class="text-sm font-semibold text-amber-800 dark:text-amber-400">SOP Reset Semester</h4>
+                </div>
+                <p class="text-[12px] text-amber-700 dark:text-amber-500/80 mb-4 leading-relaxed">
+                    Penting: Ikuti urutan langkah di bawah ini untuk mencegah kehilangan data sebelum melakukan Reset Data Operasional.
+                </p>
+                <ol class="space-y-4 relative border-l border-amber-200 dark:border-amber-800/50 ml-2.5">
+                    <li class="pl-4 relative">
+                        <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-amber-600 ring-4 ring-amber-50 dark:ring-slate-900"></span>
+                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">1. Kunci Direktori</span>
+                        <span class="block text-[11px] text-slate-500 mt-1">Hentikan lalu lintas upload (Read-Only).</span>
+                    </li>
+                    <li class="pl-4 relative">
+                        <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-amber-600 ring-4 ring-amber-50 dark:ring-slate-900"></span>
+                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">2. Unduh SQL</span>
+                        <span class="block text-[11px] text-slate-500 mt-1">Amankan database transaksional saat ini.</span>
+                    </li>
+                    <li class="pl-4 relative">
+                        <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-amber-600 ring-4 ring-amber-50 dark:ring-slate-900"></span>
+                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">3. Unduh Arsip</span>
+                        <span class="block text-[11px] text-slate-500 mt-1">Bungkus seluruh file sistem ke dalam ZIP.</span>
+                    </li>
+                    <li class="pl-4 relative">
+                        <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-rose-400 dark:bg-rose-500 ring-4 ring-amber-50 dark:ring-slate-900"></span>
+                        <span class="block text-[12px] font-bold text-rose-700 dark:text-rose-400">4. Eksekusi Reset</span>
+                        <span class="block text-[11px] text-slate-500 mt-1">Pilih dan hapus data (Materi, Nilai, dll).</span>
+                    </li>
+                </ol>
+            </div>
+            
+            <!-- Glosarium Fitur Pemeliharaan -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6 space-y-4 mt-6">
+                <div class="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <i class="fas fa-book text-indigo-500"></i>
+                    <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-200">Glosarium Fitur Pemeliharaan</h4>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h5 class="text-[12px] font-bold text-slate-700 dark:text-slate-300">Ekspor Database (.sql)</h5>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Mengunduh salinan mentah (SQL) struktur tabel dan data saat ini ke komputer lokal Anda sebagai cadangan utama.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-[12px] font-bold text-slate-700 dark:text-slate-300">Impor Database (.sql)</h5>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Memulihkan data sistem secara paksa menimpa data yang ada menggunakan file SQL cadangan yang pernah diunduh.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-[12px] font-bold text-slate-700 dark:text-slate-300">Ekspor Kelas Tertentu</h5>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Mengunduh arsip berisi materi dan jawaban (Tugas) spesifik hanya untuk satu kelas ke dalam format ZIP yang lebih ringan.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-[12px] font-bold text-slate-700 dark:text-slate-300">Ekspor Seluruh Sistem</h5>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Membungkus keseluruhan file materi guru, tugas siswa, sekaligus file SQL ke dalam satu file ZIP raksasa. Proses ini sangat memakan waktu.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-[12px] font-bold text-slate-700 dark:text-slate-300">Auto-Archive Berkas Alumni</h5>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Secara cerdas mencari tugas dari siswa yang sudah Lulus, membungkusnya menjadi ZIP, dan menghapus PDF fisiknya dari server untuk menghemat SSD.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-[12px] font-bold text-slate-700 dark:text-slate-300">Pembersihan Data Operasional</h5>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Aksi destruktif (permanen) untuk mengosongkan database transaksional agar sistem kembali ringan dan siap menampung data semester baru.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
         @endif
@@ -1343,8 +1601,36 @@
         const tabActive = urlParams.get('tab');
         if (tabActive === 'pemeliharaan') {
             switchSettingsTab('pemeliharaan');
+        } else if (tabActive === 'arsip') {
+            if (typeof switchAcademicTab === 'function') {
+                switchAcademicTab('arsip');
+            }
         }
     });
+
+    function switchAcademicTab(tabName) {
+        // Toggle buttons style
+        const btnPengaturan = document.getElementById('tab-ac-pengaturan');
+        const btnArsip = document.getElementById('tab-ac-arsip');
+        
+        // Content containers
+        const kontenPengaturan = document.getElementById('ac-konten-pengaturan');
+        const kontenArsip = document.getElementById('ac-konten-arsip');
+        
+        if (tabName === 'pengaturan') {
+            btnPengaturan.className = "px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition";
+            btnArsip.className = "px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition";
+            
+            kontenPengaturan.classList.remove('hidden');
+            kontenArsip.classList.add('hidden');
+        } else if (tabName === 'arsip') {
+            btnArsip.className = "px-5 py-3 text-sm font-bold border-b-2 border-orange-500 text-orange-500 focus:outline-none transition";
+            btnPengaturan.className = "px-5 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 focus:outline-none transition";
+            
+            kontenArsip.classList.remove('hidden');
+            kontenPengaturan.classList.add('hidden');
+        }
+    }
 </script>
 @endpush
 

@@ -23,7 +23,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
                     <label class="field-label">Nama Kelas</label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="input @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 @enderror" placeholder="Contoh: X IPA 1" required>
+                    <input type="text" name="name" value="{{ old('name') }}" class="input @error('name') border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 @enderror" placeholder="Contoh: X 1 (Fase E) atau XI F 1" required>
                     @error('name') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>

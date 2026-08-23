@@ -224,7 +224,7 @@
                 <div class="space-y-4">
                     <div>
                         <label class="mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Kelas *</label>
-                        <input type="text" id="inputNama" name="name" required placeholder="Contoh: X IPA 1" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
+                        <input type="text" id="inputNama" name="name" required placeholder="Contoh: X 1 (Fase E) atau XI F 1" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">

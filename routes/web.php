@@ -48,6 +48,7 @@ Route::post('/heartbeat', function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/student/biodata', [\App\Http\Controllers\SiswaBiodataController::class, 'create'])->name('student.biodata.create');
     Route::post('/student/biodata', [\App\Http\Controllers\SiswaBiodataController::class, 'store'])->name('student.biodata.store');
+    Route::post('/student/biodata/password', [\App\Http\Controllers\SiswaBiodataController::class, 'updatePassword'])->name('student.password.update');
 });
 
 // Students Management
@@ -98,17 +99,23 @@ Route::get('assignments/student/subject/{subject}', [TugasController::class, 'st
     ->name('assignments.student.detail');
 Route::get('assignments/teacher/subject/{subject}', [TugasController::class, 'teacherDetail'])
     ->name('assignments.teacher.detail');
+Route::patch('assignments/teacher/subjects/{subject}/classes/{kelas}/ssl-threshold', [\App\Http\Controllers\TeacherSslSettingsController::class, 'update'])
+    ->name('assignments.teacher.ssl-threshold.update');
 Route::get('assignments/teacher/rekap/{subject}', [TugasController::class, 'rekapNilai'])
     ->name('assignments.teacher.rekap');
 
 Route::get('/assignments/teacher/rekap/{subject}/export', [TugasController::class, 'exportRekapNilai'])
     ->name('assignments.teacher.rekap.export');
 
+Route::get('/assignments/{assignment}/export-rekap', [TugasController::class, 'exportSingleAssignmentRekap'])
+    ->name('assignments.export-rekap');
+
 
 // Submissions Management (Grading)
 Route::get('submissions/{submission}', [\App\Http\Controllers\PengumpulanController::class, 'show'])->name('submissions.show');
 Route::post('submissions/{submission}/grade', [\App\Http\Controllers\PengumpulanController::class, 'grade'])->name('submissions.grade');
 Route::post('submissions/{submission}/toggle-koreksi', [\App\Http\Controllers\PengumpulanController::class, 'toggleKoreksi'])->name('submissions.toggle-koreksi');
+Route::post('submissions/{submission}/return-revision', [\App\Http\Controllers\PengumpulanController::class, 'returnForRevision'])->name('submissions.return-revision');
 
 // Materials Management
 Route::post('materials/{id}/complete', [MateriController::class, 'complete'])->name('materials.complete');
@@ -158,6 +165,7 @@ Route::get('/preview/assignment/{assignment}', [\App\Http\Controllers\DownloadCo
 Route::get('/download/submission/{submission}', [\App\Http\Controllers\DownloadController::class, 'submission'])->name('download.submission');
 Route::get('/preview/submission/{submission}', [\App\Http\Controllers\DownloadController::class, 'previewSubmission'])->name('preview.submission');
 Route::get('/download/appeal/{appeal}', [\App\Http\Controllers\DownloadController::class, 'appeal'])->name('download.appeal');
+Route::get('/preview/appeal/{appeal}', [\App\Http\Controllers\DownloadController::class, 'previewAppeal'])->name('preview.appeal');
 
 // Reports
 Route::get('/reports/system', [LaporanController::class, 'system'])->name('reports.system');
@@ -174,6 +182,7 @@ Route::middleware(['is.superadmin'])->group(function () {
     Route::post('/settings/edit-academic-year', [PengaturanController::class, 'editAcademicYear'])->name('settings.edit-academic-year');
     
     // Fitur Pemeliharaan Data (Maintenance) Super Admin
+    Route::post('/settings/toggle-ssl-deadline-lock', [PengaturanController::class, 'toggleSslDeadlineLock'])->name('settings.toggle-ssl-deadline-lock');
     Route::post('/settings/bersihkan-cache', [PengaturanController::class, 'bersihkanCache'])->name('settings.bersihkan-cache');
     Route::get('/settings/cadangkan-db', [PengaturanController::class, 'cadangkanDatabase'])->name('settings.cadangkan-db');
     Route::post('/settings/pulihkan-db', [PengaturanController::class, 'pulihkanDatabase'])->name('settings.pulihkan-db');
@@ -184,8 +193,11 @@ Route::middleware(['is.superadmin'])->group(function () {
     Route::post('/settings/storage/freeze', [PengaturanController::class, 'freezeStorage'])->name('settings.storage.freeze');
     Route::post('/settings/storage/unfreeze', [PengaturanController::class, 'unfreezeStorage'])->name('settings.storage.unfreeze');
     Route::post('/settings/storage/export-class', [PengaturanController::class, 'eksporArsipKelas'])->name('settings.storage.export-class');
+    Route::post('/settings/storage/archive-alumni', [PengaturanController::class, 'archiveAlumniSubmissions'])->name('settings.archive-alumni');
+    Route::get('/settings/storage/download-alumni-archive/{filename}', [PengaturanController::class, 'downloadAlumniArchive'])->name('settings.download-alumni-archive');
     
     Route::get('/admin-accounts', [PengaturanController::class, 'userAccounts'])->name('admin.accounts');
+    Route::get('/admin-accounts/export', [PengaturanController::class, 'exportUserAccounts'])->name('admin.accounts.export');
     Route::post('/admin-accounts/{user}/reset-password', [PengaturanController::class, 'resetPassword'])->name('admin.reset-password');
     Route::post('/admin-accounts/store', [PengaturanController::class, 'storeAdmin'])->name('admin.store-admin');
     Route::put('/admin-accounts/{user}', [PengaturanController::class, 'updateUser'])->name('admin.update-user');
@@ -201,10 +213,22 @@ Route::middleware(['is.superadmin'])->group(function () {
     
     Route::get('/academic-years', [PengaturanController::class, 'index'])->name('academic-years.index');
     Route::get('/academic-years/archive-detail/{year}', [PengaturanController::class, 'archiveDetail'])->name('academic-years.archive-detail');
+    Route::get('/academic-years/arsip-siswa/{year}', [PengaturanController::class, 'arsipSiswaDetail'])->name('academic-years.arsip-siswa');
+    Route::get('/academic-years/alumni-detail/{year}', [PengaturanController::class, 'alumniDetail'])->name('academic-years.alumni');
+    Route::get('/academic-years/mutasi-detail/{year}', [PengaturanController::class, 'mutasiDetail'])->name('academic-years.mutasi');
+    
+    // Excel Download Routes for Archives
+    Route::get('/academic-years/download-archive-detail/{year}', [PengaturanController::class, 'downloadArchiveDetail'])->name('academic-years.download-archive-detail');
+    Route::get('/academic-years/download-alumni/{year}', [PengaturanController::class, 'downloadAlumni'])->name('academic-years.download-alumni');
+    Route::get('/academic-years/download-arsip-siswa/{year}', [PengaturanController::class, 'downloadArsipSiswa'])->name('academic-years.download-arsip-siswa');
+    Route::get('/academic-years/download-mutasi/{year}', [PengaturanController::class, 'downloadMutasi'])->name('academic-years.download-mutasi');
     
     Route::get('/teaching-assignments', [TeachingAssignmentController::class, 'index'])->name('teaching-assignments.index');
     Route::post('/teaching-assignments', [TeachingAssignmentController::class, 'store'])->name('teaching-assignments.store');
+    Route::delete('/teaching-assignments/group/{guruId}/{mapelId}', [TeachingAssignmentController::class, 'destroyGroup'])->name('teaching-assignments.destroy-group');
     Route::delete('/teaching-assignments/{id}', [TeachingAssignmentController::class, 'destroy'])->name('teaching-assignments.destroy');
+    Route::post('/teaching-assignments/toggle-class-verified/{id}', [TeachingAssignmentController::class, 'toggleClassVerified'])->name('teaching-assignments.toggle-class-verified');
+    Route::post('/teaching-assignments/toggle-all-verified', [TeachingAssignmentController::class, 'toggleAllVerified'])->name('teaching-assignments.toggle-all-verified');
     
     Route::get('/homeroom-setup', [KelasController::class, 'homeroomSetup'])->name('homeroom-setup.index');
     Route::post('/homeroom-setup', [KelasController::class, 'saveHomeroomSetup'])->name('homeroom-setup.store');
@@ -229,15 +253,26 @@ Route::middleware(['auth'])->prefix('teacher')->group(function () {
 
     // 4. Histori Penguncian (Audit)
     Route::get('/locking-history', [BandingController::class, 'lockingHistory'])->name('appeals.locking_history');
+
+    // 5. Mass Emergency Release (Super Admin)
+    Route::post('/submission-appeals/mass-emergency-release', [BandingController::class, 'massEmergencyRelease'])->name('appeals.mass_emergency_release');
 });
 
 // Student Submission & Appeals
 Route::middleware(['auth'])->group(function () {
     Route::post('/appeals/store', [BandingController::class, 'store'])->name('appeals.store');
+    Route::post('assignments/{assignment}/verify-access', [TugasController::class, 'verifyAccess'])
+        ->middleware(['submission.lock'])
+        ->name('assignments.verify-access');
     Route::post('assignments/{assignment}/submit', [\App\Http\Controllers\PengumpulanController::class, 'store'])
-        ->middleware('submission.lock')
+        ->middleware(['submission.lock', 'throttle:3,1'])
         ->name('assignments.submit');
-    Route::post('/assignments/{id}/banding', [TugasController::class, 'submitBanding'])->name('siswa.assignments.banding');
+    Route::post('submissions/{assignment}', [\App\Http\Controllers\PengumpulanController::class, 'store'])
+        ->middleware(['submission.lock', 'throttle:3,1'])
+        ->name('submissions.store');
+    Route::post('/assignments/{id}/banding', [TugasController::class, 'submitBanding'])
+        ->middleware('throttle:3,1')
+        ->name('siswa.assignments.banding');
     
     Route::get('/student/appeals', [BandingController::class, 'studentAppeals'])->name('student.appeals.status');
     Route::delete('/student/appeals/{appeal}/cancel', [BandingController::class, 'cancelAppeal'])->name('student.appeals.cancel');

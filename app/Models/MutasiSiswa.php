@@ -16,7 +16,8 @@ class MutasiSiswa extends Model
         'jenis_mutasi',
         'tanggal_mutasi',
         'keterangan_sekolah',
-        'alasan'
+        'alasan',
+        'surat_mutasi'
     ];
 
     protected $casts = [

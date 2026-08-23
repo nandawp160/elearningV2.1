@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Siswa extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'siswa';
 
@@ -99,6 +100,11 @@ class Siswa extends Model
     public function classRoomRelation()
     {
         return $this->belongsTo(Kelas::class, 'kelas', 'name');
+    }
+
+    public function riwayatKelas()
+    {
+        return $this->hasMany(RiwayatKelasSiswa::class, 'siswa_id');
     }
 
     public function relasiKelas()
@@ -203,5 +209,29 @@ class Siswa extends Model
     public function getAttendancePercentageAttribute()
     {
         return 100;
+    }
+
+    // Accessor: Dynamic Profile Resolution for Active Academic Year
+    public function getResolvedKelasAttribute()
+    {
+        $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif');
+        if (!$activeYear) {
+            return $this->attributes['kelas'] ?? null;
+        }
+
+        // Jika relasi riwayatKelas sudah di-eager load, cari di memori (0 extra queries)
+        if ($this->relationLoaded('riwayatKelas')) {
+            $riwayat = $this->riwayatKelas->firstWhere('academic_year', $activeYear);
+            if ($riwayat) {
+                return $riwayat->kelas_name;
+            }
+        } else {
+            $riwayat = $this->riwayatKelas()->where('academic_year', $activeYear)->first();
+            if ($riwayat) {
+                return $riwayat->kelas_name;
+            }
+        }
+
+        return $this->attributes['kelas'] ?? null;
     }
 }

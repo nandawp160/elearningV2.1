@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
 
 class Tugas extends Model
 {
-
+    use SoftDeletes;
 
     protected $table = 'tugas';
 
@@ -31,12 +32,17 @@ class Tugas extends Model
         'created_by',
         'uploaded_by',
         'max_score',
-        'type'
+        'type',
+        'tipe_pengumpulan',
+        'mode_audiovisual',
+        'submission_type'
     ];
 
     protected $casts = [
         'deadline' => 'datetime',
-        'status' => 'string'
+        'status' => 'string',
+        'tipe_pengumpulan' => 'string',
+        'mode_audiovisual' => 'string',
     ];
 
     protected $appends = [
@@ -49,7 +55,98 @@ class Tugas extends Model
         'is_overdue',
         'time_remaining',
         'preview_url',
+        'tipe_pengumpulan',
+        'mode_audiovisual',
     ];
+
+    public function hasSubmissions(): bool
+    {
+        return $this->submissions()->exists();
+    }
+
+    public function isVisual(): bool
+    {
+        return ($this->tipe_pengumpulan ?? 'dokumen') === 'visual';
+    }
+
+    public function isDocument(): bool
+    {
+        return ($this->tipe_pengumpulan ?? 'dokumen') === 'dokumen';
+    }
+
+    public function isAudiovisual(): bool
+    {
+        return ($this->tipe_pengumpulan ?? 'dokumen') === 'audiovisual';
+    }
+
+    public function isArchive(): bool
+    {
+        return ($this->tipe_pengumpulan ?? 'dokumen') === 'kompresi';
+    }
+
+    public function isExternalUrl(): bool
+    {
+        return ($this->tipe_pengumpulan ?? 'dokumen') === 'tautan';
+    }
+
+    public function allowsAudio(): bool
+    {
+        return $this->isAudiovisual() && in_array($this->mode_audiovisual, ['audio_file', 'either', null]);
+    }
+
+    public function allowsVideo(): bool
+    {
+        return $this->isAudiovisual() && in_array($this->mode_audiovisual, ['video_url', 'either', null]);
+    }
+
+    public function getAttachmentExtensionAttribute(): ?string
+    {
+        if (!$this->lampiran || $this->is_attachment_url) return null;
+        return strtolower(pathinfo($this->lampiran, PATHINFO_EXTENSION));
+    }
+
+    public function getIsAttachmentImageAttribute(): bool
+    {
+        $ext = $this->attachment_extension;
+        return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp']);
+    }
+
+    public function getIsAttachmentPdfAttribute(): bool
+    {
+        return $this->attachment_extension === 'pdf';
+    }
+
+    public function getIsAttachmentAudioAttribute(): bool
+    {
+        $ext = $this->attachment_extension;
+        return in_array($ext, ['mp3', 'm4a', 'wav', 'ogg', 'aac', 'flac']);
+    }
+
+    public function getIsAttachmentVideoAttribute(): bool
+    {
+        if (!$this->lampiran || $this->is_attachment_url) return false;
+        $ext = $this->attachment_extension;
+        return in_array($ext, ['mp4', 'm4v', 'mov', 'webm']);
+    }
+
+    public function getIsAttachmentUrlAttribute(): bool
+    {
+        $attachment = $this->lampiran;
+        return !empty($attachment) && (filter_var($attachment, FILTER_VALIDATE_URL) || str_starts_with($attachment, 'http://') || str_starts_with($attachment, 'https://'));
+    }
+
+    public function getAttachmentEmbedUrlAttribute(): ?string
+    {
+        if (!$this->is_attachment_url) return null;
+        $parsed = app(\App\Services\SubmissionUrlService::class)->parseEmbedData($this->lampiran);
+        return $parsed['embed_url'] ?? null;
+    }
+
+    public function getConfig(): array
+    {
+        $type = $this->tipe_pengumpulan ?? 'dokumen';
+        return config("assignment_submission.types.{$type}", config('assignment_submission.types.dokumen'));
+    }
 
     public function getStatusAttribute($value)
     {
@@ -198,17 +295,51 @@ class Tugas extends Model
         return $query->where('due_date', '<', Carbon::now());
     }
 
+    /**
+     * Shared helper to count overdue assignments for a specific student and subject.
+     */
+    public static function countOverdueForStudentAndSubject($studentId, $subjectId, $tingkat = null, $kelasId = null)
+    {
+        return static::tugas()
+            ->where('mata_pelajaran_id', $subjectId)
+            ->where('status', 'aktif')
+            ->whereNotNull('deadline')
+            ->where('deadline', '<', Carbon::now())
+            ->where(function ($q) use ($tingkat) {
+                if ($tingkat) {
+                    $q->whereHas('subject', function ($sub) use ($tingkat) {
+                        $sub->where('tingkat', $tingkat)->orWhereNull('tingkat');
+                    });
+                }
+            })
+            ->where(function ($q) use ($kelasId) {
+                if ($kelasId) {
+                    $q->where('kelas_id', $kelasId)->orWhereNull('kelas_id');
+                } else {
+                    $q->whereNull('kelas_id');
+                }
+            })
+            ->whereDoesntHave('submissions', function ($q) use ($studentId) {
+                $q->where('siswa_id', $studentId);
+            })
+            ->count();
+    }
+
+
 
 
     // Accessor: Check if assignment is overdue
     public function getIsOverdueAttribute()
     {
+        if (!$this->due_date) return false;
         return $this->due_date->isPast();
     }
 
-    // Accessor: Get time remaining until due date
     public function getTimeRemainingAttribute()
     {
+        if (!$this->due_date) {
+            return 'Tidak ada batas waktu';
+        }
         if ($this->is_overdue) {
             return 'Terlambat';
         }

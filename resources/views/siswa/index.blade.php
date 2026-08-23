@@ -151,11 +151,8 @@
                 <div class="relative w-full sm:w-48">
                     <select id="toolbarClass" class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 appearance-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                         <option value="">Semua Kelas</option>
-                        @php
-                            $classes = $students->pluck('kelas')->unique()->filter()->sort();
-                        @endphp
-                        @foreach($classes as $kelas)
-                            <option value="{{ $kelas }}">{{ $kelas }}</option>
+                        @foreach($classList as $kelas)
+                            <option value="{{ $kelas->name }}">{{ $kelas->name }}</option>
                         @endforeach
                     </select>
                     <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -169,7 +166,6 @@
                         <option value="aktif_nonaktif">Aktif & Nonaktif</option>
                         <option value="Aktif">Aktif</option>
                         <option value="Nonaktif">Nonaktif</option>
-                        <option value="Lulus">Lulus (Alumni)</option>
                         <option value="">Semua Status</option>
                     </select>
                     <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -177,18 +173,7 @@
                     </div>
                 </div>
 
-                <!-- Tahun Lulus Dropdown -->
-                <div class="relative w-full sm:w-40" id="filterTahunLulusContainer" style="display: none;">
-                    <select id="toolbarGraduationYear" class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 appearance-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
-                        <option value="">Semua Angkatan</option>
-                        @foreach($tahunLulusList as $tahun)
-                            <option value="{{ $tahun }}">{{ $tahun }}</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <i class="fas fa-chevron-down text-[10px]"></i>
-                    </div>
-                </div>
+
 
                 <!-- Reset Button -->
                 <button onclick="resetToolbarFilters()" class="btn border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 text-xxs font-bold px-3 py-2.5 rounded-xl flex items-center gap-1.5 transition">
@@ -222,30 +207,6 @@
                 </div>
 
                 @if(auth()->user()->isSuperAdmin())
-                <!-- Dropdown: Aksi Massal / Utilitas -->
-                <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" @click.away="open = false" type="button" class="btn border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-350 dark:hover:bg-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
-                        <i class="fas fa-cogs text-orange-500"></i>
-                        <span>Aksi Sistem</span>
-                        <i class="fas fa-chevron-down text-[10px] ml-0.5"></i>
-                    </button>
-                    <!-- Dropdown List -->
-                    <div x-show="open" style="display: none;" x-transition class="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1.5">
-
-                        <!-- Plotting Otomatis -->
-                        <button type="button" onclick="openPlottingModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
-                            <i class="fas fa-random text-indigo-500 w-4 text-center"></i>
-                            <span class="font-medium">Plotting Siswa Otomatis</span>
-                        </button>
-                        <div class="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
-                        <!-- Kenaikan & Kelulusan -->
-                        <button type="button" onclick="openKelulusanKenaikanModal(); open = false" class="w-full text-left px-4 py-2.5 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-3">
-                            <i class="fas fa-graduation-cap text-orange-500 w-4 text-center"></i>
-                            <span class="font-medium">Kenaikan & Kelulusan</span>
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Tambah Manual -->
                 <button type="button" onclick="openAddModal()" class="btn bg-orange-500 hover:bg-orange-600 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-md shadow-orange-500/15 transition flex items-center gap-2 text-xs">
                     <i class="fas fa-plus"></i>
@@ -301,8 +262,8 @@
                         <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-bold text-slate-800 dark:text-slate-100">{{ $student->nama }}</td>
                         <!-- Email -->
                         <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-500 dark:text-slate-400">{{ $student->user->email ?? '-' }}</td>
-                        <!-- Kelas -->
-                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center text-slate-800 dark:text-slate-300 font-bold">{{ $student->kelas ?? '-' }}</td>
+                        <!-- Kelas (Resolved dynamically) -->
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center text-slate-800 dark:text-slate-300 font-bold">{{ $student->resolved_kelas ?? '-' }}</td>
                         <!-- L/P -->
                         <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center text-slate-700 dark:text-slate-300">{{ $student->jenis_kelamin == 'Laki-laki' ? 'L' : 'P' }}</td>
                         <!-- Status -->
@@ -467,6 +428,7 @@
         </form>
     </div>
 </div>
+@endif
 
 <!-- ==========================================
       MODAL POPUP: IMPOR DATA EXCEL
@@ -504,71 +466,7 @@
     </div>
 </div>
 
-<!-- ==========================================
-      MODAL POPUP: PLOTTING SISWA OTOMATIS
-     ========================================== -->
-<div id="modalPlottingSiswa" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden mx-4 animate-scale-up border border-slate-100 dark:border-slate-800">
-        <!-- Header -->
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-orange-500">
-            <h3 class="text-lg font-bold text-white"><i class="fas fa-random mr-2"></i>Plotting Siswa Otomatis</h3>
-            <button onclick="closePlottingModal()" class="text-white hover:text-orange-100 transition"><i class="fas fa-times text-lg"></i></button>
-        </div>
-        <!-- Form -->
-        <form action="{{ route('students.auto-plot') }}" method="POST" class="p-6 space-y-5">
-            @csrf
-            
-            <div class="space-y-2">
-                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Tahun Ajaran Target</label>
-                <div class="relative">
-                    <select name="tahun_ajaran" required class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 appearance-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
-                        @php
-                            $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');
-                            $academicYearsList = \App\Models\Kelas::withoutGlobalScope('tahun_ajaran_aktif')
-                                ->select('academic_year')
-                                ->distinct()
-                                ->orderBy('academic_year', 'desc')
-                                ->pluck('academic_year')
-                                ->toArray();
-                            
-                            $customYears = json_decode(\App\Models\Pengaturan::getValue('daftar_tahun_ajaran_custom', '[]'), true);
-                            if (is_array($customYears)) {
-                                $academicYearsList = array_unique(array_merge($academicYearsList, $customYears));
-                            }
-                            rsort($academicYearsList);
-                            if (empty($academicYearsList)) {
-                                $academicYearsList = [$activeYear];
-                            }
-                        @endphp
-                        @foreach($academicYearsList as $year)
-                            <option value="{{ $year }}" {{ $year == $activeYear ? 'selected' : '' }}>T.A. {{ $year }}</option>
-                        @endforeach
-                    </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <i class="fas fa-chevron-down text-[10px]"></i>
-                    </div>
-                </div>
-            </div>
 
-            <div class="p-4 rounded-xl bg-orange-50/50 dark:bg-slate-800/50 border border-orange-100 dark:border-slate-800 space-y-2 text-xxs text-slate-500 dark:text-slate-400 leading-relaxed">
-                <p class="font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider"><i class="fas fa-info-circle mr-1"></i> Cara Kerja Plotting:</p>
-                <ul class="list-disc pl-4 space-y-1">
-                    <li>Sistem hanya memproses siswa dengan status <b>Aktif</b>.</li>
-                    <li>Siswa dengan kelas spesifik (misal: "X IPA 1") akan langsung ditempatkan di kelas tersebut. Jika kelas belum ada di T.A. target, sistem akan membuatnya secara otomatis.</li>
-                    <li>Siswa dengan kelas kelompok (misal: "X IPA") akan didistribusikan secara merata ke kelas-kelas aktif sesuai sisa kapasitas masing-masing kelas.</li>
-                    <li>Siswa dengan kelas kosong/tidak valid akan dilewati.</li>
-                </ul>
-            </div>
-
-            <!-- Action buttons -->
-            <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button type="button" onclick="closePlottingModal()" class="btn border border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-semibold px-4 py-2 rounded-xl">Batal</button>
-                <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl shadow-lg shadow-orange-500/10">Mulai Plotting</button>
-            </div>
-        </form>
-    </div>
-</div>
-@endif
 
 <!-- ==========================================
       MODAL POPUP: MUTASI KELUAR
@@ -582,7 +480,7 @@
             <button onclick="closeMutasiKeluarModal()" class="text-white hover:text-orange-100 transition"><i class="fas fa-times text-lg"></i></button>
         </div>
         <!-- Form -->
-        <form id="formMutasiKeluar" method="POST" action="" class="p-6 space-y-5">
+        <form id="formMutasiKeluar" method="POST" action="" enctype="multipart/form-data" class="p-6 space-y-5">
             @csrf
             
             <div class="p-3 bg-orange-50 dark:bg-slate-800/50 rounded-xl border border-orange-100 dark:border-slate-700">
@@ -614,6 +512,11 @@
                 <textarea name="alasan" rows="2" placeholder="Alasan pindah atau dikeluarkan..." class="input py-2 resize-none"></textarea>
             </div>
 
+            <div>
+                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Lampiran Surat / Dokumen (Opsional)</label>
+                <input type="file" name="surat_mutasi" accept=".pdf,.jpg,.jpeg,.png" class="block w-full text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700 transition" />
+            </div>
+
             <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button type="button" onclick="closeMutasiKeluarModal()" class="btn border border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs">Batal</button>
                 <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl shadow-md text-xs">Proses Mutasi</button>
@@ -623,503 +526,10 @@
 </div>
 @endcan
 
-<!-- ==========================================
-      MODAL POPUP: KELULUSAN & KENAIKAN KELAS
-     ========================================== -->
-<div id="modalKelulusanKenaikan" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden mx-4 animate-scale-up border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
-        <!-- Header -->
-        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-orange-500 flex-shrink-0">
-            <h3 class="text-lg font-bold text-white"><i class="fas fa-graduation-cap mr-2"></i>Kelulusan & Kenaikan Kelas Massal</h3>
-            <button onclick="closeKelulusanKenaikanModal()" class="text-white hover:text-orange-100 transition"><i class="fas fa-times text-lg"></i></button>
-        </div>
-        
-        <!-- Tab Navigation -->
-        <div class="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex-shrink-0">
-            <button type="button" onclick="switchTab('kelulusan')" id="tab-kelulusan" class="flex-1 py-3 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition">
-                🎓 Kelulusan Kelas XII
-            </button>
-            <button type="button" onclick="switchTab('kenaikan')" id="tab-kenaikan" class="flex-1 py-3 text-sm font-bold text-slate-500 hover:text-slate-750 dark:hover:text-slate-350 border-b-2 border-transparent transition">
-                📈 Kenaikan Kelas (XI ke XII)
-            </button>
-            <button type="button" onclick="switchTab('penjurusan')" id="tab-penjurusan" class="flex-1 py-3 text-sm font-bold text-slate-500 hover:text-slate-750 dark:hover:text-slate-350 border-b-2 border-transparent transition">
-                🎯 Penjurusan (X ke XI)
-            </button>
-        </div>
 
-        <!-- Form & Content -->
-        <div class="p-6 overflow-y-auto flex-grow">
-            <!-- TAB: KELULUSAN -->
-            <form id="formKelulusan" action="{{ route('students.bulk-graduate') }}" method="POST" class="space-y-4">
-                @csrf
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Kelas XII Yang Lulus</label>
-                        <div class="flex items-center gap-2">
-                            <button type="button" onclick="toggleAllClasses(true)" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded transition border border-slate-200 dark:border-slate-700">Centang Semua</button>
-                            <button type="button" onclick="toggleAllClasses(false)" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded transition border border-slate-200 dark:border-slate-700">Hapus Semua</button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="kelasTwelveContainer">
-                        @foreach($daftarKelasAsal->filter(fn($c) => stripos($c, 'xii') === 0 || stripos($c, '12') === 0) as $kelas)
-                            <label class="flex items-center gap-2 p-2.5 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
-                                <input type="checkbox" name="kelas[]" value="{{ $kelas }}" onchange="loadStudentsForGraduation()" class="kelas-checkbox rounded border-slate-300 text-orange-500 focus:ring-orange-500" />
-                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ $kelas }}</span>
-                            </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                <!-- Student List Area for Graduation -->
-                <div id="gradStudentsSection" class="space-y-2 hidden">
-                    <div class="flex items-center justify-between">
-                        <label class="field-label block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Daftar Siswa (Centang yang Lulus)</label>
-                        <div class="flex items-center gap-2">
-                            <button type="button" onclick="toggleAllCheckboxes('gradStudentsList', true, 'updateGradCount')" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded transition border border-slate-200 dark:border-slate-700">Centang Semua</button>
-                            <button type="button" onclick="toggleAllCheckboxes('gradStudentsList', false, 'updateGradCount')" class="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded transition border border-slate-200 dark:border-slate-700">Hapus Semua</button>
-                            <span class="text-[10px] text-slate-400 font-bold ml-1" id="gradSelectedCount">0 siswa terpilih</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Search Input inside Modal -->
-                    <div class="relative">
-                        <input type="text" id="searchGradStudents" placeholder="Cari nama siswa..." class="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 py-2 text-xs text-slate-700 placeholder-slate-400 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
-                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                            <i class="fas fa-search text-xs"></i>
-                        </div>
-                    </div>
-
-                    <!-- Scrollable list of checkboxes -->
-                    <div class="border border-slate-200 dark:border-slate-800 rounded-xl max-h-48 overflow-y-auto p-3 space-y-2" id="gradStudentsList">
-                        <!-- Populated via Javascript -->
-                    </div>
-                </div>
-
-                <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" onclick="closeKelulusanKenaikanModal()" class="btn border border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs">Batal</button>
-                    <button type="submit" class="btn bg-red-600 hover:bg-red-700 text-white font-bold px-5 py-2 rounded-xl shadow-md text-xs">Proses Kelulusan</button>
-                </div>
-            </form>
-
-            <!-- TAB: KENAIKAN -->
-            <form id="formKenaikan" action="{{ route('students.bulk-promote') }}" method="POST" class="space-y-4 hidden">
-                @csrf
-                <div class="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-md">
-                        Pilih kelas tujuan untuk masing-masing kelas asal. Kosongkan kelas tujuan jika kelas tersebut tidak ingin dinaikkan massal saat ini.
-                    </p>
-                    <button type="button" onclick="autoMatchClasses()" class="btn bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 dark:bg-orange-950/20 dark:border-orange-500/30 dark:text-orange-400 text-xxs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition flex-shrink-0 shadow-sm">
-                        <i class="fas fa-magic text-xxs"></i>
-                        <span>Cocokkan Otomatis</span>
-                    </button>
-                </div>
-                
-                <div class="max-h-[50vh] overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50 dark:bg-slate-800/50 sticky top-0 z-10">
-                            <tr>
-                                <th class="py-2 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">Kelas Asal (X / XI)</th>
-                                <th class="py-2 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">Kelas Tujuan (XI / XII)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            @foreach($daftarKelasAsal->filter(function($c) {
-                                $parts = explode(' ', trim($c));
-                                $grade = strtoupper($parts[0]);
-                                return $grade === 'XI' || $grade === '11';
-                            }) as $index => $kelas)
-                            <tr class="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900 dark:even:bg-slate-800/10 hover:bg-slate-100/50 dark:hover:bg-slate-800/35 transition-colors">
-                                <td class="py-2.5 px-4 w-1/2">
-                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $kelas }}</span>
-                                    <input type="hidden" name="mapping[{{ $index }}][asal]" value="{{ $kelas }}">
-                                </td>
-                                <td class="py-2.5 px-4 w-1/2">
-                                    @php
-                                        $originCount = \App\Models\Siswa::where('kelas', $kelas)->count();
-                                    @endphp
-                                    <select name="mapping[{{ $index }}][tujuan]" class="input py-1.5 px-3 text-xs w-full auto-mapping-select" data-asal="{{ $kelas }}" data-students-count="{{ $originCount }}">
-                                        <option value="">-- Jangan Naikkan Dulu --</option>
-                                        @php
-                                            $parts = explode(' ', trim($kelas));
-                                            $jurusan = count($parts) > 1 ? $parts[1] : '';
-                                            $tingkatAsal = strtoupper($parts[0]);
-                                            $tingkatTujuan = [];
-                                            
-                                            // Tentukan tingkat tujuan berdasarkan tingkat asal
-                                            if ($tingkatAsal === 'X' || $tingkatAsal === '10') $tingkatTujuan = ['XI', '11'];
-                                            elseif ($tingkatAsal === 'XI' || $tingkatAsal === '11') $tingkatTujuan = ['XII', '12'];
-                                            
-                                            $classroomsRaw = \App\Models\Kelas::orderBy('name', 'asc')->get();
-                                            $filteredClasses = $classroomsRaw->filter(function($c) use ($jurusan, $tingkatTujuan) {
-                                                $name = strtoupper($c->name);
-                                                // Filter jurusan dihilangkan agar semua kelas tujuan di tingkat tersebut bisa dipilih (Support Kurikulum Merdeka)
-                                                // if ($jurusan !== '' && strpos($name, strtoupper($jurusan)) === false) return false;
-                                                
-                                                // Filter tingkat kelas selanjutnya
-                                                if (!empty($tingkatTujuan)) {
-                                                    $matchTingkat = false;
-                                                    foreach ($tingkatTujuan as $t) {
-                                                        if (strpos($name, $t . ' ') === 0 || $name === $t) {
-                                                            $matchTingkat = true; break;
-                                                        }
-                                                    }
-                                                    if (!$matchTingkat) return false;
-                                                }
-                                                return true;
-                                            });
-                                        @endphp
-                                        @foreach($filteredClasses as $k)
-                                            @php
-                                                $currentStudents = \App\Models\Siswa::where('kelas', $k->name)->count();
-                                                $capacity = $k->max_students ?? 36; // Default capacity 36
-                                            @endphp
-                                            <option value="{{ $k->name }}" data-capacity="{{ $capacity }}" data-current="{{ $currentStudents }}">{{ $k->name }} (Isi: {{ $currentStudents }}/{{ $capacity }})</option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" onclick="closeKelulusanKenaikanModal()" class="btn border border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs">Batal</button>
-                    <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl shadow-md text-xs">Proses Kenaikan Massal</button>
-                </div>
-            </form>
-
-            <!-- TAB: PENJURUSAN X ke XI -->
-            <form id="formPenjurusan" action="{{ route('students.promote-students') }}" method="POST" class="space-y-4 hidden flex-col h-full">
-                @csrf
-                <div class="space-y-2 flex-shrink-0">
-                    <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pilih Kelas X Asal</label>
-                    <select id="kelasXSelector" class="w-full sm:w-1/2 rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 focus:border-orange-500 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" onchange="loadStudentsForPenjurusan(this.value)">
-                        <option value="">-- Pilih Kelas X --</option>
-                        @foreach($daftarKelasAsal->filter(function($c) {
-                            $parts = explode(' ', trim($c));
-                            $grade = strtoupper($parts[0]);
-                            return $grade === 'X' || $grade === '10';
-                        }) as $kelas)
-                            <option value="{{ $kelas }}">{{ $kelas }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div id="penjurusanStudentsSection" class="hidden flex-1 flex flex-col min-h-0">
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="field-label block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Daftar Siswa & Pilihan Kelas XI</label>
-                        <span class="text-[10px] text-slate-400 font-bold ml-1" id="penjurusanStudentCount">0 siswa</span>
-                    </div>
-                    
-                    <div class="overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl flex-1 max-h-[50vh]">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 dark:bg-slate-800/50 sticky top-0 z-10">
-                                <tr>
-                                    <th class="py-2 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">Nama Siswa</th>
-                                    <th class="py-2 px-4 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">Kelas Tujuan (XI)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="penjurusanStudentsList" class="divide-y divide-slate-100 dark:divide-slate-800/50">
-                                <!-- Populated via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 flex-shrink-0 mt-auto">
-                    <button type="button" onclick="closeKelulusanKenaikanModal()" class="btn border border-slate-200 hover:bg-slate-50 text-slate-700 dark:border-slate-700 dark:text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs">Batal</button>
-                    <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl shadow-md text-xs" id="btnProsesPenjurusan" disabled>Simpan Penjurusan</button>
-                </div>
-                
-                <!-- Helper data for JS: list of class XI -->
-                <div id="kelasXIOptions" class="hidden">
-                    <option value="">-- Pilih Kelas XI Tujuan --</option>
-                    @php
-                        $kelasXI = \App\Models\Kelas::orderBy('name', 'asc')->get()->filter(function($c) {
-                            $parts = explode(' ', trim($c->name));
-                            $grade = strtoupper($parts[0]);
-                            return $grade === 'XI' || $grade === '11';
-                        });
-                    @endphp
-                    @foreach($kelasXI as $k)
-                        <option value="{{ $k->name }}">{{ $k->name }} (Isi: {{ \App\Models\Siswa::where('kelas', $k->name)->active()->count() }}/{{ $k->max_students ?? 36 }})</option>
-                    @endforeach
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 @push('scripts')
 <script>
-    // Kelulusan & Kenaikan Modal controls
-    function openKelulusanKenaikanModal() {
-        $('#modalKelulusanKenaikan').removeClass('hidden');
-        $('body').addClass('overflow-hidden');
-        switchTab('kelulusan');
-        resetKelulusanKenaikanForm();
-    }
-
-    function closeKelulusanKenaikanModal() {
-        $('#modalKelulusanKenaikan').addClass('hidden');
-        $('body').removeClass('overflow-hidden');
-    }
-
-    function resetKelulusanKenaikanForm() {
-        const cbs = document.querySelectorAll('#kelasTwelveContainer .kelas-checkbox');
-        cbs.forEach(cb => cb.checked = false);
-        $('#gradStudentsList').html('');
-        $('#gradStudentsSection').addClass('hidden');
-        $('#gradSelectedCount').text('0 siswa terpilih');
-        
-        // Reset mapping select dropdowns to empty state if any
-        document.querySelectorAll('.auto-mapping-select').forEach(select => {
-            select.selectedIndex = 0;
-        });
-    }
-
-    function switchTab(tab) {
-        if (tab === 'kenaikan') {
-            $('#tab-kenaikan').addClass('text-orange-500 border-orange-500').removeClass('text-slate-500 border-transparent');
-            $('#tab-kelulusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
-            $('#tab-penjurusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
-            
-            $('#formKenaikan').removeClass('hidden');
-            $('#formKelulusan').addClass('hidden');
-            $('#formPenjurusan').addClass('hidden').removeClass('flex');
-        }
-        if (tab === 'kelulusan') {
-            $('#tab-kelulusan').addClass('text-orange-500 border-orange-500').removeClass('text-slate-500 border-transparent');
-            $('#tab-kenaikan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
-            $('#tab-penjurusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
-            
-            $('#formKelulusan').removeClass('hidden');
-            $('#formKenaikan').addClass('hidden');
-            $('#formPenjurusan').addClass('hidden').removeClass('flex');
-        }
-        if (tab === 'penjurusan') {
-            $('#tab-penjurusan').addClass('text-orange-500 border-orange-500').removeClass('text-slate-500 border-transparent');
-            $('#tab-kelulusan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
-            $('#tab-kenaikan').removeClass('text-orange-500 border-orange-500').addClass('text-slate-500 border-transparent');
-            
-            $('#formPenjurusan').removeClass('hidden').addClass('flex');
-            $('#formKelulusan').addClass('hidden');
-            $('#formKenaikan').addClass('hidden');
-        }
-    }
-
-    function loadStudentsForGraduation() {
-        const checkedClasses = [];
-        $('#kelasTwelveContainer input[name="kelas[]"]:checked').each(function() {
-            checkedClasses.push($(this).val());
-        });
-
-        if (checkedClasses.length === 0) {
-            $('#gradStudentsList').html('');
-            $('#gradStudentsSection').addClass('hidden');
-            $('#gradSelectedCount').text('0 siswa terpilih');
-            return;
-        }
-
-        fetch(`{{ route('students.by-classes') }}?kelas=${checkedClasses.join(',')}`)
-            .then(res => res.json())
-            .then(data => {
-                let html = '';
-                if (data.length === 0) {
-                    html = '<p class="text-xs text-slate-400 text-center py-4">Tidak ada siswa aktif di kelas ini.</p>';
-                } else {
-                    data.forEach(student => {
-                        html += `
-                            <label class="flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-slate-700/50 student-item" data-name="${student.nama.toLowerCase()}">
-                                <div class="flex items-center gap-2">
-                                    <input type="checkbox" name="id_siswa[]" value="${student.id}" checked class="student-checkbox rounded border-slate-300 text-orange-500 focus:ring-orange-500" onchange="updateGradCount()" />
-                                    <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">${student.nama} <span class="text-xxs text-slate-400 font-mono">(${student.nis})</span></span>
-                                </div>
-                                <span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 rounded-md font-mono">${student.kelas}</span>
-                            </label>
-                        `;
-                    });
-                }
-                $('#gradStudentsList').html(html);
-                $('#gradStudentsSection').removeClass('hidden');
-                updateGradCount();
-            });
-    }
-
-    function updateGradCount() {
-        const total = $('#gradStudentsList input[type="checkbox"]').length;
-        const checked = $('#gradStudentsList input[type="checkbox"]:checked').length;
-        $('#gradSelectedCount').text(`${checked} dari ${total} siswa terpilih`);
-    }
-
-    function loadStudentsForPenjurusan(kelas) {
-        if (!kelas) {
-            $('#penjurusanStudentsSection').addClass('hidden');
-            $('#btnProsesPenjurusan').prop('disabled', true);
-            return;
-        }
-
-        const optionsHTML = $('#kelasXIOptions').html();
-
-        fetch(`{{ route('students.by-classes') }}?kelas=${kelas}`)
-            .then(res => res.json())
-            .then(data => {
-                let html = '';
-                if (data.length === 0) {
-                    html = '<tr><td colspan="2" class="py-4 text-center text-xs text-slate-400">Tidak ada siswa aktif di kelas ini.</td></tr>';
-                    $('#btnProsesPenjurusan').prop('disabled', true);
-                } else {
-                    data.forEach(student => {
-                        html += `
-                            <tr class="odd:bg-white even:bg-slate-50/50 dark:odd:bg-slate-900 dark:even:bg-slate-800/10 hover:bg-slate-100/50 dark:hover:bg-slate-800/35 transition-colors">
-                                <td class="py-2.5 px-4">
-                                    <div class="flex items-center gap-2">
-                                        <input type="hidden" name="id_siswa[]" value="${student.id}">
-                                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">${student.nama}</span>
-                                        <span class="text-[10px] text-slate-400 font-mono">(${student.nis})</span>
-                                    </div>
-                                </td>
-                                <td class="py-2.5 px-4">
-                                    <select name="tujuan[${student.id}]" class="input py-1.5 px-3 text-xs w-full">
-                                        ${optionsHTML}
-                                    </select>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                    $('#btnProsesPenjurusan').prop('disabled', false);
-                }
-                $('#penjurusanStudentsList').html(html);
-                $('#penjurusanStudentCount').text(`${data.length} siswa`);
-                $('#penjurusanStudentsSection').removeClass('hidden').addClass('flex');
-            });
-    }
-
-    // Bind event handler for search input inside modal
-    $(document).on('keyup', '#searchGradStudents', function() {
-        const keyword = $(this).val().toLowerCase();
-        $('#gradStudentsList .student-item').each(function() {
-            const name = $(this).attr('data-name');
-            if (name.includes(keyword)) {
-                $(this).removeClass('hidden');
-            } else {
-                $(this).addClass('hidden');
-            }
-        });
-    });
-    function toggleAllClasses(isChecked) {
-        const container = document.getElementById('kelasTwelveContainer');
-        if (!container) return;
-        const checkboxes = container.querySelectorAll('.kelas-checkbox');
-        checkboxes.forEach(cb => {
-            cb.checked = isChecked;
-        });
-        loadStudentsForGraduation();
-    }
-
-    function toggleAllCheckboxes(containerId, isChecked, updateCallback) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        const checkboxes = container.querySelectorAll('.student-checkbox');
-        checkboxes.forEach(cb => {
-            // Only affect visible (non-filtered) checkboxes
-            if (cb.closest('label') && cb.closest('label').style.display !== 'none') {
-                cb.checked = isChecked;
-            }
-        });
-        if (updateCallback === 'updateGradCount' && typeof updateGradCount === 'function') updateGradCount();
-        if (updateCallback === 'updatePromoCount' && typeof updatePromoCount === 'function') updatePromoCount();
-    }
-
-    // Auto Match Classes function
-    function autoMatchClasses() {
-        // Track already selected target classes so we don't map multiple origin classes to the same target class
-        const usedTargets = new Set();
-        
-        // Track all origin classes in this bulk promotion to know which ones will be emptied
-        const originClasses = new Set();
-        document.querySelectorAll('.auto-mapping-select').forEach(select => {
-            const asal = select.getAttribute('data-asal');
-            if (asal) originClasses.add(asal.trim().toUpperCase());
-        });
-        
-        document.querySelectorAll('.auto-mapping-select').forEach(select => {
-            const asal = select.getAttribute('data-asal');
-            if (!asal) return;
-            
-            const originCount = parseInt(select.getAttribute('data-students-count')) || 0;
-            const cleanAsal = asal.trim().toUpperCase();
-            
-            // Tentukan pola nama kelas tujuan yang diharapkan (misal XI F 1 -> XII F 1)
-            let targetName = '';
-            if (cleanAsal.startsWith('XI ')) targetName = cleanAsal.replace(/^XI /, 'XII ');
-            else if (cleanAsal.startsWith('XI.')) targetName = cleanAsal.replace(/^XI\./, 'XII.');
-            else if (cleanAsal.startsWith('XI')) targetName = cleanAsal.replace(/^XI/, 'XII');
-            else if (cleanAsal.startsWith('X ')) targetName = cleanAsal.replace(/^X /, 'XI ');
-            else if (cleanAsal.startsWith('X.')) targetName = cleanAsal.replace(/^X\./, 'XI.');
-            else if (cleanAsal.startsWith('X')) targetName = cleanAsal.replace(/^X/, 'XI');
-            
-            let found = false;
-            
-            // Function to check if option is valid (not used + has capacity)
-            const isValidOption = (optVal, optionElement) => {
-                if (usedTargets.has(optVal)) return false;
-                const capacity = parseInt(optionElement.getAttribute('data-capacity')) || 36;
-                let current = parseInt(optionElement.getAttribute('data-current')) || 0;
-                
-                // If the target class is ALSO an origin class in this promotion, 
-                // assume its current students will leave, making it empty.
-                if (originClasses.has(optVal)) {
-                    current = 0;
-                }
-                
-                return (current + originCount) <= capacity;
-            };
-
-            // 1. Exact Match Check
-            for (let i = 0; i < select.options.length; i++) {
-                const optVal = select.options[i].value.trim().toUpperCase();
-                if (optVal === targetName && isValidOption(optVal, select.options[i])) {
-                    select.selectedIndex = i;
-                    usedTargets.add(optVal);
-                    found = true;
-                    break;
-                }
-            }
-            
-            // 2. Suffix Match Check
-            if (!found && targetName) {
-                const parts = cleanAsal.split(' ');
-                if (parts.length > 1) {
-                    const suffix = parts.slice(1).join(' ');
-                    for (let i = 0; i < select.options.length; i++) {
-                        const optVal = select.options[i].value.trim().toUpperCase();
-                        if (optVal.endsWith(suffix) && isValidOption(optVal, select.options[i])) {
-                            select.selectedIndex = i;
-                            usedTargets.add(optVal);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // 3. Sequential Mapping for Kurikulum Merdeka (if no exact match, just take the first available valid class)
-            if (!found) {
-                for (let i = 1; i < select.options.length; i++) { // Skip index 0 ("-- Jangan Naikkan Dulu --")
-                    const optVal = select.options[i].value.trim().toUpperCase();
-                    if (optVal !== '' && isValidOption(optVal, select.options[i])) {
-                        select.selectedIndex = i;
-                        usedTargets.add(optVal);
-                        found = true;
-                        break;
-                    }
-                }
-            }
-        });
-    }
-
     // Toggle Fields for Siswa Pindahan
     function togglePindahanFields() {
         const checkbox = document.getElementById('isPindahanCheckbox');
@@ -1170,14 +580,7 @@
         $('#importExcelModal').addClass('hidden');
         $('body').removeClass('overflow-hidden');
     }
-    function openPlottingModal() {
-        $('#modalPlottingSiswa').removeClass('hidden');
-        $('body').addClass('overflow-hidden');
-    }
-    function closePlottingModal() {
-        $('#modalPlottingSiswa').addClass('hidden');
-        $('body').removeClass('overflow-hidden');
-    }
+    
 
     // Trigger DataTables Excel Export
     function downloadExcel() {
@@ -1195,7 +598,6 @@
         const table = $('#studentsTable').DataTable();
         table.search('')
              .columns().search('')
-             .column(6).search('Aktif|Nonaktif', true, false)
              .draw();
     }
 
@@ -1257,36 +659,48 @@
             table.search(this.value).draw();
         });
 
+        // Custom filtering function for Class and Status
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            if (settings.nTable.id !== 'studentsTable') {
+                return true;
+            }
+
+            var classFilter = $('#toolbarClass').val();
+            var statusFilter = $('#toolbarStatus').val();
+
+            var classText = data[4] || '';
+            var statusHtml = data[6] || '';
+            
+            // Extract text from HTML just in case
+            var statusText = $('<div>').html(statusHtml).text().trim();
+            classText = classText.trim();
+
+            // Check Class
+            if (classFilter && classFilter !== '') {
+                if (classText !== classFilter) {
+                    return false;
+                }
+            }
+
+            // Check Status
+            if (statusFilter && statusFilter !== '' && statusFilter !== 'aktif_nonaktif') {
+                if (statusText !== statusFilter) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
         // Binds Class filter dropdown
         $('#toolbarClass').on('change', function() {
-            table.column(4).search(this.value).draw();
+            table.draw();
         });
 
-        // Binds Status filter dropdown with custom logic for 'aktif_nonaktif'
+        // Binds Status filter dropdown
         $('#toolbarStatus').on('change', function() {
-            if (this.value === 'aktif_nonaktif') {
-                table.column(6).search('Aktif|Nonaktif', true, false).draw();
-                $('#filterTahunLulusContainer').hide();
-                $('#toolbarGraduationYear').val('');
-                table.column(7).search('').draw();
-            } else if (this.value === 'Lulus') {
-                table.column(6).search('Lulus').draw();
-                $('#filterTahunLulusContainer').show();
-            } else {
-                table.column(6).search(this.value).draw();
-                $('#filterTahunLulusContainer').hide();
-                $('#toolbarGraduationYear').val('');
-                table.column(7).search('').draw();
-            }
+            table.draw();
         });
-
-        // Binds Graduation Year filter dropdown
-        $('#toolbarGraduationYear').on('change', function() {
-            table.column(7).search(this.value).draw();
-        });
-
-        // Apply default status filter on load (Show Aktif & Nonaktif only, hide Lulus/Alumni)
-        table.column(6).search('Aktif|Nonaktif', true, false).draw();
     });
 </script>
 @endpush

@@ -8,12 +8,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\Hash;
+use App\Models\PasswordChangeHistory;
+
 class SiswaBiodataController extends Controller
 {
     public function create()
     {
         $user = Auth::user();
         $student = $user->student;
+
+        // Hitung kuota ganti password
+        $passwordChangesCount = $user->passwordHistories()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        $passwordChangesLeft = max(0, 2 - $passwordChangesCount);
 
         $classrooms = Kelas::withoutGlobalScopes()
             ->orderBy('grade_level')
@@ -26,10 +35,48 @@ class SiswaBiodataController extends Controller
         $data = [
             'classrooms' => $classrooms,
             'student' => $student,
-            'isUpdate' => (bool)$student
+            'isUpdate' => (bool)$student,
+            'passwordChangesLeft' => $passwordChangesLeft
         ];
 
         return view('siswa.biodata', $data);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Cek batasan (rate limiting)
+        $changesCount = $user->passwordHistories()
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+
+        if ($changesCount >= 2) {
+            return back()->with('error', 'Anda telah mencapai batas maksimal pergantian kata sandi (2 kali) dalam 30 hari terakhir. Silakan coba lagi bulan depan atau hubungi admin.');
+        }
+
+        // 2. Validasi input
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        // 3. Verifikasi password saat ini
+        if (!Hash::check($request->current_password, $user->password)) {
+            return back()->with('error', 'Kata sandi saat ini tidak cocok.');
+        }
+
+        // 4. Update password
+        $user->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        // 5. Rekam histori
+        PasswordChangeHistory::create([
+            'pengguna_id' => $user->id
+        ]);
+
+        return back()->with('success', 'Kata sandi berhasil diperbarui.');
     }
 
     public function store(Request $request)
@@ -42,17 +89,11 @@ class SiswaBiodataController extends Controller
             'gender' => 'required|in:Laki-laki,Perempuan',
             'date_of_birth' => 'required|date',
             'entry_year' => 'required|integer',
-            'class_room_id' => 'required|exists:kelas,id',
-            'parent_name' => 'required|string|max:255',
-            'parent_phone' => 'required|string|max:20',
-            'parent_email' => 'nullable|email|max:255',
             'address' => 'required|string',
         ]);
 
         try {
             DB::beginTransaction();
-
-            $classroom = Kelas::withoutGlobalScopes()->findOrFail($request->class_room_id);
             
             // Logika Status yang Aman: 
             // Jika siswa sudah ada, ikuti status yang sudah ada (mencegah aktivasi mandiri).
@@ -68,10 +109,6 @@ class SiswaBiodataController extends Controller
                     'gender' => $request->gender,
                     'date_of_birth' => $request->date_of_birth,
                     'entry_year' => $request->entry_year,
-                    'class' => $classroom->name, 
-                    'parent_name' => $request->parent_name,
-                    'parent_phone' => $request->parent_phone,
-                    'parent_email' => $request->parent_email,
                     'address' => $request->address,
                     'status' => $status, 
                 ]

@@ -322,4 +322,81 @@ class TahunAjaranTest extends TestCase
         $updatedClass = Kelas::withoutGlobalScope('tahun_ajaran_aktif')->find($kelas->id);
         $this->assertEquals('2023/2024', $updatedClass->academic_year);
     }
+
+    public function test_admin_can_generate_classrooms_from_master_classes()
+    {
+        $admin = User::create([
+            'nama' => 'Admin Test',
+            'email' => 'admin.test@sekolah.sch.id',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+        ]);
+
+        \App\Models\MasterKelas::create([
+            'name' => 'X 1',
+            'grade_level' => 'X',
+            'major' => 'Umum',
+            'entry_academic_year' => '2025/2026',
+        ]);
+
+        \App\Models\MasterKelas::create([
+            'name' => 'XI F 1',
+            'grade_level' => 'XI',
+            'major' => 'Fase F',
+            'entry_academic_year' => '2025/2026',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('classrooms.generate'), [
+                'target_year' => '2026/2027',
+            ]);
+
+        $response->assertRedirect(route('classrooms.index', ['tahun_ajaran' => '2026/2027']));
+        $response->assertSessionHas('success');
+
+        $generatedClasses = Kelas::withoutGlobalScopes()->where('academic_year', '2026/2027')->get();
+        $this->assertCount(2, $generatedClasses);
+        $this->assertTrue($generatedClasses->contains('name', 'X 1'));
+        $this->assertTrue($generatedClasses->contains('name', 'XI F 1'));
+        foreach ($generatedClasses as $cls) {
+            $this->assertNull($cls->homeroom_teacher_id);
+        }
+    }
+
+    public function test_generate_from_master_does_not_duplicate_existing_classes()
+    {
+        $admin = User::create([
+            'nama' => 'Admin Test',
+            'email' => 'admin.test@sekolah.sch.id',
+            'password' => bcrypt('password'),
+            'role' => 'admin',
+        ]);
+
+        \App\Models\MasterKelas::create([
+            'name' => 'X 1',
+            'grade_level' => 'X',
+            'major' => 'Umum',
+            'entry_academic_year' => '2025/2026',
+        ]);
+
+        // Pre-create one class
+        Kelas::create([
+            'name' => 'X 1',
+            'grade_level' => 'X',
+            'major' => 'Umum',
+            'academic_year' => '2026/2027',
+            'max_students' => 36,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->post(route('classrooms.generate'), [
+                'target_year' => '2026/2027',
+            ]);
+
+        $response->assertRedirect(route('classrooms.index', ['tahun_ajaran' => '2026/2027']));
+        $response->assertSessionHas('info');
+
+        $classes = Kelas::withoutGlobalScopes()->where('academic_year', '2026/2027')->where('name', 'X 1')->get();
+        $this->assertCount(1, $classes);
+    }
 }

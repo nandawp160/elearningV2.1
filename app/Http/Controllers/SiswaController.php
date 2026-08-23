@@ -17,10 +17,25 @@ class SiswaController extends Controller
 
         $query = Siswa::query();
 
-        $students = Siswa::with(['user', 'relasiKelas.waliKelas'])
-                           ->orderBy('kelas', 'asc')
-                           ->orderBy('nama', 'asc')
-                           ->get();
+        $selectedYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', '2025/2026');
+
+        $hasYearHistory = \App\Models\RiwayatKelasSiswa::where('academic_year', $selectedYear)
+            ->whereHas('siswa', function($q) {
+                $q->where('status', '!=', 'Lulus');
+            })->exists();
+
+        $studentsQuery = Siswa::with(['user', 'relasiKelas.waliKelas'])
+                           ->where('status', '!=', 'Lulus');
+
+        if ($hasYearHistory) {
+            $studentsQuery->whereHas('riwayatKelas', function($q) use ($selectedYear) {
+                $q->where('academic_year', $selectedYear);
+            });
+        }
+
+        $students = $studentsQuery->orderBy('kelas', 'asc')
+                                   ->orderBy('nama', 'asc')
+                                   ->get();
         $pendingCount = Siswa::where('status', 'inactive')->count();
         $classList = \App\Models\Kelas::orderBy('name', 'asc')->get();
         $tahunLulusList = Siswa::whereNotNull('tahun_lulus')->distinct()->pluck('tahun_lulus')->sort()->values();
@@ -137,6 +152,14 @@ class SiswaController extends Controller
                     'alasan' => 'Siswa pindahan',
                 ]);
             }
+
+            // Record Class History
+            $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', date('Y') . '/' . (date('Y') + 1));
+            \App\Models\RiwayatKelasSiswa::create([
+                'siswa_id' => $siswa->id,
+                'kelas_name' => $request->kelas,
+                'academic_year' => $activeYear,
+            ]);
 
             \App\Models\ActivityLog::log('STUDENT', 'Menambahkan data siswa baru: ' . $request->name . ' (NIS: ' . $request->nis . ')');
 
@@ -261,6 +284,18 @@ class SiswaController extends Controller
                 'status' => $request->status, // Model handles active/inactive mapping to aktif/nonaktif
             ]);
 
+            // Record or Update Class History for current active year
+            $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', date('Y') . '/' . (date('Y') + 1));
+            \App\Models\RiwayatKelasSiswa::updateOrCreate(
+                [
+                    'siswa_id' => $student->id,
+                    'academic_year' => $activeYear,
+                ],
+                [
+                    'kelas_name' => $request->kelas,
+                ]
+            );
+
             \App\Models\ActivityLog::log('STUDENT', 'Memperbarui data siswa: ' . $student->nama . ' (NIS: ' . $student->nis . ')');
 
             DB::commit();
@@ -276,16 +311,16 @@ class SiswaController extends Controller
     {
         Gate::authorize('edit_siswa');
 
+        // Get all inactive students
+        $inactiveStudents = Siswa::where('status', 'inactive')->get();
+        $count = $inactiveStudents->count();
+
+        if ($count === 0) {
+            return redirect()->route('students.index')->with('info', 'Tidak ada siswa yang perlu disetujui.');
+        }
+
         try {
             DB::beginTransaction();
-
-            // Get all inactive students
-            $inactiveStudents = Siswa::where('status', 'inactive')->get();
-            $count = $inactiveStudents->count();
-
-            if ($count === 0) {
-                return redirect()->route('students.index')->with('info', 'Tidak ada siswa yang perlu disetujui.');
-            }
 
             // Generate unique batch ID
             $batchId = 'ACC-BATCH-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(2)));
@@ -342,41 +377,47 @@ class SiswaController extends Controller
             DB::beginTransaction();
             $studentsWithoutAccounts = Siswa::whereNull('pengguna_id')->get();
             $count = 0;
+            $defaultPasswordHash = \Illuminate\Support\Facades\Hash::make('password');
+            $now = now();
             
             foreach ($studentsWithoutAccounts as $student) {
-                $email = $student->nis . '@siswa.smansago.com';
+                // Generate uniform email: nama_depan.nis@siswa.smansago.com
+                $words = preg_split('/\s+/', trim($student->nama));
+                $words = array_values(array_filter($words, fn($w) => !empty($w)));
+                
+                $cleanFirst = !empty($words[0]) ? strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $words[0])) : 'siswa';
+                $email = "{$cleanFirst}.{$student->nis}@siswa.smansago.com";
                 
                 // Clean up orphaned user if exists
-                $existingUser = User::where('email', $email)->first();
+                $existingUser = DB::table('pengguna')->where('email', $email)->first();
                 if ($existingUser) {
-                    if (!$existingUser->student) {
-                        $existingUser->delete();
+                    $hasStudent = DB::table('siswa')->where('pengguna_id', $existingUser->id)->exists();
+                    if (!$hasStudent) {
+                        DB::table('pengguna')->where('id', $existingUser->id)->delete();
                     }
                 }
-
-                // Skip if email already exists
-                if (User::where('email', $email)->exists()) {
-                    continue;
-                }
                 
-                $user = User::create([
+                // Direct DB insert with pre-computed hash for maximum speed
+                $userId = DB::table('pengguna')->insertGetId([
                     'nama' => $student->nama,
                     'email' => $email,
-                    'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                    'role' => 'siswa'
+                    'password' => $defaultPasswordHash,
+                    'role' => 'siswa',
+                    'created_at' => $now,
+                    'updated_at' => $now
                 ]);
                 
-                $student->update(['pengguna_id' => $user->id]);
+                DB::table('siswa')->where('id', $student->id)->update(['pengguna_id' => $userId]);
                 $count++;
             }
             
             \App\Models\ActivityLog::log('STUDENT', 'Men-generate ' . $count . ' akun login siswa secara otomatis');
 
             DB::commit();
-            return redirect()->route('students.index')->with('success', "Berhasil men-generate $count akun siswa otomatis! Password default: password");
+            return redirect()->route('admin.accounts')->with('success', "Berhasil men-generate $count akun siswa otomatis! Password default: password");
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal generate akun otomatis: ' . $e->getMessage());
+            return redirect()->route('admin.accounts')->with('error', 'Gagal generate akun otomatis: ' . $e->getMessage());
         }
     }
 
@@ -419,188 +460,76 @@ class SiswaController extends Controller
 
         $tahunAjaran = $request->input('tahun_ajaran');
 
+        // Sesuai permintaan, fitur ini HANYA untuk siswa baru (kelas X atau 10 tanpa akhiran)
+        $students = Siswa::where('status', 'aktif')
+            ->where(function($query) {
+                $query->where('kelas', 'X')
+                      ->orWhere('kelas', 'x')
+                      ->orWhere('kelas', '10');
+            })->get();
+
+        $plottedCount = 0;
+        $skippedCount = 0;
+
+        // Cari semua kelas tingkat X di tahun ajaran target
+        $classrooms = Kelas::withoutGlobalScope('tahun_ajaran_aktif')
+            ->where('grade_level', 'X')
+            ->where('academic_year', $tahunAjaran)
+            ->get();
+
+        if ($classrooms->isEmpty()) {
+            return redirect()->route('students.index')->with('error', "Gagal: Tidak ada Rombel tingkat X yang aktif di Tahun Ajaran $tahunAjaran. Silakan buat kelas X terlebih dahulu.");
+        }
+
         try {
             DB::beginTransaction();
 
-            // Ambil semua siswa aktif
-            $students = Siswa::where('status', 'aktif')->get();
-
-            $plottedCount = 0;
-            $createdClasses = [];
-            $skippedCount = 0;
-
             foreach ($students as $student) {
-                $rawKelas = trim($student->kelas);
-
-                if (empty($rawKelas)) {
-                    $skippedCount++;
-                    continue;
+                // Kalkulasi ulang jumlah siswa setiap iterasi agar seimbang
+                $classroomList = [];
+                foreach ($classrooms as $room) {
+                    $studentCount = Siswa::where('kelas', $room->name)
+                        ->where('status', 'aktif')
+                        ->count();
+                    $classroomList[] = [
+                        'room' => $room,
+                        'count' => $studentCount
+                    ];
                 }
+                
+                // Urutkan menaik berdasarkan jumlah siswa
+                usort($classroomList, function($a, $b) {
+                    return $a['count'] <=> $b['count'];
+                });
 
-                // 1. Cek format kelas spesifik: e.g. "X IPA 1", "XI IPS 2", "XII Bahasa 1"
-                if (preg_match('/^(X|XI|XII)\s+(IPA|IPS|Bahasa)\s+(\d+)$/i', $rawKelas, $matches)) {
-                    $tingkat = strtoupper($matches[1]);
-                    $jurusan = $matches[2];
-                    $nomor = $matches[3];
-                    $className = "{$tingkat} {$jurusan} {$nomor}";
+                $assigned = false;
+                foreach ($classroomList as $item) {
+                    $room = $item['room'];
+                    $currentCount = $item['count'];
 
-                    // Cari atau buat kelas target untuk tahun ajaran terpilih
-                    $classroom = Kelas::withoutGlobalScope('tahun_ajaran_aktif')
-                        ->where('name', $className)
-                        ->where('academic_year', $tahunAjaran)
-                        ->first();
-
-                    if (!$classroom) {
-                        $classroom = Kelas::create([
-                            'name' => $className,
-                            'grade_level' => $tingkat,
-                            'major' => $jurusan,
-                            'academic_year' => $tahunAjaran,
-                            'max_students' => 36, // kapasitas default
-                        ]);
-                        $createdClasses[] = $className;
-                    }
-
-                    // Assign siswa ke kelas tersebut
-                    if ($student->kelas !== $classroom->name) {
-                        $student->update(['kelas' => $classroom->name]);
+                    if ($currentCount < $room->max_students) {
+                        $student->update(['kelas' => $room->name]);
                         $plottedCount++;
+                        $assigned = true;
+                        break;
                     }
-                    continue;
                 }
 
-                // 3. Cek format tingkat saja tanpa jurusan: e.g. "X", "XI", "XII"
-                if (preg_match('/^(X|XI|XII)$/i', $rawKelas, $matches)) {
-                    $tingkat = strtoupper($matches[1]);
-
-                    // Cari semua kelas untuk tingkat tersebut di tahun ajaran target
-                    $classrooms = Kelas::withoutGlobalScope('tahun_ajaran_aktif')
-                        ->where('grade_level', $tingkat)
-                        ->where('academic_year', $tahunAjaran)
-                        ->get();
-
-                    if ($classrooms->isNotEmpty()) {
-                        // Urutkan kelas berdasarkan jumlah siswa terkecil agar pembagian merata
-                        $classroomList = [];
-                        foreach ($classrooms as $room) {
-                            $studentCount = Siswa::where('kelas', $room->name)
-                                ->where('status', 'aktif')
-                                ->count();
-                            $classroomList[] = [
-                                'room' => $room,
-                                'count' => $studentCount
-                            ];
-                        }
-                        
-                        // Urutkan menaik berdasarkan jumlah siswa
-                        usort($classroomList, function($a, $b) {
-                            return $a['count'] <=> $b['count'];
-                        });
-
-                        foreach ($classroomList as $item) {
-                            $room = $item['room'];
-                            $currentCount = $item['count'];
-
-                            if ($currentCount < $room->max_students) {
-                                $student->update(['kelas' => $room->name]);
-                                $plottedCount++;
-                                break;
-                            }
-                        }
-                    }
-                    continue;
+                if (!$assigned) {
+                    $skippedCount++; // Semua kelas penuh
                 }
-
-                // 2. Cek format kelas umum/kelompok: e.g. "X IPA", "XI IPS"
-                if (preg_match('/^(X|XI|XII)\s+(IPA|IPS|Bahasa)$/i', $rawKelas, $matches)) {
-                    $tingkat = strtoupper($matches[1]);
-                    $jurusan = $matches[2];
-
-                    // Cari kelas yang sudah ada untuk tingkat dan jurusan tersebut di tahun ajaran target
-                    $classrooms = Kelas::withoutGlobalScope('tahun_ajaran_aktif')
-                        ->where('grade_level', $tingkat)
-                        ->where('major', $jurusan)
-                        ->where('academic_year', $tahunAjaran)
-                        ->get();
-
-                    $assigned = false;
-
-                    if ($classrooms->isNotEmpty()) {
-                        // Urutkan kelas berdasarkan jumlah siswa terkecil agar pembagian merata
-                        $classroomList = [];
-                        foreach ($classrooms as $room) {
-                            // Hanya hitung siswa yang statusnya aktif, jangan hitung alumni/lulus
-                            $studentCount = Siswa::where('kelas', $room->name)
-                                ->where('status', 'aktif')
-                                ->count();
-                            $classroomList[] = [
-                                'room' => $room,
-                                'count' => $studentCount
-                            ];
-                        }
-                        
-                        // Urutkan menaik berdasarkan jumlah siswa
-                        usort($classroomList, function($a, $b) {
-                            return $a['count'] <=> $b['count'];
-                        });
-
-                        foreach ($classroomList as $item) {
-                            $room = $item['room'];
-                            $currentCount = $item['count'];
-
-                            if ($currentCount < $room->max_students) {
-                                $student->update(['kelas' => $room->name]);
-                                $plottedCount++;
-                                $assigned = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    // Jika belum ada kelas sama sekali, atau semua kelas sudah penuh, buat kelas baru
-                    if (!$assigned) {
-                        // Cari nomor kelas berikutnya
-                        $existingCount = Kelas::withoutGlobalScope('tahun_ajaran_aktif')
-                            ->where('grade_level', $tingkat)
-                            ->where('major', $jurusan)
-                            ->where('academic_year', $tahunAjaran)
-                            ->count();
-                        
-                        $nextNum = $existingCount + 1;
-                        $className = "{$tingkat} {$jurusan} {$nextNum}";
-
-                        $classroom = Kelas::create([
-                            'name' => $className,
-                            'grade_level' => $tingkat,
-                            'major' => $jurusan,
-                            'academic_year' => $tahunAjaran,
-                            'max_students' => 36,
-                        ]);
-                        
-                        $createdClasses[] = $className;
-                        $student->update(['kelas' => $classroom->name]);
-                        $plottedCount++;
-                    }
-                    continue;
-                }
-
-                // 3. Format tidak valid
-                $skippedCount++;
             }
 
-            \App\Models\ActivityLog::log('STUDENT', 'Melakukan plotting siswa otomatis ke kelas untuk Tahun Ajaran ' . $tahunAjaran . '. Terplot: ' . $plottedCount . ' siswa');
+            \App\Models\ActivityLog::log('STUDENT', 'Melakukan plotting otomatis siswa kelas X ke rombel tingkat X Tahun Ajaran ' . $tahunAjaran . '. Terplot: ' . $plottedCount . ' siswa');
 
             DB::commit();
 
-            $msg = "Plotting siswa selesai! Berhasil mem-plot {$plottedCount} siswa.";
+            $msg = "Plotting siswa selesai! Berhasil menempatkan {$plottedCount} siswa ke rombel X.";
             if ($skippedCount > 0) {
-                $msg .= " Sebanyak {$skippedCount} siswa dilewati karena format kelas tidak valid/kosong.";
-            }
-            if (count($createdClasses) > 0) {
-                $msg .= " Berhasil membuat kelas baru: " . implode(', ', array_unique($createdClasses));
+                $msg .= " Sebanyak {$skippedCount} siswa dilewati karena semua rombel X penuh.";
             }
 
-            return redirect()->route('students.index')->with('success', $msg);
+            return back()->with('success', $msg);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal melakukan plotting otomatis: ' . $e->getMessage());
@@ -649,7 +578,7 @@ class SiswaController extends Controller
         $idSiswaArray = $request->input('id_siswa', []);
 
         if (!$request->has('id_siswa') && empty($idSiswaArray)) {
-            return redirect()->route('students.index')->with('error', 'Tidak ada siswa yang dipilih untuk kelulusan.');
+            return redirect()->back()->with('error', 'Tidak ada siswa yang dipilih untuk kelulusan.');
         }
 
         try {
@@ -676,7 +605,7 @@ class SiswaController extends Controller
             \App\Models\ActivityLog::log('STUDENT', 'Melakukan kelulusan massal untuk ' . $count . ' siswa dari kelas: ' . implode(', ', $daftarKelas));
 
             DB::commit();
-            return redirect()->route('students.index')->with('success', "$count siswa berhasil diluluskan.");
+            return redirect()->back()->with('success', "$count siswa berhasil diluluskan.");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal meluluskan siswa: ' . $e->getMessage());
@@ -704,7 +633,7 @@ class SiswaController extends Controller
         });
 
         if ($mappings->isEmpty()) {
-            return redirect()->route('students.index')->with('error', 'Tidak ada mapping kelas tujuan yang dipilih untuk kenaikan kelas.');
+            return redirect()->back()->with('error', 'Tidak ada mapping kelas tujuan yang dipilih untuk kenaikan kelas.');
         }
 
         // Verifikasi apakah kelas tujuan sudah dibuat untuk Tahun Ajaran Aktif
@@ -713,7 +642,7 @@ class SiswaController extends Controller
         $missingClasses = array_diff($targetClasses, $existingClasses);
 
         if (!empty($missingClasses)) {
-            return redirect()->route('students.index')->with('error', 'Kelas tujuan berikut belum dibuat di master Kelas: ' . implode(', ', $missingClasses));
+            return redirect()->back()->with('error', 'Kelas tujuan berikut belum dibuat di master Kelas: ' . implode(', ', $missingClasses));
         }
 
         try {
@@ -752,7 +681,7 @@ class SiswaController extends Controller
 
                 if (($targetCounts[$tujuan] + $studentsToMove) > $kapasitas) {
                     DB::rollBack();
-                    return redirect()->route('students.index')->with('error', "Gagal: Kapasitas kelas $tujuan tidak mencukupi untuk menampung tambahan $studentsToMove siswa dari $asal. (Maksimal: $kapasitas)");
+                    return redirect()->back()->with('error', "Gagal: Kapasitas kelas $tujuan tidak mencukupi untuk menampung tambahan $studentsToMove siswa dari $asal. (Maksimal: $kapasitas)");
                 }
                 
                 // Update tracker
@@ -765,6 +694,21 @@ class SiswaController extends Controller
                 if ($updated > 0) {
                     $totalPromoted += $updated;
                     $logDetails[] = "$asal -> $tujuan ($updated siswa)";
+
+                    // Record new class history for all promoted students in this batch
+                    $promotedStudents = Siswa::where('kelas', $tujuan)->active()->get();
+                    $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', date('Y') . '/' . (date('Y') + 1));
+                    foreach ($promotedStudents as $ps) {
+                        \App\Models\RiwayatKelasSiswa::updateOrCreate(
+                            [
+                                'siswa_id' => $ps->id,
+                                'academic_year' => $activeYear,
+                            ],
+                            [
+                                'kelas_name' => $tujuan,
+                            ]
+                        );
+                    }
                 }
             }
 
@@ -773,7 +717,7 @@ class SiswaController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('students.index')->with('success', "$totalPromoted siswa berhasil dinaikkan kelasnya secara massal.");
+            return redirect()->back()->with('success', "$totalPromoted siswa berhasil dinaikkan kelasnya secara massal.");
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal menaikkan kelas siswa: ' . $e->getMessage());
@@ -798,30 +742,74 @@ class SiswaController extends Controller
 
             $idSiswas = $request->input('id_siswa');
             $tujuans = $request->input('tujuan');
+            $activeYear = \App\Models\Pengaturan::getValue('tahun_ajaran_aktif', date('Y') . '/' . (date('Y') + 1));
+            $classCounts = [];
 
             foreach ($idSiswas as $id) {
                 if (!empty($tujuans[$id])) {
                     $student = Siswa::find($id);
                     if ($student && $student->status === 'active') {
-                        $kelasLama = $student->kelas;
                         $kelasBaru = $tujuans[$id];
+                        
+                        if (!isset($classCounts[$kelasBaru])) {
+                            $classModel = \App\Models\Kelas::withoutGlobalScopes()->where('name', $kelasBaru)->where('academic_year', $activeYear)->first();
+                            $classMax = $classModel ? ($classModel->max_students ?? 36) : 36;
+                            $currentInDb = Siswa::where('kelas', $kelasBaru)->where('status', 'active')->count();
+                            $classCounts[$kelasBaru] = [
+                                'current' => $currentInDb,
+                                'max' => $classMax
+                            ];
+                        }
+                        
+                        // Proteksi kapasitas: jangan lewati kuota maksimal kelas
+                        if ($classCounts[$kelasBaru]['current'] >= $classCounts[$kelasBaru]['max']) {
+                            continue;
+                        }
+                        
+                        $classCounts[$kelasBaru]['current']++;
                         
                         $student->update([
                             'kelas' => $kelasBaru
                         ]);
                         $promotedCount++;
+
+                        \App\Models\RiwayatKelasSiswa::updateOrCreate(
+                            [
+                                'siswa_id' => $student->id,
+                                'academic_year' => $activeYear,
+                            ],
+                            [
+                                'kelas_name' => $kelasBaru,
+                            ]
+                        );
                     }
                 }
             }
 
-            if ($promotedCount > 0) {
-                \App\Models\ActivityLog::log('STUDENT', 'Melakukan penjurusan/kenaikan kelas X ke XI untuk ' . $promotedCount . ' siswa.');
+            if ($promotedCount === 0) {
+                DB::rollBack();
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Tidak ada siswa yang dipilih kelas tujuannya. Silakan tentukan kelas tujuan siswa terlebih dahulu.'], 422);
+                }
+                return redirect()->back()->with('error', 'Tidak ada siswa yang dipilih kelas tujuannya. Silakan tentukan kelas tujuan siswa terlebih dahulu.');
             }
 
+            \App\Models\ActivityLog::log('STUDENT', 'Melakukan penjurusan/kenaikan kelas X ke XI untuk ' . $promotedCount . ' siswa.');
+
             DB::commit();
-            return redirect()->route('students.index')->with('success', "$promotedCount siswa berhasil dipetakan ke kelas barunya.");
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "$promotedCount siswa berhasil dipetakan ke kelas barunya.",
+                    'promoted_count' => $promotedCount
+                ]);
+            }
+            return redirect()->back()->with('success', "$promotedCount siswa berhasil dipetakan ke kelas barunya.");
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Gagal memproses penjurusan siswa: ' . $e->getMessage()], 500);
+            }
             return back()->with('error', 'Gagal memproses penjurusan siswa: ' . $e->getMessage());
         }
     }
@@ -835,10 +823,22 @@ class SiswaController extends Controller
             'tanggal_mutasi' => 'required|date',
             'keterangan_sekolah' => 'nullable|string|max:255',
             'alasan' => 'nullable|string',
+            'surat_mutasi' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         try {
             DB::beginTransaction();
+
+            $suratPath = null;
+            if ($request->hasFile('surat_mutasi')) {
+                $folderMap = [
+                    'keluar' => 'mutasi/pindah-sekolah',
+                    'dikeluarkan' => 'mutasi/dikeluarkan',
+                    'mengundurkan diri' => 'mutasi/mengundurkan-diri',
+                ];
+                $folder = $folderMap[$request->jenis_mutasi] ?? 'mutasi/lainnya';
+                $suratPath = $request->file('surat_mutasi')->store($folder, 'public');
+            }
 
             // Insert into MutasiSiswa
             \App\Models\MutasiSiswa::create([
@@ -847,6 +847,7 @@ class SiswaController extends Controller
                 'tanggal_mutasi' => $request->tanggal_mutasi,
                 'keterangan_sekolah' => $request->keterangan_sekolah,
                 'alasan' => $request->alasan,
+                'surat_mutasi' => $suratPath,
             ]);
 
             // Update Siswa

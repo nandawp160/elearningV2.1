@@ -26,6 +26,7 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
         $request->session()->regenerate();
+        Auth::logoutOtherDevices($request->password);
 
         // Prevent admin from logging in via regular student portal
         if ($request->user()->isSuperAdmin()) {
@@ -36,6 +37,18 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('login')->withErrors([
                 'email' => 'Silakan login melalui portal khusus Admin.',
             ]);
+        }
+
+        // Prevent alumni (status lulus) from logging in
+        if ($request->user()->isStudent() && $request->user()->student && $request->user()->student->status === 'lulus') {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            $msg = 'Akun Anda berstatus Alumni (Lulus). Akses ke portal E-Learning telah ditutup.';
+            return redirect()->route('login')
+                ->with('error_alumni', $msg)
+                ->withErrors(['email' => $msg]);
         }
 
         // Prevent teachers from logging in via regular student portal
@@ -70,6 +83,7 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
         $request->session()->regenerate();
+        Auth::logoutOtherDevices($request->password);
 
         // Ensure only teacher can login here
         if (!$request->user()->isTeacher()) {
@@ -102,6 +116,7 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
         $request->session()->regenerate();
+        Auth::logoutOtherDevices($request->password);
 
         // Ensure only admin can login here
         if (!$request->user()->isSuperAdmin()) {

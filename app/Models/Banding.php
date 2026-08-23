@@ -22,10 +22,19 @@ class Banding extends Model
         'kategori_alasan',
         'bukti_pendukung',
         'tanggapan_guru',
+        'tingkat_eskalasi',
+        'waktu_eskalasi',
+        'is_provisional_unlocked',
+        'provisional_unlocked_at',
+        'provisional_expires_at',
     ];
 
     protected $casts = [
         'tanggal_persetujuan' => 'datetime',
+        'waktu_eskalasi' => 'datetime',
+        'is_provisional_unlocked' => 'boolean',
+        'provisional_unlocked_at' => 'datetime',
+        'provisional_expires_at' => 'datetime',
     ];
 
     protected $appends = [
@@ -94,5 +103,33 @@ class Banding extends Model
     public function classRoom()
     {
         return $this->belongsTo(Kelas::class, 'tugas_id'); // Returns null safely since classRoom is omitted in new DB
+    }
+
+    // Escalation Helpers
+    public function isEscalatedToWaliKelas(): bool
+    {
+        return in_array($this->tingkat_eskalasi, ['wali_kelas', 'admin']);
+    }
+
+    public function isEscalatedToAdmin(): bool
+    {
+        return $this->tingkat_eskalasi === 'admin';
+    }
+
+    public function scopePending($query)
+    {
+        return $query->whereIn('status', ['ditinjau', 'pending']);
+    }
+
+    public function scopeEscalatedForWaliKelas($query)
+    {
+        return $query->whereIn('status', ['ditinjau', 'pending'])
+            ->whereIn('tingkat_eskalasi', ['wali_kelas', 'admin']);
+    }
+
+    public function scopeEscalatedForAdmin($query)
+    {
+        return $query->whereIn('status', ['ditinjau', 'pending'])
+            ->where('tingkat_eskalasi', 'admin');
     }
 }

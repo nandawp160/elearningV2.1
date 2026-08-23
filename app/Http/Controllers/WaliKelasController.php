@@ -46,9 +46,7 @@ class WaliKelasController extends Controller
         $overdueAssignmentsQuery = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            });
+            ;
             
         $overdueAssignments = $overdueAssignmentsQuery->get();
 
@@ -74,22 +72,19 @@ class WaliKelasController extends Controller
                 $totalSslLockedCount++;
             }
 
-            if ($tunggakanCount >= 3) {
+            $threshold = (int) (\App\Models\Pengaturan::getValue('ssl_threshold', 3));
+
+            if ($tunggakanCount >= $threshold) {
                 $firstOverdue = $overdueList->first();
                 $appealStatus = 'Belum Mengajukan';
                 
                 if ($firstOverdue) {
                     $appeal = \App\Models\Banding::where('siswa_id', $student->id)
-                        ->where('tugas_id', $firstOverdue->id)
+                        ->where('mata_pelajaran_id', $firstOverdue->mata_pelajaran_id)
+                        ->whereIn('status', ['pending', 'ditinjau'])
                         ->first();
                     if ($appeal) {
-                        if ($appeal->status === 'pending') {
-                            $appealStatus = 'Menunggu Guru';
-                        } elseif ($appeal->status === 'approved') {
-                            $appealStatus = 'Banding Diterima';
-                        } elseif ($appeal->status === 'rejected') {
-                            $appealStatus = 'Banding Ditolak';
-                        }
+                        $appealStatus = 'Menunggu Guru';
                     }
                 }
 
@@ -109,9 +104,7 @@ class WaliKelasController extends Controller
 
         $allClassAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         foreach ($students as $student) {
@@ -217,16 +210,17 @@ class WaliKelasController extends Controller
             abort(404, 'Kelas tidak ditemukan.');
         }
 
-        $subjects = $classRoom->mataPelajaran()->with(['course'])->get();
+        $subjects = $classRoom->mataPelajaran()->with(['course'])->get()->sortBy(function($sub) {
+            $name = strtolower($sub->course->name ?? $sub->course->nama ?? $sub->nama ?? '');
+            return (str_contains($name, 'indonesia') || str_contains($name, 'indo')) ? 0 : 1;
+        })->values();
         $gradeLevel = $classRoom->grade_level;
 
         // Ambil daftar tugas yang sudah lewat batas waktu (overdue)
         $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         $studentsQuery = $classRoom->daftarSiswa();
@@ -295,16 +289,17 @@ class WaliKelasController extends Controller
             abort(404, 'Kelas tidak ditemukan.');
         }
 
-        $subjects = $classRoom->mataPelajaran()->with(['course'])->get();
+        $subjects = $classRoom->mataPelajaran()->with(['course'])->get()->sortBy(function($sub) {
+            $name = strtolower($sub->course->name ?? $sub->course->nama ?? $sub->nama ?? '');
+            return (str_contains($name, 'indonesia') || str_contains($name, 'indo')) ? 0 : 1;
+        })->values();
         $gradeLevel = $classRoom->grade_level;
 
         // Ambil daftar tugas yang sudah lewat batas waktu (overdue)
         $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         $students = $classRoom->daftarSiswa()->get();
@@ -524,9 +519,7 @@ class WaliKelasController extends Controller
         $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         $studentsData = collect();
@@ -632,9 +625,7 @@ class WaliKelasController extends Controller
         $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         $countAman = 0;
@@ -737,9 +728,7 @@ class WaliKelasController extends Controller
         $overdueAssignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
             ->where('deadline', '<', now())
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         // 1. Ambil berkas excel dari template
@@ -948,9 +937,7 @@ class WaliKelasController extends Controller
         // Ambil semua tugas aktif untuk tingkat kelas ini
         $assignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         $assignmentsBySubject = [];
@@ -1017,9 +1004,7 @@ class WaliKelasController extends Controller
 
         $assignments = \App\Models\Tugas::tugas()->where('kelas_id', $classRoom->id)
             ->where('status', 'aktif')
-            ->whereHas('subject', function($q) use ($gradeLevel) {
-                $q->where('tingkat', $gradeLevel);
-            })
+            
             ->get();
 
         $assignmentsBySubject = [];

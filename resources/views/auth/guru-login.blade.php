@@ -131,7 +131,10 @@
             <div class="px-8 pb-6">
                 <div class="border-t border-white/10"></div>
                 <p class="text-center text-[10px] text-white/50 mt-4 font-medium">
-                    Copyright &copy; {{ date('Y') }} Nanda Wido Prasojo
+                    Copyright &copy; {{ date('Y') }} SMA NEGERI 1 CEPOGO
+                </p>
+                <p class="text-center text-[8px] text-white/30 mt-1 font-medium tracking-wider">
+                    Developed by Nanda Wido Prasojo
                 </p>
             </div>
         </div>

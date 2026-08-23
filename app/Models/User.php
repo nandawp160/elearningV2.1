@@ -141,4 +141,9 @@ class User extends Authenticatable
     {
         return $this->isHomeroomTeacher();
     }
+
+    public function passwordHistories()
+    {
+        return $this->hasMany(PasswordChangeHistory::class, 'pengguna_id');
+    }
 }

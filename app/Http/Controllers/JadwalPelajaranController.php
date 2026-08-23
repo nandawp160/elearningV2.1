@@ -28,6 +28,11 @@ class JadwalPelajaranController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         $validated = $request->validate([
             'course_id' => 'required|exists:mata_pelajaran,id',
             'teacher_id' => 'required|exists:guru,id',
@@ -74,6 +79,11 @@ class JadwalPelajaranController extends Controller
      */
     public function destroy(JadwalPelajaran $subject)
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Akses khusus Administrator.');
+        }
+
         $subject->delete();
         return back()->with('success', 'Jadwal berhasil dihapus.');
     }

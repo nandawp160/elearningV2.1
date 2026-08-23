@@ -15,6 +15,7 @@ class Kelas extends Model
         'homeroom_teacher_id',
         'academic_year',
         'max_students',
+        'is_plotting_verified',
         // Indonesian aliases
         'jurusan',
         'tingkat',
@@ -42,7 +43,24 @@ class Kelas extends Model
 
     public function getMajorAttribute($value)
     {
-        return $value ?? 'IPA';
+        return $value ?? 'Umum';
+    }
+
+    public function getRumpunAttribute()
+    {
+        if ($this->grade_level === 'X') {
+            return 'Fase E';
+        }
+
+        $name = strtoupper($this->name);
+
+        if (str_contains($name, 'F 1') || str_contains($name, 'F 2') || str_contains($name, 'F 4.1')) {
+            return 'MIPA';
+        } elseif (str_contains($name, 'F 3') || str_contains($name, 'F 4.2') || str_contains($name, 'F 4')) {
+            return 'IPS';
+        }
+
+        return $this->major ?? 'Umum';
     }
 
     public function getStudentCountAttribute()

@@ -105,6 +105,22 @@
 </div>
 @endif
 
+@if($errors->any())
+<div class="mb-6 glass p-4 border border-rose-100 bg-rose-50/70 text-rose-700 rounded-2xl shadow-sm animate-fade-in">
+    <div class="flex items-start gap-3">
+        <i class="fas fa-exclamation-circle text-lg mt-0.5"></i>
+        <div>
+            <span class="font-semibold text-sm block mb-1">Terjadi kesalahan input:</span>
+            <ul class="list-disc list-inside text-xs space-y-0.5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+</div>
+@endif
+
 @if(session('unassigned'))
 <div class="mb-6 glass p-4 border border-amber-200 bg-amber-50/70 text-amber-800 flex items-start justify-between rounded-2xl shadow-sm animate-fade-in">
     <div class="flex items-start gap-3">
@@ -187,11 +203,8 @@
                 <div class="relative w-full sm:w-48">
                     <select id="toolbarSubject" class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                         <option value="">Semua Mapel</option>
-                        @php
-                            $specializations = $teachers->pluck('spesialisasi')->unique()->filter()->sort();
-                        @endphp
-                        @foreach($specializations as $spec)
-                            <option value="{{ $spec }}">{{ $spec }}</option>
+                        @foreach($courses as $course)
+                            <option value="{{ $course->nama }}">{{ $course->nama }}</option>
                         @endforeach
                     </select>
                     <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
@@ -286,7 +299,7 @@
                         <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-left font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Mata Pelajaran</th>
                         <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Total JTM</th>
                         <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Status</th>
-                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700 sticky right-0 top-0 z-30">Aksi</th>
+                        <th class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center font-bold text-slate-800 dark:text-slate-100 text-xs uppercase tracking-wider !bg-slate-200 dark:!bg-slate-700">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -330,7 +343,7 @@
                             @endif
                         </td>
                         <!-- Aksi -->
-                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center bg-white dark:bg-slate-900 group-even:bg-slate-50 dark:group-even:bg-slate-800/30 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50 sticky right-0 z-10 transition-colors">
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-center bg-white dark:bg-slate-900 group-even:bg-slate-50 dark:group-even:bg-slate-800/30 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50 transition-colors">
                             <div class="inline-flex items-center gap-1.5">
                                 @if(auth()->user()->isSuperAdmin() && !$teacher->pengguna_id)
                                 <form action="{{ route('teachers.create-user', $teacher) }}" method="POST" class="inline" onsubmit="return confirm('Buat akun login untuk guru ini?')">
@@ -386,35 +399,19 @@
         <form action="{{ route('teachers.store') }}" method="POST" class="p-8 space-y-6">
             @csrf
             
-            <!-- Baris 1: NIP (kiri) & Spesialisasi (kanan) -->
+            <!-- Baris 1: NIP (kiri) & Nama Lengkap (kanan) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">NIP *</label>
                     <input type="text" name="nip" required placeholder="Masukkan NIP..." class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
                 </div>
                 <div>
-                    <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Spesialisasi Mata Pelajaran *</label>
-                    <div class="relative">
-                        <select name="specialization_id" required class="input w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-xs text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
-                            <option value="" disabled selected>Pilih Spesialisasi...</option>
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}">{{ $course->nama }}</option>
-                            @endforeach
-                        </select>
-                        <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <i class="fas fa-chevron-down text-[10px]"></i>
-                        </div>
-                    </div>
+                    <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Lengkap & Gelar *</label>
+                    <input type="text" name="name" required placeholder="Masukkan nama lengkap beserta gelar akademik..." class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
                 </div>
             </div>
 
-            <!-- Baris 2: Nama Lengkap & Gelar (full width) -->
-            <div>
-                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Lengkap & Gelar *</label>
-                <input type="text" name="name" required placeholder="Masukkan nama lengkap beserta gelar akademik..." class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
-            </div>
-
-            <!-- Baris 3: Alamat Email (kiri) & Nomor Telepon (kanan) -->
+            <!-- Baris 2: Alamat Email (kiri) & Nomor Telepon (kanan) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Alamat Email *</label>
@@ -423,6 +420,20 @@
                 <div>
                     <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nomor Telepon *</label>
                     <input type="text" name="phone" required placeholder="Contoh: 0812345678" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 placeholder-slate-400 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" />
+                </div>
+            </div>
+
+            <!-- Baris 3: Mata Pelajaran yang Diajarkan (FULL WIDTH 3-COLUMN GRID) -->
+            <div>
+                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mata Pelajaran yang Diajarkan (Pilih 1 atau Lebih) *</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl max-h-56 overflow-y-auto bg-slate-50/50 dark:bg-slate-900/50">
+                    @foreach($courses as $course)
+                        <label class="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-orange-400 dark:hover:border-orange-600 cursor-pointer transition shadow-2xs">
+                            <input type="checkbox" name="mata_pelajaran_diajarkan[]" value="{{ $course->id }}" 
+                                class="form-checkbox w-4 h-4 text-[#D65A20] rounded border-slate-300 focus:ring-[#D65A20]">
+                            <span class="text-xs text-slate-700 dark:text-slate-200 font-semibold leading-tight">{{ $course->nama }}</span>
+                        </label>
+                    @endforeach
                 </div>
             </div>
 

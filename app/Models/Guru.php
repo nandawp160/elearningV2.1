@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Guru extends Model
 {
+    use HasFactory, SoftDeletes;
+
     protected $table = 'guru';
 
     protected $fillable = [
@@ -19,7 +23,8 @@ class Guru extends Model
         'status',
         'pengguna_id',
         'tugas_tambahan_jtm',
-        'allowed_grades'
+        'allowed_grades',
+        'entry_academic_year'
     ];
 
     protected $casts = [
@@ -53,9 +58,23 @@ class Guru extends Model
 
     public function getSpesialisasiAttribute($value)
     {
+        if ($this->mataPelajaranDiajarkan()->exists()) {
+            return $this->mataPelajaranDiajarkan->pluck('nama')->implode(', ');
+        }
         return $this->mataPelajaran->nama
             ?? $this->attributes['spesialisasi']
             ?? null;
+    }
+
+    // Many-to-many: mata pelajaran yang DIAJARKAN guru
+    public function mataPelajaranDiajarkan()
+    {
+        return $this->belongsToMany(
+            MataPelajaran::class,
+            'guru_mata_pelajaran',
+            'guru_id',
+            'mata_pelajaran_id'
+        )->withTimestamps();
     }
 
     public function getSpecializationAttribute() { return $this->spesialisasi; }

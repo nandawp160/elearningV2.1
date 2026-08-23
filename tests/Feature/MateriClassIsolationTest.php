@@ -59,7 +59,8 @@ class MateriClassIsolationTest extends TestCase
             'nama' => 'Heni Setyarini',
             'email' => 'heni@guru.smansago.com',
             'password' => bcrypt('password'),
-            'role' => 'guru'
+            'role' => 'guru',
+            'email_verified_at' => now(),
         ]);
 
         // Create teacher profile
@@ -75,14 +76,18 @@ class MateriClassIsolationTest extends TestCase
         ]);
 
         // Attach classes to teacher
-        $this->teacher->kelasDiampu()->attach([$this->classX->id, $this->classXI->id]);
+        $this->teacher->kelasDiampu()->attach([
+            $this->classX->id => ['mata_pelajaran_id' => $this->subject->id],
+            $this->classXI->id => ['mata_pelajaran_id' => $this->subject->id],
+        ]);
 
         // Create student in X 1
         $this->studentXUser = User::create([
             'nama' => 'Siswa X 1',
             'email' => 'siswax@student.smansago.com',
             'password' => bcrypt('password'),
-            'role' => 'siswa'
+            'role' => 'siswa',
+            'email_verified_at' => now(),
         ]);
         Siswa::create([
             'nis' => 'S-001',
@@ -102,7 +107,8 @@ class MateriClassIsolationTest extends TestCase
             'nama' => 'Siswa XI F 1',
             'email' => 'siswaxi@student.smansago.com',
             'password' => bcrypt('password'),
-            'role' => 'siswa'
+            'role' => 'siswa',
+            'email_verified_at' => now(),
         ]);
         Siswa::create([
             'nis' => 'S-002',
@@ -167,6 +173,7 @@ class MateriClassIsolationTest extends TestCase
         $responseX->assertDontSee('Materi XI F 1');
 
         // 4. Student in XI F 1 accesses index page
+        $this->flushSession();
         $responseXI = $this->actingAs($this->studentXIUser)->get(route('materials.index', ['subject_id' => $this->subject->id]));
         $responseXI->assertStatus(200);
         $responseXI->assertSee('Materi XI F 1');

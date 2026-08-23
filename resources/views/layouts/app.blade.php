@@ -8,12 +8,24 @@
     <title>@yield('title', 'Dashboard') - {{ config('app.name', 'SMA N 1 Cepogo') }}</title>
     <link rel="icon" href="{{ asset('assets/logo/logo.png') }}" type="image/png">
 
+    <!-- Preconnect CDNs for instant loading -->
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.datatables.net" crossorigin>
+    <link rel="preconnect" href="https://code.jquery.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.bunny.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.datatables.net">
+    <link rel="dns-prefetch" href="https://code.jquery.com">
+
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -99,21 +111,9 @@
 
             <!-- Page Content -->
             <main class="px-6 md:px-10 mx-auto w-full max-w-[1400px] pt-28 pb-10">
-                @if(auth()->check() && (
-                    (auth()->user()->isStudent() && auth()->user()->student && empty(auth()->user()->student->nis)) ||
-                    (auth()->user()->isTeacher() && auth()->user()->teacher && (empty(auth()->user()->teacher->nip) || empty(auth()->user()->teacher->email)))
-                ))
-                <div class="mb-6 p-4 rounded-xl bg-orange-50 border border-orange-200 flex items-start gap-4 shadow-sm no-print">
-                    <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-orange-800">Perhatian: Data Profil Belum Lengkap!</h4>
-                        <p class="text-sm text-orange-700 mt-1">Kami mendeteksi bahwa data penting seperti NIS/NIP belum terisi. Harap segera lengkapi biodata Anda melalui menu Profil agar Anda terdaftar dengan benar di sistem.</p>
-                        <a href="{{ auth()->user()->isStudent() ? route('student.biodata.create') : route('profile.edit') }}" class="inline-block mt-3 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition shadow-sm">Lengkapi Sekarang</a>
-                    </div>
-                </div>
-                @endif
+                @unless(View::hasSection('hide_global_alert'))
+                    @include('components.profile-alert')
+                @endunless
                 
                 @yield('content')
             </main>
@@ -191,6 +191,71 @@
                     }
                 }
             }, HEARTBEAT_INTERVAL);
+        });
+    </script>
+
+    <!-- Global Flash Message Toast (SweetAlert2) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(session('success'))
+                if (typeof Swal !== 'undefined') {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        }
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: {!! json_encode(session('success')) !!}
+                    });
+                }
+            @endif
+
+            @if(session('error'))
+                if (typeof Swal !== 'undefined') {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        }
+                    });
+                    Toast.fire({
+                        icon: 'error',
+                        title: {!! json_encode(session('error')) !!}
+                    });
+                }
+            @endif
+
+            @if(session('warning'))
+                if (typeof Swal !== 'undefined') {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3500,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer);
+                            toast.addEventListener('mouseleave', Swal.resumeTimer);
+                        }
+                    });
+                    Toast.fire({
+                        icon: 'warning',
+                        title: {!! json_encode(session('warning')) !!}
+                    });
+                }
+            @endif
         });
     </script>
 

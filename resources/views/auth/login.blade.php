@@ -1,4 +1,5 @@
 <x-guest-layout>
+<script>sessionStorage.clear();</script>
 {{-- Full-screen background with school photo --}}
 <div class="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden" style="font-family: 'Plus Jakarta Sans', sans-serif;">
 
@@ -131,7 +132,10 @@
             <div class="px-8 pb-6">
                 <div class="border-t border-white/10"></div>
                 <p class="text-center text-[10px] text-white/50 mt-4 font-medium">
-                    Copyright &copy; {{ date('Y') }} Nanda Wido Prasojo
+                    Copyright &copy; {{ date('Y') }} SMA NEGERI 1 CEPOGO
+                </p>
+                <p class="text-center text-[8px] text-white/30 mt-1 font-medium tracking-wider">
+                    Developed by Nanda Wido Prasojo
                 </p>
             </div>
         </div>
@@ -154,7 +158,35 @@
     }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    @if(session('error_mutasi'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Akses Ditolak!',
+            text: '{{ session('error_mutasi') }}',
+            confirmButtonColor: '#D65A20',
+            background: '#1e293b',
+            color: '#fff',
+            customClass: {
+                popup: 'border border-slate-700 rounded-2xl shadow-2xl'
+            }
+        });
+    @endif
+    @if(session('error_alumni'))
+        Swal.fire({
+            icon: 'info',
+            title: 'Informasi Alumni',
+            text: '{{ session('error_alumni') }}',
+            confirmButtonColor: '#D65A20',
+            background: '#1e293b',
+            color: '#fff',
+            customClass: {
+                popup: 'border border-slate-700 rounded-2xl shadow-2xl'
+            }
+        });
+    @endif
+
 function togglePassword() {
     const pwd  = document.getElementById('password');
     const icon = document.getElementById('eye-icon');
@@ -166,5 +198,18 @@ function togglePassword() {
         icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 }
+
+@if(session('error_alumni'))
+document.addEventListener('DOMContentLoaded', function() {
+    Swal.fire({
+        icon: 'error',
+        title: 'Akses Ditolak',
+        text: '{{ session('error_alumni') }}',
+        confirmButtonColor: '#D65A20',
+        background: '#1e293b',
+        color: '#ffffff'
+    });
+});
+@endif
 </script>
 </x-guest-layout>

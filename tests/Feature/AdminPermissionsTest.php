@@ -85,4 +85,12 @@ class AdminPermissionsTest extends TestCase
         $this->assertFalse(\Illuminate\Support\Facades\Gate::allows('view_siswa'));
         $this->assertTrue(\Illuminate\Support\Facades\Gate::allows('view_kelas'));
     }
+
+    protected function tearDown(): void
+    {
+        Pengaturan::where('key', 'like', 'permissions_%')->delete();
+        Pengaturan::clearCache();
+        \Illuminate\Support\Facades\Cache::flush();
+        parent::tearDown();
+    }
 }

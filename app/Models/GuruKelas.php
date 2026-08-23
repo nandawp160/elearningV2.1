@@ -11,7 +11,12 @@ class GuruKelas extends Model
     protected $fillable = [
         'guru_id',
         'kelas_id',
-        'mata_pelajaran_id'
+        'mata_pelajaran_id',
+        'ssl_threshold',
+    ];
+
+    protected $casts = [
+        'ssl_threshold' => 'integer',
     ];
 
     public function guru()

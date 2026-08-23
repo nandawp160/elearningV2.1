@@ -20,6 +20,9 @@ class PemulihanPengumpulan extends Model
         'mulai_pemulihan',
         'batas_pemulihan',
         'selesai_pemulihan',
+        'tipe_pemulihan',
+        'dibuka_oleh',
+        'alasan_darurat',
     ];
 
     protected $casts = [
@@ -89,5 +92,10 @@ class PemulihanPengumpulan extends Model
     public function assignment()
     {
         return $this->belongsTo(Tugas::class, 'tugas_id');
+    }
+
+    public function unlockedBy()
+    {
+        return $this->belongsTo(User::class, 'dibuka_oleh');
     }
 }

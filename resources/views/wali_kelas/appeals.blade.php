@@ -257,7 +257,7 @@
                             <i class="far fa-file-pdf text-[#D65A20] text-sm flex-shrink-0"></i>
                             <span class="text-xxs font-bold text-slate-500 dark:text-slate-400 truncate">Surat Keterangan Pendukung</span>
                         </div>
-                        <a href="/storage/${appeal.bukti_pendukung}" target="_blank" class="text-xxs font-bold text-[#D65A20] hover:text-[#b04513] transition flex-shrink-0">Lihat Surat</a>
+                        <a href="/preview/appeal/${appeal.id}" target="_blank" class="text-xxs font-bold text-[#D65A20] hover:text-[#b04513] transition flex-shrink-0">Lihat Surat</a>
                     </div>
                 `;
             }

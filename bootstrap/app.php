@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/attendance/scan',
         ]);
 
+        $middleware->web(append: [
+            \Illuminate\Session\Middleware\AuthenticateSession::class,
+            \App\Http\Middleware\CheckActiveStudent::class,
+        ]);
+
         $middleware->alias([
             'submission.lock' => \App\Http\Middleware\SelectiveSubmissionLocking::class,
             'is.superadmin' => \App\Http\Middleware\IsSuperAdmin::class,

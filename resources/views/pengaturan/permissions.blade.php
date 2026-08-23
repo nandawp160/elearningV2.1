@@ -43,13 +43,6 @@
             <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Pengaturan Hak Akses</h1>
             <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola hak akses setiap peran pengguna pada sistem E-Learning SMAN 1 Cepogo.</p>
         </div>
-        <div class="flex items-center gap-2">
-            <form action="{{ route('permissions.lock') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn-orange-outline px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5">
-                    <i class="fas fa-lock"></i> Kunci Halaman
-                </button>
-            </form>
         </div>
     </div>
 

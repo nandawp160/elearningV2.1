@@ -67,15 +67,25 @@
                         <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-                <div>
-                    <label for="specialization_id" class="field-label">Mata Pelajaran / Spesialisasi *</label>
-                    <select name="specialization_id" id="specialization_id" class="select @error('specialization_id') border-rose-500 focus:border-rose-500 focus:ring-rose-500/20 @enderror" required>
-                        <option value="" disabled>Pilih Spesialisasi...</option>
+                <div class="md:col-span-2">
+                    <label class="field-label">Mata Pelajaran yang Diajarkan *</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 p-4 border border-slate-200 rounded-lg max-h-60 overflow-y-auto">
+                        @php
+                            $taughtSubjects = old('mata_pelajaran_diajarkan', $teacher->mataPelajaranDiajarkan->pluck('id')->toArray());
+                            if (empty($taughtSubjects) && $teacher->specialization_id) {
+                                $taughtSubjects = [$teacher->specialization_id];
+                            }
+                        @endphp
                         @foreach($courses as $course)
-                            <option value="{{ $course->id }}" {{ old('specialization_id', $teacher->specialization_id) == $course->id ? 'selected' : '' }}>{{ $course->nama }}</option>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="mata_pelajaran_diajarkan[]" value="{{ $course->id }}" 
+                                    class="form-checkbox text-[#D65A20] rounded border-slate-300 focus:ring-[#D65A20]"
+                                    {{ in_array($course->id, $taughtSubjects) ? 'checked' : '' }}>
+                                <span class="ml-2 text-sm text-slate-700">{{ $course->nama }}</span>
+                            </label>
                         @endforeach
-                    </select>
-                    @error('specialization_id')
+                    </div>
+                    @error('mata_pelajaran_diajarkan')
                         <p class="text-rose-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>

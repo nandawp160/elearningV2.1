@@ -62,8 +62,8 @@ class TugasRedesignTest extends TestCase
             'pengguna_id' => $this->teacherUser->id
         ]);
 
-        // 5. Connect class room to teacher
-        $this->teacher->kelasDiampu()->attach($this->classroom->id);
+        // 5. Connect class room to teacher with teaching assignment
+        $this->teacher->kelasDiampu()->attach($this->classroom->id, ['mata_pelajaran_id' => $this->subject->id]);
     }
 
     private function getTeacherUser()

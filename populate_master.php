@@ -1,1 +1,0 @@
-<?php $uniqueClasses = App\Models\Kelas::withoutGlobalScopes()->select("name", "grade_level", "major")->distinct()->get(); foreach ($uniqueClasses as $class) { App\Models\MasterKelas::firstOrCreate(["name" => $class->name], ["grade_level" => $class->grade_level, "major" => $class->major]); } echo "Done";

@@ -33,16 +33,62 @@
                 </div>
 
                 <div class="space-y-6">
-                    @if($submission->file_path)
+                    @if($submission->is_url_submission || $submission->submission_url)
+                        {{-- URL Submission Display --}}
+                        <div class="space-y-4">
+                            @if($submission->video_embed_url)
+                                <div class="aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-lg">
+                                    <iframe src="{{ $submission->video_embed_url }}" class="w-full h-full"
+                                        sandbox="allow-scripts allow-same-origin allow-presentation"
+                                        referrerpolicy="strict-origin-when-cross-origin"
+                                        allowfullscreen loading="lazy"></iframe>
+                                </div>
+                                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <div class="min-w-0 flex-1 pr-3">
+                                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-0.5">Tautan Asli Video Siswa:</span>
+                                        <a href="{{ $submission->submission_url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-red-600 hover:underline truncate block font-mono">
+                                            {{ $submission->submission_url }}
+                                        </a>
+                                    </div>
+                                    <a href="{{ $submission->submission_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                                        <i class="fas fa-external-link-alt mr-1"></i> Buka di Tab Baru
+                                    </a>
+                                </div>
+                            @else
+                                <div class="p-8 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
+                                    <div class="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-base font-bold text-slate-800 dark:text-white">{{ $submission->platform_data['label'] ?? 'Tautan Proyek Siswa' }}</h4>
+                                        <p class="text-xs text-slate-500 mt-1">Siswa mengumpulkan karya melalui platform eksternal.</p>
+                                    </div>
+                                    <div class="p-3 bg-white dark:bg-slate-950/40 rounded-xl border border-slate-200 dark:border-slate-800 max-w-lg mx-auto">
+                                        <a href="{{ $submission->submission_url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-emerald-600 hover:underline break-all font-mono">
+                                            {{ $submission->submission_url }}
+                                        </a>
+                                    </div>
+                                    <div class="pt-2">
+                                        <a href="{{ $submission->submission_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                                            <i class="fas fa-external-link-alt mr-1.5"></i> Buka Hasil Karya Siswa
+                                        </a>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                    @elseif($submission->file_path)
                     {{-- File Info Card --}}
                     <div class="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4">
                         <div class="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-2xl">
                             @php
-                                $ext = pathinfo($submission->original_name, PATHINFO_EXTENSION);
-                                $icon = match(strtolower($ext)) {
+                                $ext = strtolower(pathinfo($submission->original_name ?? $submission->file_path, PATHINFO_EXTENSION));
+                                $icon = match($ext) {
                                     'pdf' => 'fa-file-pdf text-rose-500',
                                     'doc', 'docx' => 'fa-file-word text-blue-500',
-                                    'zip' => 'fa-file-archive text-amber-500',
+                                    'zip', 'rar' => 'fa-file-zipper text-amber-500',
+                                    'jpg', 'jpeg', 'png' => 'fa-file-image text-purple-500',
+                                    'mp3', 'm4a' => 'fa-file-audio text-rose-500',
                                     default => 'fa-file text-slate-400'
                                 };
                             @endphp
@@ -54,13 +100,28 @@
                         </div>
                     </div>
 
-                    {{-- PDF Preview --}}
-                    @if(strtolower($ext) === 'pdf')
+                    {{-- Media Previews --}}
+                    @if(in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
+                    <div class="mt-6 flex justify-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <img src="{{ $submission->attachment_url }}" class="max-w-full max-h-[500px] rounded-xl shadow-sm object-contain" />
+                    </div>
+                    @elseif($ext === 'pdf')
                     <div class="mt-6">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Pratinjau Dokumen</p>
                         <div class="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-100 h-[600px]">
                             <iframe src="{{ $submission->preview_url }}#toolbar=0" class="w-full h-full border-none"></iframe>
                         </div>
+                    </div>
+                    @elseif(in_array($ext, ['mp3', 'm4a', 'wav', 'ogg']))
+                    <div class="mt-6 p-6 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-2xl text-center space-y-4">
+                        <div class="w-12 h-12 rounded-xl bg-rose-500 text-white flex items-center justify-center mx-auto text-xl shadow-md">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">Pemutar Rekaman Audio Siswa</p>
+                        <audio controls preload="metadata" class="w-full max-w-md mx-auto">
+                            <source src="{{ $submission->attachment_url }}">
+                            Browser Anda tidak mendukung pemutar audio.
+                        </audio>
                     </div>
                     @endif
 
@@ -69,8 +130,8 @@
                         <div class="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                             <i class="fas fa-exclamation-triangle text-rose-500 text-xl"></i>
                         </div>
-                        <p class="text-sm font-bold text-rose-800 dark:text-rose-400">File tidak ditemukan</p>
-                        <p class="text-xs text-rose-600/70 mt-1">Siswa mungkin belum mengunggah file atau terjadi kesalahan pada server.</p>
+                        <p class="text-sm font-bold text-rose-800 dark:text-rose-400">Berkas / Tautan tidak ditemukan</p>
+                        <p class="text-xs text-rose-600/70 mt-1">Siswa mungkin belum mengunggah jawaban tugas.</p>
                     </div>
                     @endif
 
