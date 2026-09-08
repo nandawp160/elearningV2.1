@@ -126,13 +126,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">Pengampuan Guru</h1>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola pengampuan (hak akses) Guru, Kelas, dan Mata Pelajaran secara manual maupun otomatis.</p>
-        </div>
-        
-        <div class="flex items-center gap-3">
-            <button type="button" onclick="document.getElementById('autoPlotModal').classList.remove('hidden')" class="btn-orange-outline font-bold px-4 py-2.5 rounded-xl shadow-sm text-sm flex items-center gap-2">
-                <i class="fas fa-magic"></i> Auto-Plot Kelas X (18 Mapel)
-            </button>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Kelola pengampuan (hak akses) Guru, Kelas, dan Mata Pelajaran secara manual.</p>
         </div>
     </div>
 
@@ -721,95 +715,7 @@
     </div>
 </div>
 
-<!-- Auto Plot Modal Khusus Kelas X (Fase E - 18 Mapel) -->
-<div id="autoPlotModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-fade-in" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true" onclick="document.getElementById('autoPlotModal').classList.add('hidden')"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        
-        <div class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl w-full border border-slate-100 dark:border-slate-800">
-            <div class="bg-white dark:bg-slate-900 px-5 pt-6 pb-5 sm:p-7 relative">
-                <!-- Close Button -->
-                <button type="button" onclick="document.getElementById('autoPlotModal').classList.add('hidden')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
 
-                <div class="flex items-start gap-4">
-                    <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-orange-100 text-[#D65A20] dark:bg-orange-950/60 dark:text-orange-400">
-                        <i class="fas fa-magic text-xl"></i>
-                    </div>
-                    <div class="w-full">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h3 class="text-lg font-extrabold text-slate-900 dark:text-white" id="modal-title">
-                                Auto-Plot Khusus Kelas X (Fase E)
-                            </h3>
-                            <span class="px-2.5 py-0.5 rounded-full bg-orange-100 text-[#D65A20] dark:bg-orange-950/60 dark:text-orange-300 text-[11px] font-extrabold">
-                                18 Mata Pelajaran
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Otomatisasi pengampuan guru khusus seluruh rombel Kelas X (Fase E) berbasis Kurikulum Merdeka.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Info Box Khusus Kelas X -->
-                <div class="mt-4 p-4 bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-900/50 rounded-2xl space-y-2.5">
-                    <div class="flex items-center gap-2 text-[#D65A20] dark:text-orange-400 text-xs font-bold">
-                        <i class="fas fa-info-circle text-sm"></i>
-                        <span>Ketentuan Auto-Plot Fase E (Kelas X):</span>
-                    </div>
-                    <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        Pada Kurikulum Merdeka Fase E, seluruh siswa Kelas X menempuh <b>18 mata pelajaran yang seragam</b> (Dasar IPA, Dasar IPS, Mapel Umum, dan Projek P5). Sistem akan mendistribusikan ke-18 mapel tersebut ke seluruh rombel kelas X secara optimal dan proporsional.
-                    </p>
-                    <div class="p-2.5 bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 rounded-xl text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2">
-                        <i class="fas fa-hand-point-right text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0"></i>
-                        <span><b>Pengampuan Kelas XI & XII:</b> Mohon di-plot secara <u>manual</u> melalui form input pengampuan untuk penyesuaian paket mata pelajaran pilihan/peminatan masing-masing rombel.</span>
-                    </div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-2 border-t border-orange-200/60 dark:border-orange-900/50 text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
-                        <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-emerald-500 text-[10px]"></i> 9 Mapel @ 3 JP</span>
-                        <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-emerald-500 text-[10px]"></i> 9 Mapel @ 2 JP</span>
-                        <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-emerald-500 text-[10px]"></i> Total 45 JP / Rombel</span>
-                        <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-emerald-500 text-[10px]"></i> Fasilitator Projek P5</span>
-                        <span class="flex items-center gap-1.5"><i class="fas fa-user-check text-orange-500 text-[10px]"></i> Sesuai Spesialisasi</span>
-                        <span class="flex items-center gap-1.5"><i class="fas fa-sliders-h text-blue-600 text-[10px]"></i> XI & XII Plot Manual</span>
-                    </div>
-                </div>
-
-                <!-- Form Target Tahun Ajaran -->
-                <form id="autoPlotForm" action="{{ route('teachers.auto-plot') }}" method="POST" class="mt-4 space-y-4">
-                    @csrf
-                    <div>
-                        <label for="tahun_ajaran" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Target Tahun Ajaran</label>
-                        <div class="relative">
-                            <select name="tahun_ajaran" id="tahun_ajaran" required class="w-full rounded-xl border border-slate-200 bg-white pl-4 pr-10 py-2.5 text-sm text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 font-semibold">
-                                @foreach($availableYears as $year)
-                                    <option value="{{ $year }}" {{ $year === $activeYear ? 'selected' : '' }}>
-                                        {{ $year }} {{ $year === $activeYear ? '(Tahun Ajaran Aktif)' : '' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                <i class="fas fa-chevron-down text-[10px]"></i>
-                            </div>
-                        </div>
-                        <p class="text-[11px] text-slate-400 mt-1">Hanya rombel Tingkat X pada tahun ajaran ini yang akan diperbarui.</p>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="bg-slate-50 dark:bg-slate-800/50 px-5 py-3.5 sm:px-7 sm:flex sm:flex-row-reverse gap-2 border-t border-slate-100 dark:border-slate-800">
-                <button type="button" onclick="document.getElementById('autoPlotForm').submit()" class="w-full inline-flex justify-center items-center gap-2 rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-[#D65A20] hover:bg-[#be4e1a] text-sm font-bold text-white focus:outline-none transition cursor-pointer">
-                    <i class="fas fa-magic"></i> Jalankan Auto-Plot Kelas X
-                </button>
-                <button type="button" onclick="document.getElementById('autoPlotModal').classList.add('hidden')" class="mt-2 sm:mt-0 w-full inline-flex justify-center items-center rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm px-4 py-2.5 bg-white dark:bg-slate-800 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 focus:outline-none transition cursor-pointer">
-                    Batal
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 
 @push('scripts')

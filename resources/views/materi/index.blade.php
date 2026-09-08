@@ -56,14 +56,36 @@
                                     $teacher = $subject->teacher;
                                     $teacherName = $teacher ? $teacher->nama : 'Belum Ada Guru';
                                     
-                                    // Peta ikon berdasarkan nama mata pelajaran
+                                    // Peta ikon lengkap & warna-warni berdasarkan nama mata pelajaran
                                     $iconMap = [
-                                        'matematika' => ['icon' => 'fa-drafting-compass', 'bg' => 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400'],
-                                        'kimia' => ['icon' => 'fa-vial', 'bg' => 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400'],
-                                        'bahasa' => ['icon' => 'fa-book', 'bg' => 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400'],
-                                        'muatan lokal' => ['icon' => 'fa-leaf', 'bg' => 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400'],
-                                        'tik' => ['icon' => 'fa-desktop', 'bg' => 'bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400'],
-                                        'default' => ['icon' => 'fa-file-alt', 'bg' => 'bg-slate-50 text-slate-600 dark:bg-slate-950/30 dark:text-slate-400']
+                                        'matematika' => ['icon' => 'fa-calculator', 'bg' => 'bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30'],
+                                        'kimia' => ['icon' => 'fa-flask', 'bg' => 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30'],
+                                        'fisika' => ['icon' => 'fa-atom', 'bg' => 'bg-violet-50 text-violet-600 dark:bg-violet-950/30 dark:text-violet-400 border border-violet-100 dark:border-violet-900/30'],
+                                        'biologi' => ['icon' => 'fa-dna', 'bg' => 'bg-teal-50 text-teal-600 dark:bg-teal-950/30 dark:text-teal-400 border border-teal-100 dark:border-teal-900/30'],
+                                        'ekonomi' => ['icon' => 'fa-chart-pie', 'bg' => 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'],
+                                        'geografi' => ['icon' => 'fa-earth-asia', 'bg' => 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/30 dark:text-cyan-400 border border-cyan-100 dark:border-cyan-900/30'],
+                                        'sosiologi' => ['icon' => 'fa-users', 'bg' => 'bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30'],
+                                        'seni' => ['icon' => 'fa-palette', 'bg' => 'bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-950/30 dark:text-fuchsia-400 border border-fuchsia-100 dark:border-fuchsia-900/30'],
+                                        'bahasa inggris' => ['icon' => 'fa-globe', 'bg' => 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30'],
+                                        'bahasa indonesia' => ['icon' => 'fa-book-bookmark', 'bg' => 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400 border border-red-100 dark:border-red-900/30'],
+                                        'bahasa' => ['icon' => 'fa-book', 'bg' => 'bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30'],
+                                        'pancasila' => ['icon' => 'fa-landmark', 'bg' => 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30'],
+                                        'pkn' => ['icon' => 'fa-landmark', 'bg' => 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/30'],
+                                        'jasmani' => ['icon' => 'fa-volleyball', 'bg' => 'bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30'],
+                                        'olahraga' => ['icon' => 'fa-volleyball', 'bg' => 'bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30'],
+                                        'penjas' => ['icon' => 'fa-volleyball', 'bg' => 'bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30'],
+                                        'muatan lokal' => ['icon' => 'fa-scroll', 'bg' => 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'],
+                                        'jawa' => ['icon' => 'fa-scroll', 'bg' => 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'],
+                                        'sejarah' => ['icon' => 'fa-monument', 'bg' => 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-900/30'],
+                                        'agama' => ['icon' => 'fa-hands-praying', 'bg' => 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30'],
+                                        'pai' => ['icon' => 'fa-hands-praying', 'bg' => 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400 border border-green-100 dark:border-green-900/30'],
+                                        'tik' => ['icon' => 'fa-laptop-code', 'bg' => 'bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400 border border-purple-100 dark:border-purple-900/30'],
+                                        'informatika' => ['icon' => 'fa-laptop-code', 'bg' => 'bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400 border border-purple-100 dark:border-purple-900/30'],
+                                        'prakarya' => ['icon' => 'fa-scissors', 'bg' => 'bg-lime-50 text-lime-700 dark:bg-lime-950/30 dark:text-lime-400 border border-lime-100 dark:border-lime-900/30'],
+                                        'pkwu' => ['icon' => 'fa-scissors', 'bg' => 'bg-lime-50 text-lime-700 dark:bg-lime-950/30 dark:text-lime-400 border border-lime-100 dark:border-lime-900/30'],
+                                        'bimbingan' => ['icon' => 'fa-comments', 'bg' => 'bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400 border border-pink-100 dark:border-pink-900/30'],
+                                        'bk' => ['icon' => 'fa-comments', 'bg' => 'bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400 border border-pink-100 dark:border-pink-900/30'],
+                                        'default' => ['icon' => 'fa-book-open', 'bg' => 'bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30']
                                     ];
                                     
                                     $matched = $iconMap['default'];
@@ -75,24 +97,34 @@
                                         }
                                     }
                                 @endphp
-                                <tr class="subject-row hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition" 
+                                <tr class="subject-row group cursor-pointer hover:bg-orange-50/40 dark:hover:bg-slate-800/50 transition-all duration-150" 
                                     data-name="{{ strtolower($subject->nama) }}" 
-                                    data-teacher="{{ strtolower($teacherName) }}">
+                                    data-teacher="{{ strtolower($teacherName) }}"
+                                    onclick="if(!event.target.closest('a')) window.location.href='{{ route('materials.index', ['subject_id' => $subject->id]) }}'">
                                     <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $matched['bg'] }}">
+                                        <div class="flex items-center gap-3.5">
+                                            <div class="w-11 h-11 rounded-xl flex items-center justify-center {{ $matched['bg'] }} shadow-xs transition-transform duration-200 group-hover:scale-105 shrink-0">
                                                 <i class="fas {{ $matched['icon'] }} text-lg"></i>
                                             </div>
-                                            <span class="font-bold text-slate-800 dark:text-white">{{ $subject->nama }}</span>
+                                            <div>
+                                                <span class="font-bold text-slate-800 dark:text-white group-hover:text-[#D65A20] transition-colors block text-sm">{{ $subject->nama }}</span>
+                                                <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">Mata Pelajaran Siswa</span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <span class="text-sm font-medium text-slate-600 dark:text-slate-400">{{ $teacherName }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs shrink-0">
+                                                <i class="fas fa-user-tie"></i>
+                                            </div>
+                                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $teacherName }}</span>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <a href="{{ route('materials.index', ['subject_id' => $subject->id]) }}" 
-                                           class="border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-[#D65A20] hover:text-white dark:hover:bg-[#D65A20] dark:hover:text-white hover:border-[#D65A20] rounded-lg px-4 py-2 text-xs font-bold transition duration-200 inline-block text-center whitespace-nowrap">
-                                            Buka Materi
+                                           class="inline-flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 group-hover:bg-[#D65A20] group-hover:text-white group-hover:border-[#D65A20] rounded-xl px-4 py-2 text-xs font-bold transition-all duration-200 shadow-2xs group-hover:shadow-sm whitespace-nowrap">
+                                            <span>Buka Materi</span>
+                                            <i class="fas fa-chevron-right text-[10px] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -199,7 +231,7 @@
                                         }
                                     }
                                     
-                                    $uploaderName = $material->creator ? $material->creator->nama : 'N/A';
+                                    $uploaderName = $material->uploader ? $material->uploader->nama : ($material->creator ? $material->creator->nama : 'Guru Pengampu');
                                 @endphp
                                 <tr class="material-row hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition"
                                     data-title="{{ strtolower($material->title) }}"
@@ -641,8 +673,9 @@
             $currentSubjectForModal = $subjects->firstWhere('id', $selectedSubjectIdForModal) ?? $subjects->first();
         @endphp
 
+        @push('modals')
         <!-- Main Add Material Floating Overlay -->
-        <div id="add-material-modal" class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+        <div id="add-material-modal" class="fixed inset-0 z-[99999] hidden items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto w-full h-full min-h-screen top-0 left-0">
             <!-- Modal Container -->
             <div id="modal-content" class="bg-white dark:bg-slate-900 w-[90vw] max-w-[1100px] max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 p-8 md:p-12 relative transition-all transform scale-95 opacity-0 duration-300 my-auto flex flex-col">
                 
@@ -824,6 +857,7 @@
                 </form>
             </div>
         </div>
+        @endpush
     </div>
 
     @push('scripts')
@@ -870,6 +904,7 @@
                 modalContent.classList.add('scale-100', 'opacity-100');
             }, 10);
             
+            document.documentElement.classList.add('overflow-hidden');
             document.body.classList.add('overflow-hidden');
         }
 
@@ -885,6 +920,7 @@
             setTimeout(() => {
                 modal.classList.remove('flex');
                 modal.classList.add('hidden');
+                document.documentElement.classList.remove('overflow-hidden');
                 document.body.classList.remove('overflow-hidden');
             }, 300);
         }

@@ -29,7 +29,7 @@
             <dl class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <dt class="field-label">NIS</dt>
-                    <dd class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $student->nis }}</dd>
+                    <dd class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ $student->nis ?? '-' }}</dd>
                 </div>
                 <div>
                     <dt class="field-label">Nama Siswa</dt>

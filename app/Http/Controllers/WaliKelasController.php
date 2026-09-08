@@ -546,7 +546,11 @@ class WaliKelasController extends Controller
             $appealsHistory = \App\Models\Banding::with(['subject.course', 'assignment', 'approver.guru'])
                 ->where('siswa_id', $student->id)
                 ->latest()
-                ->get();
+                ->get()
+                ->map(function ($appeal) {
+                    $appeal->is_escalated = (bool) ($appeal->isEscalatedToWaliKelas() || ($appeal->created_at && $appeal->created_at->diffInHours(now()) >= 24));
+                    return $appeal;
+                });
 
             // Determine status label and subtext
             $statusLabel = 'Aman (Tidak Ada Kasus)';
@@ -556,18 +560,25 @@ class WaliKelasController extends Controller
             if ($totalLock > 0) {
                 if ($latestAppeal) {
                     $courseName = $latestAppeal->subject && $latestAppeal->subject->course ? $latestAppeal->subject->course->nama : 'Umum';
-                    if ($latestAppeal->status === 'pending') {
-                        $statusLabel = 'Menunggu Konfirmasi';
-                        $statusSubtext = "{$courseName} (" . \Illuminate\Support\Str::limit($latestAppeal->alasan, 25) . ")";
-                        $statusColorClass = 'text-amber-500 dark:text-amber-450';
+                    if ($latestAppeal->status === 'pending' || $latestAppeal->status === 'ditinjau') {
+                        $isEscalated = ($latestAppeal->isEscalatedToWaliKelas() || ($latestAppeal->created_at && $latestAppeal->created_at->diffInHours(now()) >= 24));
+                        if ($isEscalated) {
+                            $statusLabel = 'Eskalasi 1x24 Jam (Siap Diambil Alih)';
+                            $statusSubtext = "{$courseName} • Guru belum merespon";
+                            $statusColorClass = 'text-purple-700 dark:text-purple-400 font-black';
+                        } else {
+                            $statusLabel = 'Menunggu Konfirmasi Guru';
+                            $statusSubtext = "{$courseName} (" . \Illuminate\Support\Str::limit($latestAppeal->alasan, 25) . ")";
+                            $statusColorClass = 'text-amber-600 dark:text-amber-400';
+                        }
                     } elseif ($latestAppeal->status === 'approved') {
-                        $statusLabel = "Telah Disetujui Guru ({$courseName})";
-                        $statusSubtext = 'Masalah selesai';
-                        $statusColorClass = 'text-emerald-500 dark:text-emerald-400';
+                        $statusLabel = "Telah Disetujui ({$courseName})";
+                        $statusSubtext = 'Masa pemulihan aktif';
+                        $statusColorClass = 'text-emerald-600 dark:text-emerald-400 font-bold';
                     } elseif ($latestAppeal->status === 'rejected') {
-                        $statusLabel = "Ditolak Guru ({$courseName})";
+                        $statusLabel = "Ditolak ({$courseName})";
                         $statusSubtext = $latestAppeal->tanggapan_guru ?: 'Banding ditolak';
-                        $statusColorClass = 'text-red-500 dark:text-red-400';
+                        $statusColorClass = 'text-rose-600 dark:text-rose-400 font-bold';
                     }
                 } else {
                     $statusLabel = 'Belum Mengajukan';

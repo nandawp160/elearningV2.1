@@ -440,4 +440,61 @@ class AdaptiveAccessServiceTest extends TestCase
             'message' => 'Evaluasi akses sementara tidak tersedia. Silakan mencoba kembali.',
         ]);
     }
+
+    /** 12. Verifikasi status Normal, EWS (Early Warning System), dan Lock SSL beserta helper method & representasi badge */
+    public function test_12_adaptive_status_normal_ews_and_lock_ssl_helpers_and_representations(): void
+    {
+        // 1. Kasus NORMAL: 0 tunggakan
+        $resultNormal = $this->service->evaluateSubjectAccess($this->student, $this->subjectMath);
+        $this->assertTrue($resultNormal->isNormal());
+        $this->assertFalse($resultNormal->isEws());
+        $this->assertFalse($resultNormal->isLockSsl());
+        $this->assertFalse($resultNormal->isRecovery());
+        $this->assertEquals('Normal', $resultNormal->statusLabel());
+        $this->assertStringContainsString('emerald', $resultNormal->badgeClass());
+        $this->assertEquals('fas fa-check-circle', $resultNormal->icon());
+
+        $arrayNormal = $resultNormal->toArray();
+        $this->assertTrue($arrayNormal['is_normal']);
+        $this->assertFalse($arrayNormal['is_ews']);
+        $this->assertFalse($arrayNormal['is_lock_ssl']);
+        $this->assertEquals('Normal', $arrayNormal['status_label']);
+
+        // 2. Kasus EWS (Early Warning System): 1 tunggakan (di bawah threshold 3)
+        $this->createOverdueTask($this->subjectMath, 2);
+        $resultEws = $this->service->evaluateSubjectAccess($this->student, $this->subjectMath);
+        $this->assertFalse($resultEws->isNormal());
+        $this->assertTrue($resultEws->isEws());
+        $this->assertTrue($resultEws->isWarning());
+        $this->assertFalse($resultEws->isLockSsl());
+        $this->assertFalse($resultEws->isRecovery());
+        $this->assertEquals('EWS (Peringatan Dini)', $resultEws->statusLabel());
+        $this->assertStringContainsString('amber', $resultEws->badgeClass());
+        $this->assertEquals('fas fa-exclamation-triangle', $resultEws->icon());
+
+        $arrayEws = $resultEws->toArray();
+        $this->assertFalse($arrayEws['is_normal']);
+        $this->assertTrue($arrayEws['is_ews']);
+        $this->assertFalse($arrayEws['is_lock_ssl']);
+        $this->assertEquals('EWS (Peringatan Dini)', $arrayEws['status_label']);
+
+        // 3. Kasus Lock SSL: >= 3 tunggakan (mencapai threshold)
+        $this->createOverdueTask($this->subjectMath, 3);
+        $this->createOverdueTask($this->subjectMath, 4);
+        $resultLock = $this->service->evaluateSubjectAccess($this->student, $this->subjectMath);
+        $this->assertFalse($resultLock->isNormal());
+        $this->assertFalse($resultLock->isEws());
+        $this->assertTrue($resultLock->isLockSsl());
+        $this->assertTrue($resultLock->isLocked());
+        $this->assertFalse($resultLock->isRecovery());
+        $this->assertEquals('Lock SSL (Terkunci)', $resultLock->statusLabel());
+        $this->assertStringContainsString('rose', $resultLock->badgeClass());
+        $this->assertEquals('fas fa-lock', $resultLock->icon());
+
+        $arrayLock = $resultLock->toArray();
+        $this->assertFalse($arrayLock['is_normal']);
+        $this->assertFalse($arrayLock['is_ews']);
+        $this->assertTrue($arrayLock['is_lock_ssl']);
+        $this->assertEquals('Lock SSL (Terkunci)', $arrayLock['status_label']);
+    }
 }

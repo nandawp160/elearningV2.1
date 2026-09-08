@@ -140,7 +140,11 @@ class DownloadController extends Controller
 
         $realPath = $this->resolveExistingFilePath($submission->file_tugas);
         if ($realPath && file_exists($realPath)) {
-            return response()->file($realPath);
+            $mime = mime_content_type($realPath) ?: 'application/pdf';
+            return response()->file($realPath, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="' . basename($realPath) . '"',
+            ]);
         }
 
         $pdfContent = $this->generateSubmissionAnswerPdf($submission);
@@ -439,6 +443,23 @@ class DownloadController extends Controller
                 ["F2", 9, -13, "When Baru Klinthing pulled the stick, an unstoppable torrent of water submerged the village, creating Rawa Pening."],
                 ["F2", 9, -12, "The moral value teaches us never to underestimate or mistreat others based on appearance, as sincere kindness"],
                 ["F2", 9, -12, "brings blessings while arrogance leads to catastrophe."],
+                
+                ["F3", 8, -25, "Lembar jawaban ini disusun secara mandiri oleh siswa sebagai pemenuhan tagihan akademik E-Learning SMANSAGO."]
+            ];
+        } elseif (str_contains($titleLower, 'pocung') || str_contains($titleLower, 'macapat') || str_contains($titleLower, 'tembang') || str_contains($titleLower, 'bahasa daerah')) {
+            $sections = [
+                ["F1", 10, -22, "LEMBAR JAWABAN: ANALISIS PAUGERAN TEMBANG MACAPAT POCUNG"],
+                ["F1", 9, -16, "1. Tembang Pocung Ingkang Ka-analisis:"],
+                ["F2", 9, -13, "   'Ngelmu iku kalakone kanthi laku, Lekase lawan kas, Tegese kas nyantosani, Setya budya pangekese durangkara.'"],
+                
+                ["F1", 9, -16, "2. Analisis Paugeran Tembang Pocung:"],
+                ["F2", 9, -13, "   a. Guru Gatra   : 4 gatra (larik saben sapada)."],
+                ["F2", 9, -12, "   b. Guru Wilangan: 12, 6, 8, 12 (cacahing wanda saben sagatra)."],
+                ["F2", 9, -12, "   c. Guru Lagu    : u, a, i, a (tibaning swara ing pungkasaning gatra)."],
+                
+                ["F1", 9, -16, "3. Watak lan Pitutur Luhur (Amanat):"],
+                ["F2", 9, -13, "   a. Watak Tembang: Kendho, sembrana, gecul, nanging ngemu piwulang luhur babagan kasampurnaning urip."],
+                ["F2", 9, -12, "   b. Pitutur Luhur: Ngelmu sejati iku mung bisa digayuh kanthi tumindak lan tekad ingkang tumemen."],
                 
                 ["F3", 8, -25, "Lembar jawaban ini disusun secara mandiri oleh siswa sebagai pemenuhan tagihan akademik E-Learning SMANSAGO."]
             ];

@@ -60,25 +60,25 @@
                                     <div class="flex items-center gap-2">
                                         <span class="tugas-mapel-name">{{ $item['course_name'] }}</span>
                                         @if(($item['adaptive_status'] ?? '') === 'RECOVERY')
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800 shadow-2xs">
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-400 dark:border-purple-800 shadow-2xs">
                                                 <i class="fas fa-sync-alt text-[9px] fa-spin-pulse"></i> Mode Pemulihan
                                             </span>
                                         @elseif(($item['adaptive_status'] ?? '') === 'LOCKED')
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800 shadow-2xs animate-pulse">
-                                                <i class="fas fa-lock text-[9px]"></i> Terkunci (SSL)
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-800 shadow-2xs animate-pulse">
+                                                <i class="fas fa-lock text-[9px]"></i> Lock SSL (Terkunci)
                                             </span>
                                             @if(($item['appeal_status'] ?? '') === 'PENDING')
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800 shadow-2xs">
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800 shadow-2xs">
                                                     <i class="fas fa-clock text-[9px]"></i> Banding Ditinjau
                                                 </span>
                                             @endif
                                         @elseif(($item['adaptive_status'] ?? '') === 'WARNING')
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800 shadow-2xs">
-                                                <i class="fas fa-exclamation-triangle text-[9px]"></i> {{ $item['overdue_count'] }} Tunggakan
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-800 shadow-2xs" title="Early Warning System: {{ $item['overdue_count'] }} tunggakan (ambang batas: {{ $item['threshold'] }})">
+                                                <i class="fas fa-exclamation-triangle text-[9px]"></i> EWS: {{ $item['overdue_count'] }} Tunggakan
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800 shadow-2xs">
-                                                <i class="fas fa-check-circle text-[9px]"></i> Lancar
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-800 shadow-2xs">
+                                                <i class="fas fa-check-circle text-[9px]"></i> Normal
                                             </span>
                                         @endif
                                     </div>

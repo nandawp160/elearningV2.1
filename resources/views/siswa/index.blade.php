@@ -257,7 +257,7 @@
                         <!-- No -->
                         <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-slate-700 dark:text-slate-300 text-center">{{ $no++ }}</td>
                         <!-- NIS -->
-                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{{ $student->nis }}</td>
+                        <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{{ $student->nis ?? '-' }}</td>
                         <!-- Nama Lengkap -->
                         <td class="border border-slate-400 dark:border-slate-500 px-3 py-1.5 font-bold text-slate-800 dark:text-slate-100">{{ $student->nama }}</td>
                         <!-- Email -->

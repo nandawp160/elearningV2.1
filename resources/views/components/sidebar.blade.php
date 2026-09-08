@@ -600,7 +600,7 @@ if (!function_exists('isActive')) {
                     <a href="{{ route('dashboard') }}"
                        class="sidebar-student-link flex items-center justify-between px-4 py-3 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ isActive('dashboard') ? 'active' : '' }}">
                         <div class="flex items-center gap-3.5">
-                            <i class="fa-regular fa-house w-5 text-center text-lg"></i>
+                            <i class="fas fa-home w-5 text-center text-lg"></i>
                             Dashboard
                         </div>
                         @if(isActive('dashboard'))
@@ -612,7 +612,7 @@ if (!function_exists('isActive')) {
                     <a href="{{ route('materials.index') }}"
                        class="sidebar-student-link flex items-center justify-between px-4 py-3 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ isActive('materials') ? 'active' : '' }}">
                         <div class="flex items-center gap-3.5">
-                            <i class="fa-regular fa-folder-open w-5 text-center text-lg"></i>
+                            <i class="fas fa-book-open w-5 text-center text-lg"></i>
                             Materi Pembelajaran
                         </div>
                         @if(isActive('materials'))
@@ -634,7 +634,7 @@ if (!function_exists('isActive')) {
                     <a href="{{ route('assignments.index') }}"
                        class="sidebar-student-link flex items-center justify-between px-4 py-3 rounded-xl text-[14px] font-semibold transition-all duration-150 {{ isActive('assignments') ? 'active' : '' }}">
                         <div class="flex items-center gap-3.5">
-                            <i class="fa-regular fa-clipboard w-5 text-center text-lg"></i>
+                            <i class="fas fa-clipboard-list w-5 text-center text-lg"></i>
                             Daftar Tugas
                         </div>
                         <div class="flex items-center gap-2">
@@ -652,17 +652,28 @@ if (!function_exists('isActive')) {
                     <a href="{{ route('student.appeals.status') }}"
                        class="sidebar-student-link flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ isActive('student.appeals.status') ? 'active' : '' }}">
                         <div class="flex items-center gap-3.5">
-                            <i class="fa-regular fa-clock w-5 text-center text-lg"></i>
+                            <i class="fas fa-shield-alt w-5 text-center text-lg"></i>
                             Status Banding (SSL)
                         </div>
+                        @if(isActive('student.appeals.status'))
+                        <i class="fas fa-chevron-right text-[10px]"></i>
+                        @endif
                     </a>
                 </li>
 
+                <div class="px-4 pt-6 pb-2 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    PENGATURAN PRIBADI
+                </div>
                 <li>
                     <a href="{{ route('student.biodata.create') }}"
-                       class="sidebar-student-link flex items-center gap-3.5 px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ isActive('student.biodata') ? 'active' : '' }}">
-                        <i class="fas fa-id-card w-5 text-center"></i>
-                        Biodata Saya
+                       class="sidebar-student-link flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-semibold transition-all duration-150 {{ isActive('student.biodata') ? 'active' : '' }}">
+                        <div class="flex items-center gap-3.5">
+                            <i class="fas fa-id-card w-5 text-center text-lg"></i>
+                            Biodata Saya
+                        </div>
+                        @if(isActive('student.biodata'))
+                        <i class="fas fa-chevron-right text-[10px]"></i>
+                        @endif
                     </a>
                 </li>
             @endif

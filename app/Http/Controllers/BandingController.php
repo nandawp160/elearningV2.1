@@ -20,7 +20,12 @@ class BandingController extends Controller
         $request->validate([
             'subject_id' => 'required|exists:mata_pelajaran,id',
             'reason' => 'required|string|max:1000',
-            'bukti_pendukung' => 'nullable|file|mimes:pdf,jpg,png|max:5120',
+            'bukti_pendukung' => 'required|file|mimes:pdf,jpg,png|max:5120',
+        ], [
+            'reason.required' => 'Alasan keterlambatan wajib diisi.',
+            'bukti_pendukung.required' => 'Berkas bukti pendukung (surat sakit/dokumen relevan) wajib diunggah.',
+            'bukti_pendukung.max' => 'Ukuran berkas bukti pendukung maksimal 5MB.',
+            'bukti_pendukung.mimes' => 'Format berkas bukti pendukung harus berupa PDF, JPG, atau PNG.',
         ]);
 
         $student = $user->student;

@@ -22,11 +22,23 @@
             <i class="fas fa-arrow-left"></i> Kembali ke Daftar Mapel
         </a>
         <div class="tugas-detail-header__info">
-            <h1 class="tugas-detail-header__title">{{ $subject->course->name ?? $subject->nama ?? '' }}</h1>
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="tugas-detail-header__title">{{ $subject->course->name ?? $subject->nama ?? '' }}</h1>
+                @if(isset($accessResult))
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ $accessResult->badgeClass() }} shadow-2xs border">
+                        <i class="{{ $accessResult->icon() }} {{ $accessResult->isRecovery() ? 'fa-spin-pulse' : '' }}"></i>
+                        Status: {{ $accessResult->statusLabel() }}
+                    </span>
+                @endif
+            </div>
             <div class="tugas-detail-header__meta">
                 <span><i class="fas fa-user-tie"></i> Guru Pengampu: <strong>{{ $subject->teacher->name ?? '-' }}</strong></span>
                 <span class="tugas-detail-header__sep">•</span>
                 <span><i class="fas fa-school"></i> Kelas: <strong>{{ $subject->classRoom->name ?? (auth()->user()->student?->resolved_kelas ?? '-') }}</strong></span>
+                @if(isset($accessResult))
+                    <span class="tugas-detail-header__sep">•</span>
+                    <span><i class="fas fa-shield-alt"></i> Toleransi Tunggakan: <strong>{{ $accessResult->threshold }} Tugas</strong></span>
+                @endif
             </div>
         </div>
     </div>
@@ -36,40 +48,40 @@
     <div class="tugas-alert tugas-alert--recovery">
         <div class="tugas-alert__icon"><i class="fas fa-sync-alt fa-spin"></i></div>
         <div class="tugas-alert__text">
-            <strong>Mode Pemulihan Aktif:</strong> Selesaikan tugas yang dibuka untuk membuka tugas berikutnya secara bertahap.
+            <strong>Mode Pemulihan Aktif:</strong> Selesaikan tugas target yang sedang dibuka untuk membuka tugas berikutnya secara bertahap.
             <div class="tugas-alert__timer">
                 <i class="fas fa-clock"></i> Sisa waktu pemulihan: 
-                <span id="recovery-timer" data-expiry="{{ $recovery->expired_at->toIso8601String() }}">Menghitung...</span>
+                <span id="recovery-timer" data-expiry="{{ ($recovery->expired_at ?? $recovery->batas_pemulihan)?->toIso8601String() }}">Menghitung...</span>
             </div>
         </div>
     </div>
     @endif
 
-    {{-- Alert: Locked due to overdue tasks (and not in recovery) --}}
-    @if(isset($accessResult) && $accessResult->isLocked())
+    {{-- Alert: Locked due to overdue tasks (Lock SSL) --}}
+    @if(isset($accessResult) && $accessResult->isLockSsl())
     <div x-show="showLockBanner" x-cloak class="tugas-lock-banner" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0">
         <div class="tugas-lock-banner__left">
             <div class="tugas-lock-banner__icon-box">
                 <i class="fas fa-lock"></i>
             </div>
             <div>
-                <h3 class="tugas-lock-banner__title">Akses Pengumpulan Mata Pelajaran Dikunci</h3>
-                <p class="tugas-lock-banner__desc">Anda memiliki {{ $accessResult->jumlahTunggakan }} tunggakan tugas (batas toleransi {{ $accessResult->threshold }} tunggakan). Anda tetap dapat mengakses materi.</p>
+                <h3 class="tugas-lock-banner__title">Status: Lock SSL (Akses Pengumpulan Dikunci)</h3>
+                <p class="tugas-lock-banner__desc">Anda memiliki {{ $accessResult->jumlahTunggakan }} tunggakan tugas pada mata pelajaran ini (ambang batas toleransi: {{ $accessResult->threshold }} tunggakan). Akses pengumpulan tugas baru dikunci sementara. Anda tetap dapat membaca materi dan memperbaiki tugas revisi.</p>
             </div>
         </div>
         @if($accessResult->appealStatus === 'PENDING')
-            <span class="tugas-lock-banner__status">(Banding Anda sedang ditinjau)</span>
+            <span class="tugas-lock-banner__status"><i class="fas fa-hourglass-half mr-1"></i> Permohonan Banding Anda Sedang Ditinjau Guru</span>
         @elseif($accessResult->canAppeal)
             <button type="button" @click="openAppealModal()" class="tugas-lock-banner__btn">
                 Ajukan Banding (SSL) <i class="fas fa-chevron-right" style="font-size:10px"></i>
             </button>
         @endif
     </div>
-    @elseif(isset($accessResult) && $accessResult->isWarning())
+    @elseif(isset($accessResult) && $accessResult->isEws())
     <div class="tugas-alert tugas-alert--warning" style="background:#fffbeb; border:1px solid #fef3c7; color:#b45309">
         <div class="tugas-alert__icon" style="background:#fef3c7; color:#d97706"><i class="fas fa-exclamation-triangle"></i></div>
         <div class="tugas-alert__text">
-            <strong>Peringatan Keterlambatan:</strong> Anda memiliki {{ $accessResult->jumlahTunggakan }} tunggakan tugas. Pengumpulan masih diizinkan sebelum mencapai batas penguncian ({{ $accessResult->threshold }} tugas).
+            <strong>Status EWS (Early Warning System):</strong> Anda memiliki {{ $accessResult->jumlahTunggakan }} tunggakan tugas pada mata pelajaran ini. Pengumpulan tugas tertunggak masih diizinkan sebelum mencapai batas penguncian ({{ $accessResult->threshold }} tugas). Segera selesaikan tugas Anda.
         </div>
     </div>
     @endif
@@ -99,25 +111,26 @@
                         $isCurrentRecovery = false;
                         $prereqNotCompleted = $assignment->prasyarat_materi_id && !in_array($assignment->prasyarat_materi_id, $completedMaterialIds);
 
-                        if ($recovery) {
-                            if (!$mySub) {
-                                if ($assignment->id == $recovery->current_assignment_id) {
+                        if ($prereqNotCompleted) {
+                            $isLocked = true;
+                        } elseif ($recovery) {
+                            $recoveryTargetId = $recovery->assignment_id ?? $recovery->current_assignment_id ?? $recovery->tugas_id;
+                            if (!$mySub || $mySub->is_needs_revision) {
+                                if ($assignment->id == $recoveryTargetId) {
                                     $isLocked = false;
                                     $isCurrentRecovery = true;
                                 } else {
                                     $isLocked = true;
                                 }
                             }
-                        } else {
-                            if (!$mySub) {
-                                if ($isPassed) {
-                                    $isLocked = true;
-                                } elseif ($tunggakanIds->count() >= 3) {
-                                    $isLocked = true;
-                                } elseif ($prereqNotCompleted) {
-                                    $isLocked = true;
-                                }
+                        } elseif (isset($accessResult) && $accessResult->isLockSsl()) {
+                            // If locked by SSL, only revision/return allowed; new submissions blocked
+                            if (!$mySub || !$mySub->is_needs_revision) {
+                                $isLocked = true;
                             }
+                        } else {
+                            // Normal or EWS: unsubmitted overdue tasks are still submittable
+                            $isLocked = false;
                         }
                     @endphp
                     <tr class="tugas-tr {{ $isLocked ? 'tugas-tr--locked' : '' }}">
@@ -127,7 +140,35 @@
                         </td>
                         <td class="tugas-td">
                             <div class="tugas-detail-cell">
-                                <span class="tugas-detail-cell__title">{{ $assignment->title }}</span>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="tugas-detail-cell__title" style="margin-bottom:0">{{ $assignment->title }}</span>
+                                    @php
+                                        $formatBadgeClass = 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+                                        $formatLabel = 'Dokumen';
+                                        $formatIcon = 'fas fa-file-alt';
+                                        
+                                        if (($assignment->tipe_pengumpulan ?? 'dokumen') === 'audiovisual') {
+                                            $formatBadgeClass = 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800';
+                                            $formatLabel = 'Audio/Video';
+                                            $formatIcon = 'fas fa-play-circle';
+                                        } elseif (($assignment->tipe_pengumpulan ?? 'dokumen') === 'visual') {
+                                            $formatBadgeClass = 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300 dark:border-indigo-800';
+                                            $formatLabel = 'Visual/Gambar';
+                                            $formatIcon = 'fas fa-image';
+                                        } elseif (($assignment->tipe_pengumpulan ?? 'dokumen') === 'tautan') {
+                                            $formatBadgeClass = 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800';
+                                            $formatLabel = 'Tautan URL';
+                                            $formatIcon = 'fas fa-link';
+                                        } elseif (($assignment->tipe_pengumpulan ?? 'dokumen') === 'kompresi') {
+                                            $formatBadgeClass = 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800';
+                                            $formatLabel = 'File ZIP/RAR';
+                                            $formatIcon = 'fas fa-file-archive';
+                                        }
+                                    @endphp
+                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-md border {{ $formatBadgeClass }} shadow-xs inline-flex items-center gap-1 shrink-0" title="Format Pengumpulan: {{ $formatLabel }}">
+                                        <i class="{{ $formatIcon }}"></i> {{ $formatLabel }}
+                                    </span>
+                                </div>
                                 <span class="tugas-detail-cell__desc">{{ Str::limit(strip_tags($assignment->description), 50) }}</span>
                             </div>
                         </td>
@@ -156,7 +197,7 @@
                                 <span class="tugas-status-badge tugas-status-badge--active">
                                     <i class="fas fa-unlock"></i> Sedang Dibuka
                                 </span>
-                            @elseif($recovery && $isPassed && !$isCurrentRecovery)
+                            @elseif($recovery && !$isCurrentRecovery)
                                 <span class="tugas-status-badge tugas-status-badge--wait">
                                     <i class="fas fa-hourglass-half"></i> Menunggu
                                 </span>
@@ -165,12 +206,12 @@
                                     <i class="fas fa-lock"></i> Prasyarat
                                 </span>
                             @elseif($isLocked)
-                                <span class="tugas-status-badge tugas-status-badge--locked">
-                                    <i class="fas fa-lock"></i> Locked
+                                <span class="tugas-status-badge tugas-status-badge--locked" title="Terkunci oleh aturan Selective Submission Locking (SSL)">
+                                    <i class="fas fa-lock"></i> Lock SSL
                                 </span>
                             @elseif($isPassed)
-                                <span class="tugas-status-badge tugas-status-badge--danger">
-                                    <i class="fas fa-times-circle"></i> Terlewat
+                                <span class="tugas-status-badge tugas-status-badge--warning" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a" title="Tunggakan (EWS) - Pengumpulan masih diizinkan">
+                                    <i class="fas fa-exclamation-triangle"></i> Terlewat (EWS)
                                 </span>
                             @else
                                 <span class="tugas-status-badge tugas-status-badge--warning">
@@ -943,8 +984,8 @@
 
                         {{-- Bukti Pendukung --}}
                         <div class="tugas-form-group mb-6">
-                            <label class="tugas-label" style="font-size: 13.5px; font-weight: 600; color: #475569; margin-bottom: 8px;">Bukti Pendukung (Opsional)</label>
-                            <input type="file" name="bukti_pendukung" x-ref="appealFileInput" class="hidden" @change="handleAppealFileSelect" accept=".pdf,.jpg,.png">
+                            <label class="tugas-label" style="font-size: 13.5px; font-weight: 600; color: #475569; margin-bottom: 8px;">Bukti Pendukung <span class="text-red-500">*</span></label>
+                            <input type="file" name="bukti_pendukung" x-ref="appealFileInput" class="hidden" @change="handleAppealFileSelect" accept=".pdf,.jpg,.png" required>
                             
                             <div 
                                 x-show="!appealFile"
@@ -953,7 +994,7 @@
                                 style="padding: 20px; border-radius: 12px;"
                             >
                                 <div class="tugas-redesign-drop__icon" style="font-size: 24px; color: #3b82f6; margin-bottom: 6px;"><i class="fas fa-cloud-upload-alt"></i></div>
-                                <p class="tugas-redesign-drop__text" style="font-size: 13px; color: #2563eb; font-weight: 700; margin:0">Unggah surat sakit atau dokumen relevan (Maks 5MB)</p>
+                                <p class="tugas-redesign-drop__text" style="font-size: 13px; color: #2563eb; font-weight: 700; margin:0">Unggah surat sakit atau dokumen relevan (Wajib, Maks 5MB)</p>
                             </div>
 
                             <div x-show="appealFile" x-cloak class="tugas-drive-selected" style="border-radius: 12px;">
@@ -972,7 +1013,7 @@
 
                         {{-- Checkbox Komitmen --}}
                         <div class="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-slate-900 border border-emerald-100 dark:border-slate-800 rounded-2xl mb-6">
-                            <input type="checkbox" id="commitment" x-model="appealCommitment" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" style="cursor: pointer;">
+                            <input type="checkbox" id="commitment" x-model="appealCommitment" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" style="cursor: pointer;" required>
                             <label for="commitment" class="text-xs font-bold text-emerald-800 dark:text-emerald-400 cursor-pointer" style="margin: 0;">
                                 Saya berkomitmen untuk menyelesaikan seluruh tugas jika disetujui.
                             </label>
@@ -983,7 +1024,7 @@
                             <button type="button" @click="closeAppealModal()" class="px-5 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-xl text-xs hover:bg-slate-50 transition">
                                 Batal
                             </button>
-                            <button type="submit" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs transition shadow-md shadow-red-600/10 flex items-center gap-1.5" :disabled="!appealReason.trim() || !appealCommitment">
+                            <button type="submit" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs transition shadow-md shadow-red-600/10 flex items-center gap-1.5" :disabled="!appealReason.trim() || !appealCommitment || !appealFile">
                                 <i class="fas fa-paper-plane" style="font-size:10px"></i> Kirim Pengajuan
                             </button>
                         </div>
@@ -1109,7 +1150,7 @@ function studentDetailModals() {
         checkStep: 1,
         verifyPassed: false,
         verifyResult: null,
-        showLockBanner: sessionStorage.getItem('ssl_locked_student_{{ auth()->user()->student_id }}_subject_{{ $subject->id }}') === 'true' || {{ $pendingAppeal ? 'true' : 'false' }},
+        showLockBanner: {{ (isset($accessResult) && $accessResult->isLockSsl()) ? 'true' : 'false' }} || sessionStorage.getItem('ssl_locked_student_{{ auth()->user()->student_id }}_subject_{{ $subject->id }}') === 'true' || {{ $pendingAppeal ? 'true' : 'false' }},
 
         submissionData: null,
         needsReload: false,
@@ -1637,7 +1678,8 @@ document.addEventListener('DOMContentLoaded', function() {
 .tugas-alert { display:flex; align-items:center; gap:12px; padding:14px 18px; border-radius:12px; margin-bottom:20px; font-size:13px; font-weight:500; }
 .tugas-alert--success { background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; }
 .tugas-alert--danger { background:#fef2f2; border:1px solid #fecaca; color:#991b1b; }
-.tugas-alert--recovery { background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; }
+.tugas-alert--recovery { background:#faf5ff; border:1px solid #e9d5ff; color:#6b21a8; }
+.dark .tugas-alert--recovery { background:rgba(147, 51, 234, 0.1); border-color:rgba(147, 51, 234, 0.25); color:#c084fc; }
 .tugas-alert__icon { flex-shrink:0; width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.5); font-size:13px; }
 .tugas-alert__text { flex:1; }
 .tugas-alert__timer { font-size:11px; margin-top:4px; font-weight:700; display:flex; align-items:center; gap:5px; }

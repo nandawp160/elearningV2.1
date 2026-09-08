@@ -5,11 +5,11 @@
 @section('content')
 <div class="space-y-6" style="font-family: 'Plus Jakarta Sans', sans-serif;">
     <!-- Page Header Card -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm p-6">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">Buku Induk Kelas {{ $classRoom->name }}</h1>
-                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Daftar lengkap data demografi dan kontak darurat peserta didik perwalian Anda.</p>
+                <h1 class="text-2xl font-black text-slate-950 dark:text-white tracking-tight">Buku Induk Kelas {{ $classRoom->name }}</h1>
+                <p class="text-slate-700 dark:text-slate-300 text-sm font-medium mt-1">Daftar lengkap data demografi dan kontak darurat peserta didik perwalian Anda.</p>
             </div>
         </div>
     </div>
@@ -17,114 +17,164 @@
     <!-- 3 Stat Cards Row -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <!-- Card 1: Total Peserta Didik -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition hover:shadow-md">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 flex items-center justify-center text-lg sm:text-xl shadow-inner flex-shrink-0">
+        <div class="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl p-5 flex items-center gap-4 transition hover:shadow-md">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 flex items-center justify-center text-xl shadow-xs shrink-0">
                 <i class="fas fa-users"></i>
             </div>
             <div class="min-w-0 flex-1">
-                <span class="text-[10px] sm:text-xxs font-extrabold text-slate-400 uppercase tracking-wider block truncate">Total Peserta Didik</span>
-                <span class="text-lg sm:text-xl font-black text-slate-800 dark:text-white block mt-0.5 truncate">{{ $students->count() }} <span class="text-xs font-semibold text-slate-450 dark:text-slate-500">Siswa</span></span>
+                <span class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider block truncate">Total Peserta Didik</span>
+                <span class="text-2xl font-black text-slate-950 dark:text-white block mt-0.5 truncate">{{ $students->count() }} <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Siswa</span></span>
             </div>
         </div>
 
         <!-- Card 2: Laki-Laki -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition hover:shadow-md">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg sm:text-xl shadow-inner flex-shrink-0">
+        <div class="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl p-5 flex items-center gap-4 transition hover:shadow-md">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 flex items-center justify-center text-xl shadow-xs shrink-0">
                 <i class="fas fa-mars"></i>
             </div>
             <div class="min-w-0 flex-1">
-                <span class="text-[10px] sm:text-xxs font-extrabold text-slate-400 uppercase tracking-wider block truncate">Laki-Laki</span>
-                <span class="text-lg sm:text-xl font-black text-slate-800 dark:text-white block mt-0.5 truncate">{{ $students->where('jenis_kelamin', 'Laki-laki')->count() }} <span class="text-xs font-semibold text-slate-450 dark:text-slate-500">Siswa</span></span>
+                <span class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider block truncate">Laki-Laki</span>
+                <span class="text-2xl font-black text-slate-950 dark:text-white block mt-0.5 truncate">{{ $students->where('jenis_kelamin', 'Laki-laki')->count() }} <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Siswa</span></span>
             </div>
         </div>
 
         <!-- Card 3: Perempuan -->
-        <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition hover:shadow-md">
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg sm:text-xl shadow-inner flex-shrink-0">
+        <div class="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 shadow-sm rounded-xl p-5 flex items-center gap-4 transition hover:shadow-md">
+            <div class="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-300 flex items-center justify-center text-xl shadow-xs shrink-0">
                 <i class="fas fa-venus"></i>
             </div>
             <div class="min-w-0 flex-1">
-                <span class="text-[10px] sm:text-xxs font-extrabold text-slate-400 uppercase tracking-wider block truncate">Perempuan</span>
-                <span class="text-lg sm:text-xl font-black text-slate-800 dark:text-white block mt-0.5 truncate">{{ $students->where('jenis_kelamin', 'Perempuan')->count() }} <span class="text-xs font-semibold text-slate-450 dark:text-slate-500">Siswa</span></span>
+                <span class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider block truncate">Perempuan</span>
+                <span class="text-2xl font-black text-slate-950 dark:text-white block mt-0.5 truncate">{{ $students->where('jenis_kelamin', 'Perempuan')->count() }} <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Siswa</span></span>
             </div>
         </div>
     </div>
 
     <!-- Search & Export Action Bar -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
         <div class="relative w-full sm:max-w-md">
             <input type="text" id="studentSearchInput" placeholder="Cari NIS atau Nama Lengkap..." 
-                   class="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-xs text-slate-700 appearance-none focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-100">
-            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                   class="w-full rounded-xl border-2 border-slate-300 pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-900 placeholder:text-slate-500 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-950 dark:border-slate-700 dark:text-slate-100">
+            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-700 dark:text-slate-300">
                 <i class="fas fa-search text-xs"></i>
             </div>
         </div>
         
-        <button onclick="exportToCSV()" class="w-full sm:w-auto bg-[#D65A20] hover:bg-[#be4e1a] text-white font-bold px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/10 transition flex items-center justify-center gap-2 text-xs">
+        <button onclick="exportToCSV()" class="w-full sm:w-auto bg-[#D65A20] hover:bg-[#be4e1a] text-white font-extrabold px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/15 transition flex items-center justify-center gap-2 text-xs">
             <i class="fas fa-file-export text-xs"></i>
-            <span>Ekspor Data</span>
+            <span>Ekspor Data (CSV)</span>
         </button>
     </div>
 
     <!-- Student Table Card -->
-    <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
-        <div class="overflow-x-auto overflow-y-auto" style="max-height: 600px;">
-            <table class="w-full border-collapse border border-slate-300 dark:border-slate-700 text-xs" id="studentTable">
+    <div class="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 620px;">
+            <table class="w-full border-collapse text-xs" id="studentTable">
                 <thead class="sticky top-0 z-10">
-                    <tr class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-12 shadow-sm">NO</th>
-                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold shadow-sm">NIS</th>
-                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold min-w-64 shadow-sm">NAMA LENGKAP</th>
-                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-16 shadow-sm">L/P</th>
-                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-left font-bold min-w-48 shadow-sm">KONTAK WALI (ORTU)</th>
-                        <th class="border border-slate-300 dark:border-slate-700 px-3 py-2 text-center font-bold w-20 shadow-sm">AKSI</th>
+                    <tr class="bg-slate-100 dark:bg-slate-800 text-slate-950 dark:text-white border-b-2 border-slate-300 dark:border-slate-700">
+                        <th class="px-4 py-3.5 text-center font-black w-14 uppercase tracking-wider text-xs">NO</th>
+                        <th class="px-4 py-3.5 text-left font-black w-32 uppercase tracking-wider text-xs">NIS</th>
+                        <th class="px-5 py-3.5 text-left font-black min-w-72 uppercase tracking-wider text-xs">NAMA LENGKAP & EMAIL</th>
+                        <th class="px-4 py-3.5 text-center font-black w-20 uppercase tracking-wider text-xs">L/P</th>
+                        <th class="px-5 py-3.5 text-left font-black min-w-56 uppercase tracking-wider text-xs">KONTAK WALI (ORTU)</th>
+                        <th class="px-4 py-3.5 text-center font-black w-28 uppercase tracking-wider text-xs">AKSI</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                     @forelse($students as $idx => $student)
-                    <tr class="student-table-row hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-slate-700 dark:text-slate-300">
+                    @php
+                        $email = $student->user->email ?? (strtolower(str_replace(' ', '', $student->name)) . '@siswa.smansago.com');
+                    @endphp
+                    <tr class="student-table-row hover:bg-orange-50/40 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-slate-900 dark:text-slate-100"
+                        onclick="if(!event.target.closest('button') && !event.target.closest('a')) openDetailModal({{ json_encode($student) }})">
                         <!-- Row Number -->
-                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
+                        <td class="px-4 py-3.5 text-center text-slate-900 dark:text-slate-200 font-extrabold text-xs">
                             {{ $idx + 1 }}
                         </td>
 
                         <!-- NIS -->
-                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 font-mono font-semibold">
-                            {{ $student->nis }}
+                        <td class="px-4 py-3.5">
+                            @if($student->nis)
+                                <span class="font-mono font-black text-xs text-slate-950 dark:text-slate-100 bg-slate-200 dark:bg-slate-800 px-2.5 py-1 rounded-md border border-slate-300 dark:border-slate-600">
+                                    {{ $student->nis }}
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-950 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                                    Belum diisi
+                                </span>
+                            @endif
                         </td>
                         
                         <!-- Name & Email -->
-                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5">
-                            <span class="font-bold text-slate-800 dark:text-white">{{ $student->name }}</span>
-                            <span class="text-[10px] text-slate-400 dark:text-slate-500 ml-2 block sm:inline">{{ $student->user->email ?? strtolower(str_replace(' ', '', $student->name)) . '@sekolah.id' }}</span>
+                        <td class="px-5 py-3.5">
+                            <div class="flex flex-col">
+                                <span class="font-black text-sm text-slate-950 dark:text-white leading-snug hover:text-[#D65A20] transition-colors">
+                                    {{ $student->name }}
+                                </span>
+                                <div class="flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium mt-1">
+                                    <i class="fas fa-envelope text-slate-700 dark:text-slate-300 text-xs shrink-0"></i>
+                                    <span class="font-mono font-bold text-slate-800 dark:text-slate-200 select-all">{{ $email }}</span>
+                                </div>
+                            </div>
                         </td>
                         
                         <!-- Gender (L/P) -->
-                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center">
+                        <td class="px-4 py-3.5 text-center">
                             @if(in_array($student->jenis_kelamin, ['L', 'Laki-laki']))
-                                <span class="font-bold text-sky-600 dark:text-sky-400">L</span>
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-black bg-blue-100 text-blue-950 border-2 border-blue-300 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-700 shadow-2xs" title="Laki-laki">
+                                    L
+                                </span>
                             @else
-                                <span class="font-bold text-rose-600 dark:text-rose-400">P</span>
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-black bg-rose-100 text-rose-950 border-2 border-rose-300 dark:bg-rose-950 dark:text-rose-200 dark:border-rose-700 shadow-2xs" title="Perempuan">
+                                    P
+                                </span>
                             @endif
                         </td>
                         
                         <!-- Guardian Contact -->
-                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5">
-                            <span class="font-mono font-semibold text-slate-800 dark:text-slate-300">{{ $student->parent_phone ?: '-' }}</span>
-                            <span class="text-[10px] text-slate-400 dark:text-slate-500 ml-2">({{ $student->parent_name ?: 'Orang Tua' }})</span>
+                        <td class="px-5 py-3.5">
+                            @if($student->parent_phone)
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <i class="fas fa-phone-alt text-xs text-emerald-700 dark:text-emerald-400 shrink-0"></i>
+                                        <span class="font-mono font-black text-xs text-slate-950 dark:text-white select-all">{{ $student->parent_phone }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-semibold">
+                                        <i class="fas fa-user text-xs text-slate-700 dark:text-slate-300 shrink-0"></i>
+                                        <span>{{ $student->parent_name ?: 'Orang Tua / Wali' }}</span>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="flex flex-col gap-0.5">
+                                    <div class="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-bold">
+                                        <i class="fas fa-phone-slash text-xs text-slate-600 dark:text-slate-400 shrink-0"></i>
+                                        <span>Belum ada nomor HP</span>
+                                    </div>
+                                    <div class="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                                        <span>{{ $student->parent_name ? '(' . $student->parent_name . ')' : '(Orang Tua / Wali)' }}</span>
+                                    </div>
+                                </div>
+                            @endif
                         </td>
                         
                         <!-- Actions -->
-                        <td class="border border-slate-300 dark:border-slate-700 px-3 py-1.5 text-center bg-slate-50/30 dark:bg-slate-900/30">
+                        <td class="px-4 py-3.5 text-center">
                             <button onclick="openDetailModal({{ json_encode($student) }})" 
-                                    class="text-slate-500 hover:text-[#D65A20] dark:text-slate-400 dark:hover:text-[#D65A20] p-1 transition" title="Lihat Detail">
-                                <i class="fas fa-search-plus"></i>
+                                    class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#D65A20] hover:bg-[#be4e1a] text-white font-extrabold text-xs shadow-sm transition" 
+                                    title="Lihat Detail Siswa">
+                                <i class="fas fa-id-card text-xs"></i>
+                                <span>Detail</span>
                             </button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="border border-slate-300 dark:border-slate-700 px-3 py-8 text-center text-slate-400 font-medium">Belum ada data siswa di kelas ini.</td>
+                        <td colspan="6" class="px-4 py-12 text-center text-slate-700 dark:text-slate-300 font-bold">
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <i class="fas fa-user-slash text-3xl text-slate-400"></i>
+                                <span>Belum ada data siswa di kelas ini.</span>
+                            </div>
+                        </td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -132,21 +182,21 @@
         </div>
         
         <!-- Table Footer -->
-        <div class="bg-slate-50 dark:bg-slate-950/20 border-t border-slate-100 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+        <div class="bg-slate-100 dark:bg-slate-950/40 border-t-2 border-slate-200 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-slate-800 dark:text-slate-200">
             <span id="entriesInfo">Menampilkan 1 hingga {{ $students->count() }} dari {{ $students->count() }} peserta didik</span>
             <div class="flex gap-1.5" id="paginationControls">
-                <button class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-450 hover:bg-slate-50 cursor-not-allowed text-[11px]" disabled>&lt;</button>
-                <button class="px-3 py-1.5 rounded-lg bg-[#D65A20] text-white font-extrabold text-[11px]">1</button>
-                <button class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-450 hover:bg-slate-50 cursor-not-allowed text-[11px]" disabled>&gt;</button>
+                <button class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 hover:bg-slate-50 cursor-not-allowed text-xs font-bold" disabled>&lt;</button>
+                <button class="px-3.5 py-1.5 rounded-lg bg-[#D65A20] text-white font-black text-xs">1</button>
+                <button class="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 hover:bg-slate-50 cursor-not-allowed text-xs font-bold" disabled>&gt;</button>
             </div>
         </div>
     </div>
 
     <!-- Sync Notice Footer -->
-    <div class="p-4 bg-slate-50 border border-slate-100 dark:bg-slate-800/40 dark:border-slate-800 rounded-xl flex gap-3">
-        <i class="fas fa-lock text-slate-400 mt-0.5 text-sm flex-shrink-0"></i>
-        <p class="text-xxs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
-            Data tersinkronisasi otomatis dengan server utama (Admin). Wali Kelas berstatus hak akses pemantauan (<span class="text-[#D65A20] font-bold">Read-Only</span>).
+    <div class="p-4 bg-slate-100 border border-slate-200 dark:bg-slate-800/60 dark:border-slate-700 rounded-xl flex gap-3">
+        <i class="fas fa-lock text-slate-700 dark:text-slate-300 mt-0.5 text-base shrink-0"></i>
+        <p class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-relaxed">
+            Data tersinkronisasi otomatis dengan server utama (Admin). Wali Kelas berstatus hak akses pemantauan (<span class="text-[#D65A20] font-black">Read-Only</span>).
         </p>
     </div>
 </div>
@@ -170,43 +220,43 @@
         </div>
         
         <!-- Modal Details -->
-        <div class="space-y-4 text-slate-700 dark:text-slate-350 text-xs">
+        <div class="space-y-4 text-slate-900 dark:text-slate-100 text-xs">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xxs font-extrabold text-slate-450 uppercase tracking-wider mb-1">Jenis Kelamin</label>
-                    <p class="font-bold text-slate-800 dark:text-white" id="mGender">-</p>
+                    <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Jenis Kelamin</label>
+                    <p class="font-black text-sm text-slate-950 dark:text-white" id="mGender">-</p>
                 </div>
                 <div>
-                    <label class="block text-xxs font-extrabold text-slate-450 uppercase tracking-wider mb-1">Status Keanggotaan</label>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30 font-extrabold">Aktif</span>
+                    <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Status Keanggotaan</label>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-950 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 font-black text-xs">Aktif</span>
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4 border-t border-slate-50 dark:border-slate-800/80 pt-3">
+            <div class="grid grid-cols-2 gap-4 border-t border-slate-200 dark:border-slate-800 pt-3">
                 <div>
-                    <label class="block text-xxs font-extrabold text-slate-450 uppercase tracking-wider mb-1">Nama Orang Tua/Wali</label>
-                    <p class="font-bold text-slate-800 dark:text-white" id="mParentName">-</p>
+                    <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nama Orang Tua/Wali</label>
+                    <p class="font-black text-sm text-slate-950 dark:text-white" id="mParentName">-</p>
                 </div>
                 <div>
-                    <label class="block text-xxs font-extrabold text-slate-450 uppercase tracking-wider mb-1">Nomor Telepon Wali</label>
+                    <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nomor Telepon Wali</label>
                     <div class="flex items-center gap-2">
-                        <p class="font-mono font-bold text-slate-800 dark:text-white" id="mParentPhone">-</p>
-                        <a href="" id="mWaLink" target="_blank" class="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 transition shadow-inner">
-                            <i class="fab fa-whatsapp"></i>
+                        <p class="font-mono font-black text-sm text-slate-950 dark:text-white" id="mParentPhone">-</p>
+                        <a href="" id="mWaLink" target="_blank" class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center hover:bg-emerald-200 transition border border-emerald-300" title="Hubungi via WhatsApp">
+                            <i class="fab fa-whatsapp text-sm"></i>
                         </a>
                     </div>
                 </div>
             </div>
             
-            <div class="border-t border-slate-50 dark:border-slate-800/80 pt-3">
-                <label class="block text-xxs font-extrabold text-slate-450 uppercase tracking-wider mb-1">Alamat Rumah</label>
-                <p class="font-semibold text-slate-700 dark:text-slate-300 leading-relaxed" id="mAddress">-</p>
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-3">
+                <label class="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Alamat Rumah</label>
+                <p class="font-bold text-sm text-slate-900 dark:text-slate-200 leading-relaxed" id="mAddress">-</p>
             </div>
         </div>
         
         <!-- Modal Footer -->
-        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <button onclick="closeDetailModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+        <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+            <button onclick="closeDetailModal()" class="px-5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-black text-slate-950 dark:text-white transition">
                 Tutup
             </button>
         </div>
@@ -224,10 +274,10 @@
         let visibleCount = 0;
 
         tableRows.forEach(row => {
-            const nis = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-            const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            const nis = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+            const nameAndEmail = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
             
-            if (nis.includes(query) || name.includes(query)) {
+            if (nis.includes(query) || nameAndEmail.includes(query)) {
                 row.style.display = '';
                 visibleCount++;
             } else {
@@ -288,36 +338,23 @@
         const rows = table.querySelectorAll('tr');
         let csvContent = "data:text/csv;charset=utf-8,";
         
-        // Fetch headers
-        const headerCols = rows[0].querySelectorAll('th');
-        let headerRow = [];
-        for (let i = 0; i < headerCols.length - 1; i++) { // Skip actions column
-            headerRow.push(`"${headerCols[i].textContent.trim()}"`);
-        }
-        csvContent += headerRow.join(",") + "\r\n";
+        // Headers
+        csvContent += '"NO","NIS","NAMA LENGKAP","EMAIL","JENIS KELAMIN","NO HP WALI","NAMA WALI"\r\n';
         
         // Fetch data
         for (let i = 1; i < rows.length; i++) {
             const cols = rows[i].querySelectorAll('td');
-            if (cols.length === 0) continue;
+            if (cols.length < 6) continue;
             
-            let dataRow = [];
+            const no = cols[0].textContent.trim();
+            const nis = cols[1].textContent.trim();
+            const name = cols[2].querySelector('span:first-child')?.textContent.trim() || '';
+            const email = cols[2].querySelector('span.select-all')?.textContent.trim() || '';
+            const gender = cols[3].textContent.trim();
+            const parentPhone = cols[4].querySelector('span.select-all')?.textContent.trim() || '-';
+            const parentName = cols[4].querySelector('.text-slate-500 span, .text-slate-400 span')?.textContent.trim() || '-';
             
-            // NIS
-            dataRow.push(`"${cols[0].textContent.trim()}"`);
-            
-            // Name
-            const nameEl = cols[1].querySelector('span:first-child');
-            dataRow.push(`"${nameEl ? nameEl.textContent.trim() : cols[1].textContent.trim()}"`);
-            
-            // L/P
-            dataRow.push(`"${cols[2].textContent.trim()}"`);
-            
-            // Phone
-            const phoneEl = cols[3].querySelector('span:first-child');
-            dataRow.push(`"${phoneEl ? phoneEl.textContent.trim() : cols[3].textContent.trim()}"`);
-            
-            csvContent += dataRow.join(",") + "\r\n";
+            csvContent += `"${no}","${nis}","${name}","${email}","${gender}","${parentPhone}","${parentName}"\r\n`;
         }
         
         // Trigger download

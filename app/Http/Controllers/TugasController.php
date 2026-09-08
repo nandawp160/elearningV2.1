@@ -700,9 +700,14 @@ class TugasController extends Controller
                 'overdue_count'       => $accessResult->jumlahTunggakan,
                 'threshold'           => $accessResult->threshold,
                 'is_locked'           => $accessResult->isLocked(),
+                'is_lock_ssl'         => $accessResult->isLockSsl(),
                 'is_warning'          => $accessResult->isWarning(),
+                'is_ews'              => $accessResult->isEws(),
                 'is_recovery'         => $accessResult->isRecovery(),
                 'is_normal'           => $accessResult->isNormal(),
+                'status_label'        => $accessResult->statusLabel(),
+                'badge_class'         => $accessResult->badgeClass(),
+                'status_icon'         => $accessResult->icon(),
                 'has_pending_appeal'  => $accessResult->appealStatus === 'PENDING',
                 'has_active_recovery' => $accessResult->isRecovery(),
                 'adaptive_status'     => $accessResult->status->value,
@@ -1566,10 +1571,11 @@ class TugasController extends Controller
         $request->validate([
             'kategori_alasan' => 'required|string|in:Sakit,Kendala Teknis/Jaringan,Izin Resmi,Lainnya',
             'penjelasan' => 'required|string|min:50',
-            'bukti_pendukung' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
+            'bukti_pendukung' => 'required|file|mimes:pdf,jpg,png|max:2048',
         ], [
             'penjelasan.required' => 'Penjelasan detail wajib diisi.',
             'penjelasan.min' => 'Penjelasan detail harus minimal 50 karakter.',
+            'bukti_pendukung.required' => 'Unggah berkas bukti pendukung wajib dilampirkan.',
             'bukti_pendukung.max' => 'Ukuran bukti pendukung maksimal 2MB.',
             'bukti_pendukung.mimes' => 'Format bukti pendukung harus PDF, JPG, atau PNG.',
         ]);

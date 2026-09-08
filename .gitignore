@@ -25,3 +25,6 @@ Thumbs.db
 /scratch
 /laporan
 *.xlsx
+/tools & dev program/
+*.exe
+*.zip

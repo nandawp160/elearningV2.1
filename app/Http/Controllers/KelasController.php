@@ -95,7 +95,21 @@ class KelasController extends Controller
         
         $daftarKelasAsal = \App\Models\Siswa::active()->pluck('kelas')->filter()->unique()->sort($kelasSorter)->values();
 
-        return view('kelas.index', compact('classrooms', 'academicYears', 'selectedYear', 'emptyClasses', 'availableTeachers', 'daftarKelasAsal', 'totalMasterClasses'));
+        $teachers = \App\Models\Guru::active()->orderBy('nama', 'asc')->get();
+        $masterClasses = \App\Models\MasterKelas::orderBy('grade_level', 'asc')->orderBy('name', 'asc')->get();
+
+        return view('kelas.index', compact(
+            'classrooms',
+            'academicYears',
+            'selectedYear',
+            'activeYear',
+            'emptyClasses',
+            'availableTeachers',
+            'teachers',
+            'masterClasses',
+            'daftarKelasAsal',
+            'totalMasterClasses'
+        ));
     }
 
     public function generateFromMaster(Request $request)
@@ -188,6 +202,16 @@ class KelasController extends Controller
     public function store(Request $request)
     {
         Gate::authorize('create_kelas');
+
+        // Normalisasi nama field input
+        $request->merge([
+            'name' => $request->input('name') ?? $request->input('namaKelas'),
+            'tingkat' => $request->input('tingkat') ?? $request->input('grade_level'),
+            'jurusan' => $request->input('jurusan') ?? $request->input('major'),
+            'homeroom_teacher_id' => $request->input('homeroom_teacher_id') ?? $request->input('waliKelas'),
+            'tahunAjaran' => $request->input('tahunAjaran') ?? $request->input('academic_year'),
+            'kapasitasMaksimal' => $request->input('kapasitasMaksimal') ?? $request->input('max_students') ?? 36,
+        ]);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:kelas,name',

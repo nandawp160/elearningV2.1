@@ -251,24 +251,24 @@
                                     </span>
                                 </label>
 
-                                {{-- Toggle Pilihan Khusus Audiovisual Video: Berkas MP4 vs Tautan Video --}}
-                                <div x-show="tipePengumpulan === 'audiovisual' && modeAudiovisual !== 'audio_file'" x-cloak class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl mb-3 border border-slate-200/60 dark:border-slate-700/60">
+                                {{-- Toggle Pilihan Khusus: Berkas Lokal vs Tautan --}}
+                                <div x-show="(tipePengumpulan === 'audiovisual' && modeAudiovisual !== 'audio_file') || tipePengumpulan === 'tautan'" x-cloak class="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl mb-3 border border-slate-200/60 dark:border-slate-700/60">
                                     <button type="button" @click="teacherAttachmentMode = 'file'"
                                         class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
-                                        :class="teacherAttachmentMode === 'file' ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
-                                        <i class="fas fa-file-video"></i>
-                                        <span>Unggah Video (.mp4) / Berkas</span>
+                                        :class="teacherAttachmentMode === 'file' ? 'bg-white dark:bg-slate-700 text-[#D65A20] shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
+                                        <i class="fas" :class="tipePengumpulan === 'audiovisual' ? 'fa-file-video' : 'fa-file-upload'"></i>
+                                        <span x-text="tipePengumpulan === 'audiovisual' ? 'Unggah Video (.mp4) / Berkas' : 'Unggah Berkas Lokal'"></span>
                                     </button>
                                     <button type="button" @click="teacherAttachmentMode = 'link'"
                                         class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5"
-                                        :class="teacherAttachmentMode === 'link' ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
-                                        <i class="fab fa-youtube text-red-500"></i>
-                                        <span>Tautan Video (YouTube/Drive)</span>
+                                        :class="teacherAttachmentMode === 'link' ? 'bg-white dark:bg-slate-700 text-[#D65A20] shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
+                                        <i class="fas" :class="tipePengumpulan === 'audiovisual' ? 'fa-youtube text-red-500' : 'fa-link'"></i>
+                                        <span x-text="tipePengumpulan === 'audiovisual' ? 'Tautan Video (YouTube/Drive)' : 'Tautan Template/Proyek'"></span>
                                     </button>
                                 </div>
 
-                                {{-- Opsi 1: File Dropzone --}}
-                                <div x-show="tipePengumpulan !== 'audiovisual' || modeAudiovisual === 'audio_file' || teacherAttachmentMode === 'file'">
+                                {{-- Opsi 1: File drag & drop area --}}
+                                <div x-show="(!['audiovisual', 'tautan'].includes(tipePengumpulan)) || (tipePengumpulan === 'audiovisual' && modeAudiovisual === 'audio_file') || teacherAttachmentMode === 'file'">
                                     <div class="relative" 
                                         @dragover.prevent="isDragging = true" 
                                         @dragleave.prevent="isDragging = false"
@@ -277,7 +277,7 @@
                                         {{-- Empty state / drop zone --}}
                                         <label for="attachment" 
                                             class="flex flex-col items-center justify-center gap-3 p-6 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200"
-                                            :class="isDragging ? 'border-orange-400 bg-orange-50/50 dark:bg-orange-900/10' : (fileName ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-orange-300 hover:bg-orange-50/30')">
+                                            :class="isDragging ? 'border-[#D65A20] bg-orange-50/50 dark:bg-orange-900/10' : (fileName ? 'border-emerald-300 bg-emerald-50/50 dark:bg-emerald-900/10' : 'border-slate-200 dark:border-slate-700 hover:border-[#D65A20] hover:bg-slate-50/30')">
                                             
                                             <template x-if="!fileName">
                                                 <div class="text-center">
@@ -310,24 +310,28 @@
                                     </div>
                                 </div>
 
-                                {{-- Opsi 2: Input Tautan Video Online --}}
-                                <div x-show="tipePengumpulan === 'audiovisual' && modeAudiovisual !== 'audio_file' && teacherAttachmentMode === 'link'" x-cloak class="space-y-3">
+                                {{-- Opsi 2: Input Tautan Online --}}
+                                <div x-show="(['audiovisual', 'tautan'].includes(tipePengumpulan)) && !(tipePengumpulan === 'audiovisual' && modeAudiovisual === 'audio_file') && teacherAttachmentMode === 'link'" x-cloak class="space-y-3">
                                     <div class="relative">
-                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-rose-500 pointer-events-none">
-                                            <i class="fab fa-youtube text-sm"></i>
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none" :class="tipePengumpulan === 'audiovisual' ? 'text-rose-500' : 'text-emerald-500'">
+                                            <i class="fas" :class="tipePengumpulan === 'audiovisual' ? 'fa-youtube text-sm' : 'fa-link text-sm'"></i>
                                         </span>
                                         <input type="url" name="attachment_link" x-model="teacherAttachmentLink" @input="updateTeacherVideoPreview()"
-                                            placeholder="https://www.youtube.com/watch?v=... atau https://drive.google.com/..."
-                                            class="w-full px-4 py-3 pl-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 @error('attachment_link') border-rose-500 @enderror" />
+                                            :placeholder="tipePengumpulan === 'audiovisual' ? 'https://www.youtube.com/watch?v=... atau https://drive.google.com/...' : 'https://www.canva.com/... atau tautan proyek lainnya'"
+                                            class="w-full px-4 py-3 pl-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#D65A20]/20 focus:border-[#D65A20] @error('attachment_link') border-rose-500 @enderror" />
                                     </div>
-                                    <template x-if="teacherVideoEmbed">
+                                    <template x-if="teacherVideoEmbed && tipePengumpulan === 'audiovisual'">
                                         <div class="aspect-video w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black shadow-inner">
                                             <iframe :src="teacherVideoEmbed" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                         </div>
                                     </template>
-                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5" x-show="tipePengumpulan === 'audiovisual'">
                                         <i class="fas fa-info-circle text-rose-500"></i>
                                         <span>Video dapat berupa tautan YouTube (Unlisted/Public) atau Google Drive.</span>
+                                    </p>
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5" x-show="tipePengumpulan === 'tautan'">
+                                        <i class="fas fa-info-circle text-emerald-500"></i>
+                                        <span>Tautan dapat berupa referensi Figma, Canva, GitHub, atau website lainnya.</span>
                                     </p>
                                 </div>
 

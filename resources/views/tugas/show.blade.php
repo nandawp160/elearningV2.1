@@ -1218,12 +1218,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Unggah Bukti Pendukung (Opsional)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Unggah Bukti Pendukung <span class="text-rose-500">*</span></label>
                         <div class="relative" 
                             @dragover.prevent="appealDragging = true" 
                             @dragleave.prevent="appealDragging = false"
                             @drop.prevent="appealDragging = false; appealDrop($event)">
-                            <input type="file" name="bukti_pendukung" id="appealFileInput" class="sr-only" accept=".pdf,.jpg,.jpeg,.png" @change="handleAppealFileChange($event)" />
+                            <input type="file" name="bukti_pendukung" id="appealFileInput" class="sr-only" accept=".pdf,.jpg,.jpeg,.png" @change="handleAppealFileChange($event)" required />
                             
                             <label for="appealFileInput" 
                                 class="flex flex-col items-center justify-center gap-2 p-5 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-200"

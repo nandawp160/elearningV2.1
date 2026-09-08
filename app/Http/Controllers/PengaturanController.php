@@ -19,7 +19,13 @@ class PengaturanController extends Controller
 
         $settings = [
             'school_name' => Pengaturan::getValue('school_name', 'SMA Negeri 1 Cepogo'),
+            'school_npsn' => Pengaturan::getValue('school_npsn', '20307718'),
             'school_email' => Pengaturan::getValue('school_email', 'info@smansago.sch.id'),
+            'school_phone' => Pengaturan::getValue('school_phone', '(0276) 321xxx'),
+            'school_website' => Pengaturan::getValue('school_website', 'https://sman1cepogo.sch.id'),
+            'headmaster_name' => Pengaturan::getValue('headmaster_name', 'Drs. H. Sukardi, M.Pd.'),
+            'headmaster_nip' => Pengaturan::getValue('headmaster_nip', '19680512 199412 1 002'),
+            'school_address' => Pengaturan::getValue('school_address', 'Jl. Cepogo KM. 13, Boyolali, Jawa Tengah'),
             'fonnte_token' => Pengaturan::getValue('fonnte_token', config('services.fonnte.token')),
             'lock_duration_hours' => Pengaturan::getValue('lock_duration_hours', '24'),
             'allow_dispensations' => Pengaturan::getValue('allow_dispensations', '1'),
@@ -249,17 +255,26 @@ class PengaturanController extends Controller
     {
         $validated = $request->validate([
             'school_name' => 'required|string|max:255',
+            'school_npsn' => 'nullable|string|max:50',
             'school_email' => 'required|email|max:255',
+            'school_phone' => 'nullable|string|max:50',
+            'school_website' => 'nullable|string|max:255',
+            'headmaster_name' => 'nullable|string|max:255',
+            'headmaster_nip' => 'nullable|string|max:50',
+            'school_address' => 'nullable|string|max:500',
             'fonnte_token' => 'nullable|string|max:255',
-            'lock_duration_hours' => 'required|integer|min:1|max:168',
-            'allow_dispensations' => 'required|in:0,1',
-            'wa_notification_status' => 'required|in:0,1',
-            'tahun_ajaran_aktif' => 'required|string',
+            'lock_duration_hours' => 'nullable|integer|min:1|max:168',
+            'allow_dispensations' => 'nullable|in:0,1',
+            'wa_notification_status' => 'nullable|in:0,1',
+            'tahun_ajaran_aktif' => 'nullable|string',
             'tahun_ajaran_baru' => ['nullable', 'string', 'regex:/^\d{4}\/\d{4}$/'],
             'permissions_page_password' => 'nullable|string|max:255',
             'ssl_lock_expired_deadline' => 'nullable|in:0,1',
         ], [
             'tahun_ajaran_baru.regex' => 'Format tahun ajaran baru harus YYYY/YYYY (contoh: 2026/2027)',
+            'school_name.required' => 'Nama Sekolah wajib diisi.',
+            'school_email.required' => 'Email Resmi Sekolah wajib diisi.',
+            'school_email.email' => 'Format email resmi tidak valid.',
         ]);
 
         foreach ($validated as $key => $value) {
@@ -267,7 +282,7 @@ class PengaturanController extends Controller
                 if ($key === 'permissions_page_password' && empty($value)) {
                     continue;
                 }
-                Pengaturan::setValue($key, $value);
+                Pengaturan::setValue($key, $value ?? '');
             }
         }
 
@@ -284,7 +299,9 @@ class PengaturanController extends Controller
             Pengaturan::setValue('tahun_ajaran_aktif', $newYear);
         }
         
-        return redirect()->route('settings.index')->with('success', 'Pengaturan berhasil diperbarui!');
+        \App\Models\ActivityLog::log('SETTINGS', 'Memperbarui profil informasi sekolah dan pengaturan sistem');
+
+        return redirect()->route('settings.index')->with('success', 'Informasi sekolah dan pengaturan sistem berhasil diperbarui!');
     }
 
     public function toggleSslDeadlineLock(Request $request)
@@ -1218,14 +1235,7 @@ class PengaturanController extends Controller
                 $catatanPembersihan[] = 'Data Materi Pembelajaran';
             }
 
-            // 3. Reset Absensi / Kehadiran
-            if (in_array('kehadiran', $opsiDipilih)) {
-                \DB::table('attendances')->truncate();
-                \DB::table('attendance_sessions')->truncate();
-                $catatanPembersihan[] = 'Data Presensi & Sesi Kehadiran';
-            }
-
-            // 4. Reset Plotting Kelas Siswa & Guru
+            // 3. Reset Plotting Kelas Siswa & Guru
             if (in_array('plot_kelas', $opsiDipilih)) {
                 \DB::table('siswa')->update(['kelas' => null]);
                 \DB::table('guru_kelas')->truncate();

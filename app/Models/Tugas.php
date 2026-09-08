@@ -55,8 +55,6 @@ class Tugas extends Model
         'is_overdue',
         'time_remaining',
         'preview_url',
-        'tipe_pengumpulan',
-        'mode_audiovisual',
     ];
 
     public function hasSubmissions(): bool

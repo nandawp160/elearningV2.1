@@ -363,122 +363,218 @@
     <!-- Tab Konten: Pengaturan Umum -->
     <div id="tab-konten-umum" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Side: Form Configurations -->
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-2 space-y-6">
             <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm">
                 <form action="{{ route('settings.update') }}" method="POST" class="space-y-6">
                     @csrf
                     
-                    <!-- Section 1: School Identity -->
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                            <i class="fas fa-school text-orange-500 text-sm"></i>
-                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Identitas Instansi Sekolah</h3>
+                    <!-- Section 1: School Identity & Profile -->
+                    <div class="space-y-5">
+                        <div class="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                            <div class="w-8 h-8 rounded-xl bg-orange-50 text-[#D65A20] dark:bg-orange-950/30 flex items-center justify-center text-sm font-bold">
+                                <i class="fas fa-school"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Profil & Informasi Instansi Sekolah</h3>
+                                <p class="text-xs text-slate-400">Data ini akan digunakan pada kop laporan, cetak leger nilai, dan identitas sistem.</p>
+                            </div>
                         </div>
 
+                        <!-- Baris 1: Nama & NPSN -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nama Sekolah</label>
-                                <input name="school_name" type="text" required class="input" value="{{ $settings['school_name'] }}" />
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Nama Sekolah <span class="text-rose-500">*</span></label>
+                                <input name="school_name" type="text" required placeholder="Contoh: SMA Negeri 1 Cepogo" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 font-semibold" value="{{ $settings['school_name'] }}" />
                                 @error('school_name') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email Resmi Sekolah</label>
-                                <input name="school_email" type="email" required class="input" value="{{ $settings['school_email'] }}" />
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">NPSN (Nomor Pokok Sekolah Nasional)</label>
+                                <input name="school_npsn" type="text" placeholder="Contoh: 20307718" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 font-mono" value="{{ $settings['school_npsn'] ?? '' }}" />
+                                @error('school_npsn') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Baris 2: Kepala Sekolah & NIP -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Nama Kepala Sekolah</label>
+                                <input name="headmaster_name" type="text" placeholder="Contoh: Drs. H. Sukardi, M.Pd." class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 font-semibold" value="{{ $settings['headmaster_name'] ?? '' }}" />
+                                @error('headmaster_name') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">NIP Kepala Sekolah</label>
+                                <input name="headmaster_nip" type="text" placeholder="Contoh: 19680512 199412 1 002" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 font-mono" value="{{ $settings['headmaster_nip'] ?? '' }}" />
+                                @error('headmaster_nip') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Baris 3: Email & No. Telp -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Email Resmi Sekolah <span class="text-rose-500">*</span></label>
+                                <input name="school_email" type="email" required placeholder="info@smansago.sch.id" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 font-mono" value="{{ $settings['school_email'] }}" />
                                 @error('school_email') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
-                            <div class="md:col-span-2">
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Password Halaman Hak Akses</label>
-                                <input name="permissions_page_password" type="password" required class="input" value="{{ $settings['permissions_page_password'] }}" />
-                                <p class="text-[11px] text-slate-400 mt-1">Password untuk melindungi halaman Pengaturan Hak Akses (default: admin123). Karakter tidak terlihat saat diisi.</p>
-                                @error('permissions_page_password') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <div>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">No. Telepon / Hotline</label>
+                                <input name="school_phone" type="text" placeholder="Contoh: (0276) 321234 / 08123456789" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value="{{ $settings['school_phone'] ?? '' }}" />
+                                @error('school_phone') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Baris 4: Website & Alamat Lengkap -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Website Resmi Sekolah</label>
+                                <input name="school_website" type="text" placeholder="https://sman1cepogo.sch.id" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100 font-mono" value="{{ $settings['school_website'] ?? '' }}" />
+                                @error('school_website') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Alamat Lengkap Instansi</label>
+                                <input name="school_address" type="text" placeholder="Contoh: Jl. Raya Cepogo KM. 13, Boyolali, Jawa Tengah" class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value="{{ $settings['school_address'] ?? '' }}" />
+                                @error('school_address') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
 
-                    <!-- Section 2: Selective Submission Locking -->
-                    <div class="space-y-4 pt-4">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                            <i class="fas fa-shield-alt text-orange-500 text-sm"></i>
-                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Sistem Penguncian Tugas Otomatis (SSL)</h3>
+                    <!-- Section 2: Keamanan & Hak Akses -->
+                    <div class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800">
+                            <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/30 flex items-center justify-center text-sm font-bold">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Keamanan & Password Hak Akses</h3>
+                        </div>
+
+                        <div>
+                            <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Password Halaman Hak Akses</label>
+                            <input name="permissions_page_password" type="password" required class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value="{{ $settings['permissions_page_password'] }}" />
+                            <p class="text-[11px] text-slate-400 mt-1"><i class="fas fa-info-circle mr-1"></i>Password untuk melindungi menu Pengaturan Hak Akses dari akses yang tidak berwenang (default: <code>admin123</code>).</p>
+                            @error('permissions_page_password') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Selective Submission Locking (SSL) -->
+                    <div class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-50 text-[#00B074] dark:bg-emerald-950/30 flex items-center justify-center text-sm font-bold">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Sistem Penguncian Tugas Otomatis (SSL)</h3>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Durasi Kunci Otomatis (Jam)</label>
-                                <input name="lock_duration_hours" type="number" min="1" max="168" required class="input" value="{{ $settings['lock_duration_hours'] }}" />
-                                <p class="text-[11px] text-slate-400 mt-1">Lama waktu tugas dapat dikirim terlambat sebelum dikunci total.</p>
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Durasi Kunci Otomatis (Jam)</label>
+                                <input name="lock_duration_hours" type="number" min="1" max="168" required class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100" value="{{ $settings['lock_duration_hours'] }}" />
+                                <p class="text-[11px] text-slate-400 mt-1">Tenggat toleransi tugas terlambat sebelum dikunci.</p>
                                 @error('lock_duration_hours') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Metode Dispensasi Siswa</label>
-                                <select name="allow_dispensations" required class="input">
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Dispensasi Siswa</label>
+                                <select name="allow_dispensations" required class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                                     <option value="1" {{ $settings['allow_dispensations'] == '1' ? 'selected' : '' }}>Aktif (Bisa Mengajukan Banding)</option>
                                     <option value="0" {{ $settings['allow_dispensations'] == '0' ? 'selected' : '' }}>Nonaktif (Hanya Admin)</option>
                                 </select>
-                                <p class="text-[11px] text-slate-400 mt-1">Mengatur apakah siswa dapat mengirimkan banding dispensasi tugas.</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Mengatur pengajuan banding tugas siswa.</p>
                                 @error('allow_dispensations') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                             <div>
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Proteksi Kunci Deadline Tugas</label>
-                                <select name="ssl_lock_expired_deadline" required class="input">
+                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Proteksi Deadline Lewat</label>
+                                <select name="ssl_lock_expired_deadline" required class="input w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-700 focus:border-[#D65A20] focus:ring-2 focus:ring-[#D65A20]/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100">
                                     <option value="1" {{ ($settings['ssl_lock_expired_deadline'] ?? '1') == '1' ? 'selected' : '' }}>Aktif (Terkunci Ketat)</option>
                                     <option value="0" {{ ($settings['ssl_lock_expired_deadline'] ?? '1') == '0' ? 'selected' : '' }}>Nonaktif (Fleksibel Edit)</option>
                                 </select>
-                                <p class="text-[11px] text-slate-400 mt-1">Mengunci form edit deadline tugas yang sudah lewat batas waktu.</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Mengunci form deadline yang sudah kedaluwarsa.</p>
                                 @error('ssl_lock_expired_deadline') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
                             </div>
                         </div>
                     </div>
 
-                    <!-- Section 3: WhatsApp Fonnte Integration -->
-                    <div class="space-y-4 pt-4 hidden">
-                        <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                            <i class="fab fa-whatsapp text-orange-500 text-sm"></i>
-                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Integrasi WhatsApp (Fonnte API)</h3>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="md:col-span-1">
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status Notifikasi</label>
-                                <select name="wa_notification_status" required class="input">
-                                    <option value="1" {{ $settings['wa_notification_status'] == '1' ? 'selected' : '' }}>Aktif</option>
-                                    <option value="0" {{ $settings['wa_notification_status'] == '0' ? 'selected' : '' }}>Nonaktif</option>
-                                </select>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="field-label mb-1.5 block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">API Token Fonnte</label>
-                                <input name="fonnte_token" type="password" class="input" value="{{ $settings['fonnte_token'] }}" placeholder="Masukkan Fonnte API Token..." />
-                                @error('fonnte_token') <p class="text-rose-500 text-xs mt-1">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-                        <p class="text-xxs text-slate-400 leading-normal"><i class="fas fa-info-circle mr-1"></i> Notifikasi WhatsApp Fonnte digunakan untuk mengirimkan peringatan otomatis kepada orang tua ketika siswa terlambat mengumpulkan tugas sekolah.</p>
-                    </div>
-
-
                     <!-- Submit Button -->
-                    <div class="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <button type="submit" class="btn bg-orange-500 hover:bg-orange-600 text-white font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/15 transition duration-150 flex items-center gap-2">
+                    <div class="flex justify-end pt-5 border-t border-slate-100 dark:border-slate-800">
+                        <button type="submit" class="btn btn-orange-solid font-extrabold px-8 py-3 rounded-2xl shadow-xl shadow-orange-500/20 text-xs transition flex items-center gap-2">
                             <i class="fas fa-save"></i>
-                            Simpan Perubahan
+                            <span>Simpan Perubahan Informasi</span>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Right Side: Logo & System Info Card -->
+        <!-- Right Side: School Live Preview Card & Infrastructure -->
         <div class="space-y-6">
-            <!-- Logo Card -->
+            <!-- School Profile Preview Card -->
             <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm text-center">
-                <img src="{{ asset('assets/logo/logo.jpeg') }}" alt="Logo {{ $settings['school_name'] }}" class="w-24 h-24 object-contain rounded-full shadow-md mx-auto mb-4 border-2 border-orange-500/10">
-                <h3 class="text-lg font-bold text-slate-800 dark:text-white">{{ $settings['school_name'] }}</h3>
-                <p class="text-xs text-slate-400 font-mono mt-0.5">{{ $settings['school_name'] }}</p>
+                <img src="{{ asset('assets/logo/logo.jpeg') }}" alt="Logo {{ $settings['school_name'] }}" class="w-24 h-24 object-contain rounded-full shadow-md mx-auto mb-4 border-2 border-orange-500/20">
+                <h3 class="text-lg font-extrabold text-slate-800 dark:text-white">{{ $settings['school_name'] }}</h3>
+                
+                @if(!empty($settings['school_npsn']))
+                <div class="inline-block mt-1">
+                    <span class="px-2.5 py-0.5 rounded-lg bg-orange-100 text-[#D65A20] dark:bg-orange-950/40 text-[11px] font-mono font-bold">NPSN: {{ $settings['school_npsn'] }}</span>
+                </div>
+                @endif
+
+                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 text-left space-y-2.5 text-xs">
+                    @if(!empty($settings['headmaster_name']))
+                    <div class="flex items-start gap-2.5">
+                        <i class="fas fa-user-tie text-slate-400 mt-0.5 text-xs shrink-0"></i>
+                        <div class="min-w-0">
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Kepala Sekolah</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-200 block truncate">{{ $settings['headmaster_name'] }}</span>
+                            @if(!empty($settings['headmaster_nip']))
+                                <span class="text-[10px] text-slate-400 font-mono">NIP. {{ $settings['headmaster_nip'] }}</span>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(!empty($settings['school_email']))
+                    <div class="flex items-start gap-2.5">
+                        <i class="fas fa-envelope text-slate-400 mt-0.5 text-xs shrink-0"></i>
+                        <div class="min-w-0">
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Email Resmi</span>
+                            <span class="font-semibold text-slate-700 dark:text-slate-200 block font-mono truncate">{{ $settings['school_email'] }}</span>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(!empty($settings['school_phone']))
+                    <div class="flex items-start gap-2.5">
+                        <i class="fas fa-phone text-slate-400 mt-0.5 text-xs shrink-0"></i>
+                        <div class="min-w-0">
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Telepon</span>
+                            <span class="font-semibold text-slate-700 dark:text-slate-200 block truncate">{{ $settings['school_phone'] }}</span>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(!empty($settings['school_website']))
+                    <div class="flex items-start gap-2.5">
+                        <i class="fas fa-globe text-slate-400 mt-0.5 text-xs shrink-0"></i>
+                        <div class="min-w-0">
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Website</span>
+                            <a href="{{ $settings['school_website'] }}" target="_blank" class="font-semibold text-[#D65A20] hover:underline block font-mono truncate">{{ $settings['school_website'] }}</a>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(!empty($settings['school_address']))
+                    <div class="flex items-start gap-2.5">
+                        <i class="fas fa-map-marker-alt text-slate-400 mt-0.5 text-xs shrink-0"></i>
+                        <div class="min-w-0">
+                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Alamat</span>
+                            <span class="text-slate-600 dark:text-slate-300 block text-xs leading-relaxed">{{ $settings['school_address'] }}</span>
+                        </div>
+                    </div>
+                    @endif
+                </div>
             </div>
 
-            <!-- Server Card -->
+            <!-- Server & Infrastructure Card -->
             <div class="card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm space-y-4">
                 <div class="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                    <i class="fas fa-circle-info text-orange-500 text-sm"></i>
+                    <i class="fas fa-circle-info text-[#D65A20] text-sm"></i>
                     <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Status Infrastruktur</h4>
                 </div>
                 <div class="space-y-2.5 text-xs">
@@ -763,32 +859,75 @@
                         <i class="fas fa-triangle-exclamation text-rose-600"></i>
                         <h3 class="text-sm font-bold text-rose-700 dark:text-rose-400">Pembersihan Data Operasional (Reset Semester Baru)</h3>
                     </div>
+
+                    <!-- Warning Banner: Panduan Waktu Reset Data (User-Friendly & High Contrast) -->
+                    <div class="mb-6 bg-amber-500/10 dark:bg-amber-950/30 border border-amber-300/80 dark:border-amber-700/60 rounded-2xl p-5 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20 text-lg">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-sm md:text-base font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">Perhatikan Waktu Eksekusi Pembersihan!</h4>
+                                <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">Pahami aturan urutan berikut agar data rombel dan plotting siswa baru tidak terhapus secara tidak sengaja.</p>
+                            </div>
+                        </div>
+
+                        <!-- 2 Kolom Visual: Larangan vs Anjuran -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                            <!-- Kotak 1: DILARANG (Merah) -->
+                            <div class="bg-white dark:bg-slate-900 border-2 border-rose-300 dark:border-rose-900/60 rounded-xl p-4 flex items-start gap-3.5 shadow-sm">
+                                <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+                                    <i class="fas fa-times-circle text-base"></i>
+                                </div>
+                                <div>
+                                    <span class="inline-block px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 font-extrabold text-[11px] uppercase tracking-wide mb-1">
+                                        ❌ JANGAN RESET JIKA:
+                                    </span>
+                                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                                        Anda <strong>sudah menyusun Tahun Ajaran, Rombel, atau Plotting Siswa/Guru baru</strong>. Tindakan reset akan <strong>menghapus data baru tersebut</strong>!
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Kotak 2: DISARANKAN (Hijau) -->
+                            <div class="bg-white dark:bg-slate-900 border-2 border-emerald-300 dark:border-emerald-900/60 rounded-xl p-4 flex items-start gap-3.5 shadow-sm">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                                    <i class="fas fa-check-circle text-base"></i>
+                                </div>
+                                <div>
+                                    <span class="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-extrabold text-[11px] uppercase tracking-wide mb-1">
+                                        ✅ WAKTU YANG TEPAT:
+                                    </span>
+                                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                                        Lakukan saat <strong>penutupan tahun ajaran lama</strong> setelah mengunduh <strong>Backup SQL & ZIP</strong>, dan <strong>SEBELUM</strong> membuat rombel tahun baru.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <form action="{{ route('settings.reset-data') }}" method="POST" class="space-y-4" onsubmit="return konfirmasiAksiDestruktif(this, 'Peringatan keras! Data transaksional terpilih akan dihapus permanen. Lanjutkan?')">
+                    <form action="{{ route('settings.reset-data') }}" method="POST" class="space-y-4" onsubmit="return konfirmasiAksiDestruktif(this, 'PERINGATAN KERAS!\n\nApakah Anda yakin ingin menghapus data transaksional terpilih secara permanen?\n\nPastikan:\n1. Anda sudah mengunduh Backup SQL dan Arsip ZIP.\n2. Anda BELUM menyusun data/rombel tahun ajaran baru.\n\nKlik OK untuk melanjutkan.')">
                         @csrf
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label class="flex items-start gap-2.5 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-rose-400 transition shadow-sm">
                                 <input type="checkbox" name="opsi[]" value="tugas_nilai" class="mt-0.5 rounded text-rose-500 border-slate-300" />
                                 <div>
-                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Tugas & Nilai</span>
+                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">Tugas & Nilai</span>
+                                    <span class="block text-[11px] text-slate-400 mt-0.5">Tugas, pengumpulan, & nilai</span>
                                 </div>
                             </label>
-                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
+                            <label class="flex items-start gap-2.5 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-rose-400 transition shadow-sm">
                                 <input type="checkbox" name="opsi[]" value="materi" class="mt-0.5 rounded text-rose-500 border-slate-300" />
                                 <div>
-                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Materi</span>
+                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">Materi</span>
+                                    <span class="block text-[11px] text-slate-400 mt-0.5">Seluruh berkas materi guru</span>
                                 </div>
                             </label>
-                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
-                                <input type="checkbox" name="opsi[]" value="kehadiran" class="mt-0.5 rounded text-rose-500 border-slate-300" />
-                                <div>
-                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Absensi</span>
-                                </div>
-                            </label>
-                            <label class="flex items-start gap-2.5 p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md cursor-pointer hover:border-rose-400 transition shadow-sm">
+                            <label class="flex items-start gap-2.5 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-rose-400 transition shadow-sm">
                                 <input type="checkbox" name="opsi[]" value="plot_kelas" class="mt-0.5 rounded text-rose-500 border-slate-300" />
                                 <div>
-                                    <span class="block text-[12px] font-semibold text-slate-800 dark:text-slate-200 leading-tight">Plot Kelas</span>
+                                    <span class="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">Plot Kelas</span>
+                                    <span class="block text-[11px] text-slate-400 mt-0.5">Plotting siswa & guru kelas</span>
                                 </div>
                             </label>
                         </div>
@@ -851,33 +990,43 @@
             <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/50 rounded-xl p-6 shadow-sm mt-6">
                 <div class="flex items-center gap-2 mb-3 border-b border-amber-200/60 dark:border-amber-800/60 pb-3">
                     <i class="fas fa-list-ol text-amber-600 dark:text-amber-500"></i>
-                    <h4 class="text-sm font-semibold text-amber-800 dark:text-amber-400">SOP Reset Semester</h4>
+                    <h4 class="text-sm font-semibold text-amber-800 dark:text-amber-400">SOP Urutan Reset & Tahun Baru</h4>
                 </div>
                 <p class="text-[12px] text-amber-700 dark:text-amber-500/80 mb-4 leading-relaxed">
-                    Penting: Ikuti urutan langkah di bawah ini untuk mencegah kehilangan data sebelum melakukan Reset Data Operasional.
+                    Penting: Ikuti urutan langkah di bawah ini secara runut untuk mencegah kehilangan data baru yang sudah disusun.
                 </p>
                 <ol class="space-y-4 relative border-l border-amber-200 dark:border-amber-800/50 ml-2.5">
                     <li class="pl-4 relative">
                         <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-amber-600 ring-4 ring-amber-50 dark:ring-slate-900"></span>
-                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">1. Kunci Direktori</span>
-                        <span class="block text-[11px] text-slate-500 mt-1">Hentikan lalu lintas upload (Read-Only).</span>
+                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">1. Kunci Direktori (Freeze)</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">Hentikan lalu lintas upload (Read-Only).</span>
                     </li>
                     <li class="pl-4 relative">
                         <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-amber-600 ring-4 ring-amber-50 dark:ring-slate-900"></span>
-                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">2. Unduh SQL</span>
-                        <span class="block text-[11px] text-slate-500 mt-1">Amankan database transaksional saat ini.</span>
-                    </li>
-                    <li class="pl-4 relative">
-                        <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-amber-600 ring-4 ring-amber-50 dark:ring-slate-900"></span>
-                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">3. Unduh Arsip</span>
-                        <span class="block text-[11px] text-slate-500 mt-1">Bungkus seluruh file sistem ke dalam ZIP.</span>
+                        <span class="block text-[12px] font-bold text-slate-700 dark:text-slate-300">2. Unduh SQL & Arsip ZIP</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">Amankan database master & file tugas tahun lama.</span>
                     </li>
                     <li class="pl-4 relative">
                         <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-rose-400 dark:bg-rose-500 ring-4 ring-amber-50 dark:ring-slate-900"></span>
-                        <span class="block text-[12px] font-bold text-rose-700 dark:text-rose-400">4. Eksekusi Reset</span>
-                        <span class="block text-[11px] text-slate-500 mt-1">Pilih dan hapus data (Materi, Nilai, dll).</span>
+                        <span class="block text-[12px] font-bold text-rose-700 dark:text-rose-400">3. Eksekusi Reset Data Lama</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">Kosongkan data transaksional (Tugas, Materi, Plot).</span>
+                    </li>
+                    <li class="pl-4 relative">
+                        <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 dark:bg-emerald-500 ring-4 ring-amber-50 dark:ring-slate-900"></span>
+                        <span class="block text-[12px] font-bold text-emerald-700 dark:text-emerald-400">4. Buka Kunci (Unfreeze)</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">Kembalikan mode server ke Writable.</span>
+                    </li>
+                    <li class="pl-4 relative">
+                        <span class="absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-indigo-500 ring-4 ring-amber-50 dark:ring-slate-900"></span>
+                        <span class="block text-[12px] font-bold text-indigo-700 dark:text-indigo-400">5. Susun Tahun Ajaran & Rombel Baru</span>
+                        <span class="block text-[11px] text-slate-500 mt-0.5">Baru buat TA baru, generate rombel, & plotting.</span>
                     </li>
                 </ol>
+
+                <div class="mt-4 pt-3 border-t border-amber-200/80 dark:border-amber-800/80 text-[11px] text-amber-900 dark:text-amber-300 font-bold flex items-start gap-1.5">
+                    <i class="fas fa-ban text-rose-600 mt-0.5 shrink-0"></i>
+                    <span>Jangan pernah jalankan Reset Data setelah langkah 5 dilakukan!</span>
+                </div>
             </div>
             
             <!-- Glosarium Fitur Pemeliharaan -->
